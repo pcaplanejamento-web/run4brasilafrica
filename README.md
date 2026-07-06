@@ -65,9 +65,14 @@ Na Cloudflare o app roda em **Workers** através do adaptador **OpenNext**
 1. Acesse <https://dash.cloudflare.com> → **Workers & Pages** → **Create** →
    **Import a repository** (autorize o app da Cloudflare no GitHub).
 2. Selecione o repositório `run4brasilafrica`.
-3. Em build, use:
-   - **Build command:** `npx opennextjs-cloudflare build`
-   - **Deploy command:** `npx wrangler deploy`
+3. Em build, use (importante — o deploy precisa compilar antes):
+   - **Build command:** deixe em branco
+   - **Deploy command:** `npm run cf:deploy`
+
+   > `npm run cf:deploy` compila e publica de uma vez
+   > (`opennextjs-cloudflare build && opennextjs-cloudflare deploy`). Um
+   > `npx wrangler deploy` puro falha com "Could not find the compiled OpenNext
+   > configuration" porque não roda a compilação.
 4. Em **Variables and Secrets**, adicione as duas do Apps Script
    (ver [`apps-script/README.md`](apps-script/README.md)):
    - `GAS_WEB_APP_URL`
