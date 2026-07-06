@@ -1,0 +1,47 @@
+import Link from "next/link";
+import type { ContactLinks } from "@/lib/content/types";
+
+function ext(url: string) {
+  return url.startsWith("http") ? url : `https://${url}`;
+}
+
+/** Footer with social links and the discreet ADM entry point. */
+export default function SiteFooter({ contact }: { contact: ContactLinks }) {
+  const socials = [
+    { label: "Instagram", href: ext(contact.instagram) },
+    { label: "WhatsApp", href: `https://wa.me/${contact.whatsapp.replace(/\D/g, "")}` },
+    { label: "YouTube", href: ext(contact.youtube) },
+  ];
+
+  return (
+    <footer className="flex flex-col gap-8 bg-ink-deeper px-5 py-12 text-muted sm:px-8 md:flex-row md:items-center md:justify-between md:px-14 md:py-[60px]">
+      <div className="font-display text-[18px] uppercase text-white">
+        Run4BrasilAfrica
+      </div>
+
+      <div className="flex flex-wrap gap-5 text-[13px] uppercase">
+        {socials.map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-cream"
+          >
+            {s.label}
+          </a>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-4">
+        <span className="text-[12px] opacity-60">{contact.copyright}</span>
+        <Link
+          href="/admin/login"
+          className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"
+        >
+          Acesso administrativo
+        </Link>
+      </div>
+    </footer>
+  );
+}

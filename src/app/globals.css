@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+/*
+ * Run4BrasilAfrica — Design tokens
+ * Ported from the Claude Design handoff bundle (design-source/).
+ * Palette connects Brazil + Africa: warm terracotta/red, gold accent, deep earth ink.
+ * Do not hardcode raw colors in components — reference these tokens.
+ */
+@theme {
+  /* Fonts (wired to next/font CSS variables in layout.tsx) */
+  --font-display: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-sans: var(--font-ibm-plex), "IBM Plex Sans", sans-serif;
+
+  /* Public site — dark earth surfaces */
+  --color-ink: oklch(0.2 0.018 40);
+  --color-ink-deep: oklch(0.15 0.02 40);
+  --color-ink-deeper: oklch(0.12 0.015 40);
+  --color-ink-panel: oklch(0.22 0.02 40);
+  --color-ink-card: oklch(0.24 0.02 40);
+
+  /* Lines / borders */
+  --color-line: oklch(0.3 0.02 40);
+  --color-line-soft: oklch(0.35 0.02 40);
+
+  /* Text */
+  --color-cream: oklch(0.95 0.012 70);
+  --color-muted: oklch(0.75 0.01 70);
+  --color-muted-strong: oklch(0.8 0.01 70);
+
+  /* Accents */
+  --color-gold: oklch(0.75 0.15 105);
+  --color-gold-ink: oklch(0.15 0.02 100);
+  --color-brasil: oklch(0.62 0.16 35);
+  --color-brasil-2: oklch(0.55 0.16 32);
+
+  /* Admin — terracotta primary + light surfaces */
+  --color-terracotta: oklch(0.55 0.16 35);
+  --color-terracotta-2: oklch(0.62 0.16 35);
+  --color-adm-bg: #f4f4f2;
+  --color-adm-card: #ffffff;
+  --color-adm-border: #e2e2dc;
+  --color-adm-line: #f1f1ef;
+  --color-adm-ink: #333333;
+  --color-adm-muted: #888888;
+  --color-adm-sidebar: #2b2b2b;
+  --color-adm-sidebar-active: #3d3d3d;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Angular clip used on gold CTAs (matches design's clip-path buttons) */
+.clip-cta {
+  clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
+}
+.clip-cta-lg {
+  clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%);
+}
+.clip-hero {
+  clip-path: polygon(0 0, 100% 0, 100% 92%, 0 100%);
+}
+
+/* Scroll-reveal: elements start hidden, .is-visible reveals them */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--ease-out-soft),
+    transform 0.7s var(--ease-out-soft);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* FAQ answer fade (matches r4baFadeIn keyframe from the design) */
+@keyframes r4baFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.r4ba-fade {
+  animation: r4baFadeIn 0.5s ease both;
+}
+
+/* Respect users who prefer reduced motion (plan requirement) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .r4ba-fade {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

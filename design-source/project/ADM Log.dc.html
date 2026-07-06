@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="log" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px;">
+    <div style="font-size:22px; font-weight:700; margin-bottom:28px;">Log de alterações</div>
+
+    <div style="background:#fff; border:1px solid #e2e2dc; border-radius:8px; overflow:hidden;">
+      <div style="display:grid; grid-template-columns:140px 1fr 160px; padding:12px 20px; font-size:12px; color:#888; font-weight:700; border-bottom:1px solid #eee;">
+        <div>DATA/HORA</div><div>AÇÃO</div><div>USUÁRIO</div>
+      </div>
+      <sc-for list="{{ log }}" as="l" hint-placeholder-count="10">
+        <div style="display:grid; grid-template-columns:140px 1fr 160px; padding:12px 20px; border-bottom:1px solid #f1f1ef; font-size:13px;">
+          <div style="color:#999;">{{ l.time }}</div>
+          <div style="color:#333;">{{ l.action }}</div>
+          <div style="color:#777;">{{ l.user }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const log = [
+      { time: "06/07 14:32", action: "Atualizou texto da seção \"Sobre a causa\"", user: "Fernanda S." },
+      { time: "05/07 09:10", action: "Adicionou 3 fotos ao álbum \"Largada\"", user: "Bruno A." },
+      { time: "03/07 18:44", action: "Reconectou token de integração Strava", user: "Fernanda S." },
+      { time: "01/07 11:02", action: "Cadastrou novo patrocinador (Prata)", user: "Bruno A." },
+      { time: "29/06 17:15", action: "Reordenou slides do banner", user: "Fernanda S." },
+      { time: "27/06 10:03", action: "Atualizou link de inscrição", user: "Rafael L." },
+      { time: "24/06 08:50", action: "Convidou novo usuário administrativo", user: "Fernanda S." },
+      { time: "20/06 15:40", action: "Editou FAQ", user: "Bruno A." },
+      { time: "15/06 09:22", action: "Criou edição Run4BrasilAfrica 2026", user: "Fernanda S." },
+      { time: "10/06 13:05", action: "Removeu foto do álbum \"Percurso\"", user: "Bruno A." },
+    ];
+    return { log };
+  }
+}
+
+</script>
+</body>
+</html>

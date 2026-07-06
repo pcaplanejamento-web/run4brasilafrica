@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="patrocinadores" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+      <div style="font-size:22px; font-weight:700;">Patrocinadores & apoiadores</div>
+      <div style="background:oklch(0.55 0.16 35); color:#fff; padding:11px 22px; border-radius:6px; font-size:14px; font-weight:700;">+ Novo patrocinador</div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e2dc; border-radius:8px; overflow:hidden;">
+      <div style="display:grid; grid-template-columns:60px 1.4fr 1fr 1fr 120px; padding:12px 20px; font-size:12px; color:#888; font-weight:700; border-bottom:1px solid #eee;">
+        <div>LOGO</div><div>NOME</div><div>CATEGORIA</div><div>LINK</div><div>AÇÕES</div>
+      </div>
+      <sc-for list="{{ sponsors }}" as="sp" hint-placeholder-count="6">
+        <div style="display:grid; grid-template-columns:60px 1.4fr 1fr 1fr 120px; padding:14px 20px; align-items:center; border-bottom:1px solid #f1f1ef; font-size:13px;">
+          <div style="width:36px; height:36px; border-radius:6px; background:repeating-linear-gradient(45deg,#ddd 0 6px,#e8e8e2 6px 12px);"></div>
+          <div style="font-weight:600;">{{ sp.name }}</div>
+          <div><span style="border-radius:999px; padding:4px 12px; font-size:12px; font-weight:700; background:{{ sp.badgeBg }}; color:{{ sp.badgeColor }};">{{ sp.tier }}</span></div>
+          <div style="color:#777;">{{ sp.link }}</div>
+          <div style="display:flex; gap:8px;">
+            <span style="font-size:12px; border:1px solid #ccc; padding:5px 10px; background:#fff; border-radius:4px;">Editar</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const tierColors = {
+      Ouro: { bg: "oklch(0.85 0.12 85)", color: "oklch(0.35 0.1 70)" },
+      Prata: { bg: "oklch(0.9 0.005 0)", color: "oklch(0.4 0.01 0)" },
+      Bronze: { bg: "oklch(0.82 0.08 45)", color: "oklch(0.35 0.08 40)" },
+    };
+    const raw = [
+      { name: "Banco Atlântico", tier: "Ouro", link: "bancoatlantico.com" },
+      { name: "VoaAfrica Airlines", tier: "Ouro", link: "voaafrica.com" },
+      { name: "Hidrata+", tier: "Prata", link: "hidratamais.com.br" },
+      { name: "Correndo Sports", tier: "Prata", link: "correndosports.com" },
+      { name: "Café Raízes", tier: "Bronze", link: "cafeaizes.com.br" },
+      { name: "Estúdio Aro", tier: "Bronze", link: "estudioaro.com" },
+    ];
+    const sponsors = raw.map(s => ({ ...s, badgeBg: tierColors[s.tier].bg, badgeColor: tierColors[s.tier].color }));
+    return { sponsors };
+  }
+}
+
+</script>
+</body>
+</html>

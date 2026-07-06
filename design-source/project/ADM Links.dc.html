@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="links" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px; max-width:760px;">
+    <div style="font-size:22px; font-weight:700; margin-bottom:28px;">Links & inscrição</div>
+
+    <div style="border:1px solid #e2e2dc; background:#fff; padding:24px; border-radius:8px; margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#888; margin-bottom:14px;">INSCRIÇÃO</div>
+      <div style="font-size:13px; color:#555; margin-bottom:6px;">Plataforma</div>
+      <div style="border:1px solid #ccc; background:#fbfbfa; padding:9px 12px; border-radius:4px; font-size:14px; margin-bottom:14px;">Ticket Sports (parceiro)</div>
+      <div style="font-size:13px; color:#555; margin-bottom:6px;">URL de inscrição</div>
+      <div style="border:1px solid #ccc; background:#fbfbfa; padding:9px 12px; border-radius:4px; font-size:14px;">ticketsports.com.br/run4brasilafrica-2026</div>
+    </div>
+
+    <div style="border:1px solid #e2e2dc; background:#fff; padding:24px; border-radius:8px; margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#888; margin-bottom:14px;">REDES SOCIAIS</div>
+      <sc-for list="{{ social }}" as="s" hint-placeholder-count="4">
+        <div style="display:grid; grid-template-columns:130px 1fr; gap:12px; align-items:center; margin-bottom:12px;">
+          <div style="font-size:13px; color:#555;">{{ s.label }}</div>
+          <div style="border:1px solid #ccc; background:#fbfbfa; padding:9px 12px; border-radius:4px; font-size:14px;">{{ s.value }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="border:1px solid #e2e2dc; background:#fff; padding:24px; border-radius:8px;">
+      <div style="font-size:13px; font-weight:700; color:#888; margin-bottom:14px;">DOAÇÕES</div>
+      <div style="border:1px solid #ccc; background:#fbfbfa; padding:9px 12px; border-radius:4px; font-size:14px;">doacoes.run4brasilafrica.com</div>
+    </div>
+
+    <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+      <div style="background:oklch(0.55 0.16 35); color:#fff; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">Salvar alterações</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const social = [
+      { label: "Instagram", value: "instagram.com/run4brasilafrica" },
+      { label: "WhatsApp", value: "+55 21 0000-0000" },
+      { label: "YouTube", value: "youtube.com/@run4brasilafrica" },
+      { label: "E-mail de contato", value: "contato@run4brasilafrica.com" },
+    ];
+    return { social };
+  }
+}
+
+</script>
+</body>
+</html>

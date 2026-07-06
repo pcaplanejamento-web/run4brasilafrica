@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="dashboard" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
+      <div style="font-size:24px; font-weight:700;">Visão geral</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-size:13px; color:#777;">Edição ativa: Run4BrasilAfrica 2026</span>
+        <span style="width:34px; height:34px; border-radius:999px; background:#ccc; display:inline-block;"></span>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:32px;">
+      <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+        <div style="background:#fff; border:1px solid #e2e2dc; border-radius:10px; padding:22px;">
+          <div style="font-size:13px; color:#888;">{{ k.label }}</div>
+          <div style="font-family:'Space Grotesk',sans-serif; font-size:30px; font-weight:700; margin-top:6px; color:oklch(0.5 0.14 35);">{{ k.value }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:24px;">
+      <div style="background:#fff; border:1px solid #e2e2dc; border-radius:10px; padding:24px;">
+        <div style="font-size:14px; font-weight:700; margin-bottom:16px;">Acesso rápido</div>
+        <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+          <sc-for list="{{ quickLinks }}" as="q" hint-placeholder-count="8">
+            <a href="{{ q.href }}" style="text-decoration:none; color:#333; border:1px solid #e2e2dc; border-radius:8px; padding:16px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px;">
+              <span style="width:14px; height:14px; border-radius:3px; background:oklch(0.55 0.16 35); flex:none;"></span>
+              {{ q.label }}
+            </a>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#fff; border:1px solid #e2e2dc; border-radius:10px; padding:24px;">
+        <div style="font-size:14px; font-weight:700; margin-bottom:16px;">Últimas alterações</div>
+        <sc-for list="{{ recentLog }}" as="l" hint-placeholder-count="4">
+          <div style="padding:10px 0; border-bottom:1px solid #f1f1ef; font-size:13px;">
+            <div style="color:#333;">{{ l.action }}</div>
+            <div style="color:#999; margin-top:2px;">{{ l.time }} · {{ l.user }}</div>
+          </div>
+        </sc-for>
+        <a href="ADM Log.dc.html" style="display:inline-block; margin-top:14px; font-size:12px; color:oklch(0.55 0.14 35); text-decoration:none; font-weight:600;">Ver log completo →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const kpis = [
+      { label: "Inscritos (2026)", value: "1.840" },
+      { label: "Vagas restantes", value: "660" },
+      { label: "Fotos na galeria", value: "212" },
+      { label: "Patrocinadores", value: "9" },
+    ];
+    const quickLinks = [
+      { label: "Editar banner", href: "ADM Banner.dc.html" },
+      { label: "Gerenciar galeria", href: "ADM Galeria.dc.html" },
+      { label: "Editar textos", href: "ADM Conteudo.dc.html" },
+      { label: "Config. Strava", href: "ADM Strava.dc.html" },
+      { label: "Patrocinadores", href: "ADM Patrocinadores.dc.html" },
+      { label: "Links & inscrição", href: "ADM Links.dc.html" },
+      { label: "Usuários", href: "ADM Usuarios.dc.html" },
+      { label: "Nova edição", href: "ADM Edicoes.dc.html" },
+    ];
+    const recentLog = [
+      { action: "Atualizou texto da seção \"Sobre a causa\"", time: "06/07 14:32", user: "Fernanda S." },
+      { action: "Adicionou 3 fotos ao álbum \"Largada\"", time: "05/07 09:10", user: "Bruno A." },
+      { action: "Reconectou token de integração Strava", time: "03/07 18:44", user: "Fernanda S." },
+      { action: "Cadastrou novo patrocinador (Prata)", time: "01/07 11:02", user: "Bruno A." },
+    ];
+    return { kpis, quickLinks, recentLog };
+  }
+}
+
+</script>
+</body>
+</html>

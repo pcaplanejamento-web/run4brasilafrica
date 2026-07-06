@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="banner" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+      <div style="font-size:22px; font-weight:700;">Gestão do Banner / Hero</div>
+      <span style="font-size:13px; color:#777;">Edição: Run4BrasilAfrica 2026</span>
+    </div>
+
+    <div style="border:1px dashed #b8b8b0; background:#fff; padding:20px; margin-bottom:28px; border-radius:8px;">
+      <div style="font-size:13px; color:#888; margin-bottom:14px;">SLIDES DO CARROSSEL (arraste para reordenar)</div>
+      <sc-for list="{{ slides }}" as="sl" hint-placeholder-count="3">
+        <div style="display:flex; align-items:center; gap:16px; padding:12px 0; border-bottom:1px solid #eee;">
+          <span style="width:20px; text-align:center; color:#aaa;">⠿</span>
+          <div style="width:96px; height:56px; background:repeating-linear-gradient(45deg,#ddd 0 8px,#e8e8e2 8px 16px); flex:none; border-radius:4px;"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px; color:#888;">Texto de destaque</div>
+            <div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; font-size:14px; margin-top:4px; border-radius:4px;">{{ sl.text }}</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px; color:#888;">Botão (CTA)</div>
+            <div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; font-size:14px; margin-top:4px; border-radius:4px;">{{ sl.cta }}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <span style="font-size:12px; border:1px solid #ccc; padding:6px 12px; background:#fff; border-radius:4px;">Editar</span>
+            <span style="font-size:12px; border:1px solid #ccc; padding:6px 12px; background:#fff; border-radius:4px;">Remover</span>
+          </div>
+        </div>
+      </sc-for>
+      <div style="margin-top:16px; display:inline-block; border:1px dashed #999; padding:10px 18px; font-size:13px; color:#666; border-radius:4px;">+ Adicionar slide</div>
+    </div>
+
+    <div style="border:1px dashed #b8b8b0; background:#fff; padding:20px; border-radius:8px;">
+      <div style="font-size:13px; color:#888; margin-bottom:14px;">CONFIGURAÇÕES GERAIS DO CARROSSEL</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px;">
+        <div>
+          <div style="font-size:13px; color:#555; margin-bottom:6px;">Transição</div>
+          <div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; font-size:14px; border-radius:4px;">Fade suave</div>
+        </div>
+        <div>
+          <div style="font-size:13px; color:#555; margin-bottom:6px;">Duração por slide</div>
+          <div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; font-size:14px; border-radius:4px;">6 segundos</div>
+        </div>
+        <div>
+          <div style="font-size:13px; color:#555; margin-bottom:6px;">Reduzir movimento (acessibilidade)</div>
+          <div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; font-size:14px; border-radius:4px;">Respeitar preferência do usuário</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px; display:flex; justify-content:flex-end;">
+      <div style="background:oklch(0.55 0.16 35); color:#fff; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">Salvar alterações</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const slides = [
+      { text: "14 de setembro · Rio de Janeiro", cta: "Garantir minha vaga" },
+      { text: "Inscrições do Lote 2 abertas", cta: "Inscreva-se" },
+      { text: "Reviva a edição de 2025", cta: "Ver galeria" },
+    ];
+    return { slides };
+  }
+}
+
+</script>
+</body>
+</html>

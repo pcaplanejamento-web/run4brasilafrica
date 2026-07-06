@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="conteudo" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px;">
+    <div style="font-size:22px; font-weight:700; margin-bottom:28px;">Textos do site</div>
+
+    <sc-for list="{{ sections }}" as="s" hint-placeholder-count="4">
+      <div style="border:1px solid #e2e2dc; background:#fff; padding:20px; border-radius:8px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:700; color:#888; margin-bottom:12px;">{{ s.title }}</div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+          <span style="border:1px solid #ddd; border-radius:4px; padding:4px 9px; font-size:12px; font-weight:700;">B</span>
+          <span style="border:1px solid #ddd; border-radius:4px; padding:4px 9px; font-size:12px; font-style:italic;">I</span>
+          <span style="border:1px solid #ddd; border-radius:4px; padding:4px 9px; font-size:12px;">Link</span>
+          <span style="border:1px solid #ddd; border-radius:4px; padding:4px 9px; font-size:12px;">Lista</span>
+        </div>
+        <div style="border:1px solid #ccc; background:#fbfbfa; padding:14px; font-size:14px; line-height:1.6; border-radius:4px; min-height:70px; color:#444;">{{ s.body }}</div>
+      </div>
+    </sc-for>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <div style="background:oklch(0.55 0.16 35); color:#fff; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">Salvar alterações</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const sections = [
+      { title: "SOBRE A CAUSA", body: "Cada passo do Run4BrasilAfrica financia projetos sociais que conectam comunidades no Brasil e na África. Energia de pista, impacto real." },
+      { title: "SOBRE O EVENTO", body: "Corrida de 10km e caminhada de 5km com concentração em Copacabana, aberta a corredores de todos os níveis." },
+      { title: "PERGUNTAS FREQUENTES — INTRODUÇÃO", body: "Reunimos aqui as dúvidas mais comuns sobre inscrição, kit do atleta e regras da prova." },
+      { title: "RODAPÉ / CONTATO", body: "contato@run4brasilafrica.com · +55 21 0000-0000" },
+    ];
+    return { sections };
+  }
+}
+
+</script>
+</body>
+</html>

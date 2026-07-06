@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="strava" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px; max-width:760px;">
+    <div style="font-size:22px; font-weight:700; margin-bottom:28px;">Configuração do percurso (Strava)</div>
+
+    <div style="border:1px solid #e2e2dc; background:#fff; padding:24px; border-radius:8px; margin-bottom:20px;">
+      <div style="font-size:13px; color:#555; margin-bottom:6px;">ID ou link da rota no Strava</div>
+      <div style="border:1px solid #ccc; background:#fbfbfa; padding:10px 12px; font-size:14px; border-radius:4px; margin-bottom:18px;">strava.com/routes/•••••••</div>
+
+      <div style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:18px;">
+        <span style="width:8px; height:8px; border-radius:999px; background:#4a9d5f;"></span> Conectado — token renovado automaticamente
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <div style="font-size:13px; border:1px solid #ccc; padding:9px 18px; border-radius:6px; background:#fff;">Reconectar conta Strava</div>
+        <div style="font-size:13px; border:1px solid #ccc; padding:9px 18px; border-radius:6px; background:#fff;">Testar conexão</div>
+      </div>
+    </div>
+
+    <div style="border:1px solid #e2e2dc; background:#fff; padding:24px; border-radius:8px; margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:700; color:#888; margin-bottom:14px;">FALLBACK MANUAL (caso a API falhe)</div>
+      <div style="border:2px dashed #ccc; border-radius:8px; padding:28px; text-align:center; color:#999; font-size:13px;">Upload de arquivo GPX ou imagem do mapa</div>
+    </div>
+
+    <div style="border:1px solid #e2e2dc; background:#fff; padding:24px; border-radius:8px;">
+      <div style="font-size:13px; font-weight:700; color:#888; margin-bottom:14px;">DADOS COMPLEMENTARES</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+        <div><div style="font-size:12px; color:#888; margin-bottom:4px;">Distância</div><div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; border-radius:4px; font-size:14px;">10 km</div></div>
+        <div><div style="font-size:12px; color:#888; margin-bottom:4px;">Elevação</div><div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; border-radius:4px; font-size:14px;">+84 m</div></div>
+        <div><div style="font-size:12px; color:#888; margin-bottom:4px;">Largada/Chegada</div><div style="border:1px solid #ccc; background:#fbfbfa; padding:8px 10px; border-radius:4px; font-size:14px;">Copacabana</div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+      <div style="background:oklch(0.55 0.16 35); color:#fff; padding:12px 28px; border-radius:6px; font-size:14px; font-weight:700;">Salvar alterações</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

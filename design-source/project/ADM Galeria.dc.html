@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</helmet>
+
+<div style="display:flex; min-height:100vh; background:#f4f4f2; font-family:'IBM Plex Sans',sans-serif; color:#333;">
+  <dc-import name="AdmSidebar" active="galeria" hint-size="240px,100%" style="flex:none;"></dc-import>
+
+  <div style="flex:1; padding:36px 44px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+      <div style="font-size:22px; font-weight:700;">Gestão da Galeria</div>
+      <div style="background:oklch(0.55 0.16 35); color:#fff; padding:11px 22px; border-radius:6px; font-size:14px; font-weight:700;">+ Novo álbum</div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-bottom:24px;">
+      <sc-for list="{{ albums }}" as="a" hint-placeholder-count="4">
+        <div style="padding:9px 18px; border-radius:999px; font-size:13px; font-weight:600; background:{{ a.bg }}; color:{{ a.color }}; border:1px solid #ddd;">{{ a.name }} · {{ a.count }}</div>
+      </sc-for>
+    </div>
+
+    <div style="border:1px dashed #b8b8b0; background:#fff; padding:20px; border-radius:8px; margin-bottom:24px;">
+      <div style="font-size:13px; color:#888; margin-bottom:10px;">UPLOAD EM LOTE — ÁLBUM "LARGADA"</div>
+      <div style="border:2px dashed #ccc; border-radius:8px; padding:34px; text-align:center; color:#999; font-size:13px;">Arraste imagens aqui ou clique para selecionar<br><span style="font-size:11px;">Miniaturas geradas automaticamente</span></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:12px;">
+      <sc-for list="{{ photos }}" as="p" hint-placeholder-count="12">
+        <div style="position:relative; height:100px; border-radius:6px; background:repeating-linear-gradient(45deg,#ddd 0 8px,#e8e8e2 8px 16px);">
+          <span style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:2px 6px; border-radius:3px;">✕</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  renderVals() {
+    const albumsRaw = [
+      { name: "Largada", count: 48, active: true },
+      { name: "Percurso", count: 62, active: false },
+      { name: "Premiação", count: 31, active: false },
+      { name: "Comunidade", count: 27, active: false },
+    ];
+    const albums = albumsRaw.map(a => ({ ...a, bg: a.active ? "#2b2b2b" : "#fff", color: a.active ? "#fff" : "#555" }));
+    const photos = Array.from({ length: 12 }, (_, i) => ({ id: i }));
+    return { albums, photos };
+  }
+}
+
+</script>
+</body>
+</html>
