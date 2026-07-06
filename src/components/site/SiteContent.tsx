@@ -18,9 +18,9 @@ import SiteFooter from "./SiteFooter";
 /**
  * Renders the public site. Server-renders from `initial` (the seed) for SEO and
  * instant paint, then fetches the live content from /api/content on the client
- * and swaps it in. We hydrate on the client because reading Cloudflare KV during
- * server rendering is unreliable under OpenNext, whereas the browser → route
- * handler path is solid (it's what the ADM uses).
+ * and swaps it in. We hydrate on the client because reading the Cloudflare D1
+ * binding during server rendering is unreliable under OpenNext, whereas the
+ * browser → route handler path is solid (it's what the ADM uses).
  */
 export default function SiteContent({ initial }: { initial: SiteContentType }) {
   const [c, setC] = useState(initial);
