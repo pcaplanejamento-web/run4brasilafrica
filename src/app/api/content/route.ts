@@ -1,79 +1,45 @@
 import { NextResponse } from "next/server";
-import { seedContent } from "@/lib/content/seed";
+import { kvReadContent, kvWriteContent, kvResetContent } from "@/lib/content/kv";
 import type { SiteContent } from "@/lib/content/types";
 
 /**
- * Proxy between the browser ADM and the Apps Script backend.
- *
- * The write token lives ONLY here (server env), never in the client bundle:
- * the ADM calls this same-origin route and we forward to GAS with the token.
+ * Content backend for the ADM, same-origin. Reads/writes Cloudflare Workers KV
+ * (see src/lib/content/kv.ts). No secrets in the client: the KV binding lives in
+ * the Worker. When there is no binding (local `next dev`), writes report
+ * `not_configured` so the ADM persists locally only.
  */
 
 export const dynamic = "force-dynamic";
 
-const GAS_URL = process.env.GAS_WEB_APP_URL;
-const TOKEN = process.env.GAS_SHARED_TOKEN;
-
-function merge(stored: Partial<SiteContent> | null | undefined): SiteContent {
-  return stored ? { ...seedContent, ...stored } : seedContent;
-}
-
 export async function GET() {
-  if (!GAS_URL) {
-    return NextResponse.json({ ok: true, content: seedContent, source: "unset" });
-  }
-  try {
-    const res = await fetch(GAS_URL, {
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-    const data = (await res.json()) as { content?: Partial<SiteContent> | null };
-    const hasBackend = Boolean(data?.content);
-    return NextResponse.json({
-      ok: true,
-      content: merge(data?.content),
-      source: hasBackend ? "backend" : "seed",
-    });
-  } catch (err) {
-    return NextResponse.json({
-      ok: false,
-      content: seedContent,
-      source: "error",
-      error: String(err),
-    });
-  }
-}
-
-async function forward(body: Record<string, unknown>) {
-  const res = await fetch(GAS_URL as string, {
-    method: "POST",
-    // text/plain keeps this a "simple request" so Apps Script needs no
-    // CORS preflight (it doesn't answer OPTIONS).
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ token: TOKEN, ...body }),
-    redirect: "follow",
-    signal: AbortSignal.timeout(10000),
-  });
-  return (await res.json()) as { ok?: boolean; error?: string };
+  const { content, source } = await kvReadContent();
+  return NextResponse.json({ ok: true, content, source });
 }
 
 export async function PUT(req: Request) {
-  if (!GAS_URL || !TOKEN) {
-    // Backend not configured — tell the client so it can persist locally only.
-    return NextResponse.json({ ok: false, code: "not_configured" });
-  }
+  let body: { content?: SiteContent; action?: string };
   try {
-    const body = (await req.json()) as { content?: SiteContent; action?: string };
-    const data = await forward(
-      body.action === "reset" ? { action: "reset" } : { content: body.content },
-    );
-    if (!data?.ok) {
-      return NextResponse.json(
-        { ok: false, error: data?.error ?? "backend recusou a gravação" },
-        { status: 502 },
-      );
+    body = (await req.json()) as { content?: SiteContent; action?: string };
+  } catch {
+    return NextResponse.json({ ok: false, error: "corpo inválido" }, { status: 400 });
+  }
+
+  try {
+    if (body.action === "reset") {
+      const ok = await kvResetContent();
+      return ok
+        ? NextResponse.json({ ok: true })
+        : NextResponse.json({ ok: false, code: "not_configured" });
     }
-    return NextResponse.json({ ok: true });
+
+    if (!body.content) {
+      return NextResponse.json({ ok: false, error: "sem conteúdo" }, { status: 400 });
+    }
+
+    const ok = await kvWriteContent(body.content);
+    return ok
+      ? NextResponse.json({ ok: true })
+      : NextResponse.json({ ok: false, code: "not_configured" });
   } catch (err) {
     return NextResponse.json({ ok: false, error: String(err) }, { status: 502 });
   }

@@ -1,0 +1,61 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { SiteContent as SiteContentType } from "@/lib/content/types";
+import SiteNav from "./SiteNav";
+import Hero from "./Hero";
+import StatsBar from "./StatsBar";
+import Sobre from "./Sobre";
+import Percurso from "./Percurso";
+import InscricaoCTA from "./InscricaoCTA";
+import Galeria from "./Galeria";
+import Parceiros from "./Parceiros";
+import Depoimentos from "./Depoimentos";
+import Faq from "./Faq";
+import KitAtleta from "./KitAtleta";
+import SiteFooter from "./SiteFooter";
+
+/**
+ * Renders the public site. Server-renders from `initial` (the seed) for SEO and
+ * instant paint, then fetches the live content from /api/content on the client
+ * and swaps it in. We hydrate on the client because reading Cloudflare KV during
+ * server rendering is unreliable under OpenNext, whereas the browser → route
+ * handler path is solid (it's what the ADM uses).
+ */
+export default function SiteContent({ initial }: { initial: SiteContentType }) {
+  const [c, setC] = useState(initial);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/content", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (alive && data?.content) setC(data.content as SiteContentType);
+      })
+      .catch(() => {
+        /* keep the seed we rendered with */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return (
+    <>
+      <SiteNav />
+      <main>
+        <Hero hero={c.hero} />
+        <StatsBar stats={c.stats} />
+        <Sobre about={c.about} />
+        <Percurso percurso={c.percurso} />
+        <InscricaoCTA inscricao={c.inscricao} />
+        <Galeria tiles={c.galleryTiles} />
+        <Parceiros sponsors={c.sponsors} />
+        <Depoimentos testimonials={c.testimonials} />
+        <Faq items={c.faq} />
+        <KitAtleta kit={c.kit} />
+      </main>
+      <SiteFooter contact={c.contact} />
+    </>
+  );
+}

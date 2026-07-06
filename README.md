@@ -19,25 +19,25 @@ O sistema tem dois lados:
 | Linguagem | TypeScript |
 | Estilo | Tailwind CSS v4 (design tokens em `src/app/globals.css`) |
 | Fontes | Space Grotesk (títulos) + IBM Plex Sans (texto) via `next/font` |
-| Backend | Google Apps Script (Web App) + planilha Google — ver [`apps-script/`](apps-script/README.md) |
-| Cache/offline do ADM | `localStorage` (fallback quando o backend não está configurado) |
+| Backend | Cloudflare Workers KV (binding `CONTENT_KV` em `wrangler.jsonc`) |
+| Hospedagem | Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`) |
+| Cache/offline do ADM | `localStorage` (fallback quando não há binding, ex.: `next dev`) |
 
 A stack segue a recomendação do Plano §5 (Next.js/React). O conteúdo é persistido no
-**Apps Script**; storage de mídia, Auth com papéis e integração Strava são os próximos
-passos descritos em [ARQUITETURA.md](ARQUITETURA.md).
+**Cloudflare KV**; storage de mídia, Auth com papéis e integração Strava são os
+próximos passos descritos em [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Como rodar
 
 ```bash
 npm install
-cp .env.example .env.local   # preencha com a URL/token do Apps Script
 npm run dev                  # http://localhost:3000
 ```
 
-Sem `.env.local` o site funciona normalmente com o conteúdo padrão e o ADM salva
-**apenas no navegador** (a tela Configurações mostra "Backend não configurado").
-Para persistência real, siga [`apps-script/README.md`](apps-script/README.md) e
-preencha `GAS_WEB_APP_URL` e `GAS_SHARED_TOKEN`.
+Não há variáveis de ambiente a configurar. Localmente (sem o binding KV) o site
+funciona com o conteúdo padrão e o ADM salva **apenas no navegador** (a tela
+Configurações mostra o status). No site publicado na Cloudflare, o KV guarda o
+conteúdo para todos os visitantes.
 
 Outros comandos:
 
@@ -73,24 +73,17 @@ Na Cloudflare o app roda em **Workers** através do adaptador **OpenNext**
    > (`opennextjs-cloudflare build && opennextjs-cloudflare deploy`). Um
    > `npx wrangler deploy` puro falha com "Could not find the compiled OpenNext
    > configuration" porque não roda a compilação.
-4. Em **Variables and Secrets**, adicione as duas do Apps Script
-   (ver [`apps-script/README.md`](apps-script/README.md)):
-   - `GAS_WEB_APP_URL`
-   - `GAS_SHARED_TOKEN`
-5. **Save and Deploy**. A cada `git push` na `main`, a Cloudflare publica de novo.
+4. **Save and Deploy**. A cada `git push` na `main`, a Cloudflare publica de novo.
+
+> O backend (KV) já vem no `wrangler.jsonc` (binding `CONTENT_KV`) — não há
+> variáveis de ambiente a definir. Se recriar o Worker do zero, crie o namespace
+> com `npx wrangler kv namespace create CONTENT_KV` e atualize o `id`.
 
 ### Opção B — Linha de comando (mais direto)
 
 ```bash
 npx wrangler login        # abre o navegador para autenticar na Cloudflare
 npm run cf:deploy         # build do OpenNext + publica o Worker
-```
-
-Depois, defina as variáveis (uma vez):
-
-```bash
-npx wrangler secret put GAS_WEB_APP_URL
-npx wrangler secret put GAS_SHARED_TOKEN
 ```
 
 ### Testar o build da Cloudflare localmente
@@ -111,9 +104,9 @@ npm run cf:preview        # roda o Worker localmente (runtime workerd)
 src/
   app/
     layout.tsx            # fontes, metadata, <noscript> fallback do reveal
-    page.tsx              # home pública (busca conteúdo publicado, ISR)
+    page.tsx              # home pública (SSR do seed; conteúdo ao vivo no client)
     globals.css          # design tokens (paleta oklch, fontes, animações)
-    api/content/route.ts  # proxy do backend (GET/PUT) com token no servidor
+    api/content/route.ts  # backend: lê/grava o conteúdo no Cloudflare KV
     admin/
       page.tsx            # redireciona para /admin/login
       login/page.tsx      # login (porta de entrada)
@@ -122,15 +115,16 @@ src/
         dashboard | banner | galeria | conteudo | strava | patrocinadores |
         links | usuarios | edicoes | log | configuracoes   # 11 páginas
   components/
-    site/                 # componentes do site público (Hero, Faq, Counter, ...)
+    site/                 # site público: SiteContent (hidrata ao vivo), Hero, Faq...
     admin/                # AdminShell, AdmSidebar, primitivos de UI, nav
   lib/content/
     types.ts              # modelo de conteúdo tipado
     seed.ts               # conteúdo padrão (portado do handoff)
     store.tsx             # store do ADM (backend + cache + log + status)
-    server.ts             # busca de conteúdo no servidor (público) com fallback
+    kv.ts                 # leitura/gravação no Cloudflare KV (usado pela rota)
     theme.ts              # cores de badges (tiers de patrocínio, status de edição)
-apps-script/              # backend Google Apps Script (Code.gs + instruções)
+open-next.config.ts       # adaptador OpenNext → Cloudflare
+wrangler.jsonc            # Worker + binding KV (CONTENT_KV) + assets
 design-source/            # bundle original do Claude Design (referência/provenância)
 ```
 

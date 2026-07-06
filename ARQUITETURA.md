@@ -35,34 +35,38 @@ O ponto central do princípio "nada hardcoded" (Plano §8):
   ADM: textos, edições, usuários, KPIs, log).
 - **`seed.ts`** — o conteúdo padrão, portado verbatim do handoff. É o fallback quando
   o backend ainda não tem dados.
-- **`server.ts`** — `getPublishedContent()` (server-only): busca o conteúdo no backend
-  para o **site público**, com merge sobre o seed e fallback total.
+- **`kv.ts`** — `kvReadContent()` / `kvWriteContent()` / `kvResetContent()` (server-only):
+  leem/gravam o `SiteContent` no Cloudflare KV via o binding `CONTENT_KV`. Merge sobre
+  o seed e fallback total quando não há binding.
 - **`store.tsx`** — `ContentProvider` + hook `useContent()` usado pelo **ADM**. Carrega
   via `/api/content`, salva com `save(patch, logAction?)`, e expõe `status`
   (`loading/saving/saved/error`), `backend`, `reload()` e `reset()`. Mantém um cache
   em `localStorage`.
 - **`theme.ts`** — mapas de cor de badges (tiers de patrocínio, status de edição).
 
-## Backend (Google Apps Script)
+## Backend (Cloudflare KV)
 
 Fluxo de dados:
 
 ```
-Site público (server)  ── GET ──▶  Apps Script /exec  ◀── planilha (A1 = JSON)
-ADM (browser)  ── PUT ──▶  /api/content (Next, token)  ── POST ──▶  Apps Script /exec
+Site público (browser) ── GET ──▶  /api/content ──▶ KV (CONTENT_KV, chave "content")
+ADM (browser)          ── PUT ──▶  /api/content ──▶ KV
 ```
 
-- **`src/app/api/content/route.ts`** — proxy same-origin. `GET` lê do GAS; `PUT`
-  grava/reseta. O **token de escrita fica só no servidor** (`GAS_SHARED_TOKEN`),
-  nunca no bundle do navegador. O POST ao GAS usa `Content-Type: text/plain` para
-  evitar preflight CORS (o Apps Script não responde a `OPTIONS`).
-- **`apps-script/Code.gs`** — Web App que guarda o `SiteContent` inteiro na célula A1
-  de uma planilha do Drive. Ver [`apps-script/README.md`](apps-script/README.md).
+- **`src/app/api/content/route.ts`** — `GET` lê o conteúdo do KV; `PUT` grava/reseta.
+  Roda no Worker, onde o binding KV está disponível de forma confiável.
+- **Leitura no site público é feita no cliente** (`components/site/SiteContent.tsx`):
+  o servidor renderiza o baseline (seed) para SEO/primeiro paint e o navegador busca
+  o conteúdo ao vivo em `/api/content`. Isso porque `getCloudflareContext()` é
+  instável dentro da renderização de React Server Components no OpenNext (devolve um
+  binding com leitura defasada), enquanto o caminho navegador → rota é sólido — o
+  mesmo que o ADM usa.
+- **`kv.ts`** guarda o `SiteContent` inteiro sob a chave `content`.
 
 ### Resiliência (sem backend / offline)
 
-- Sem `GAS_WEB_APP_URL`, o site usa o seed e o ADM salva **só no `localStorage`**
-  (a tela Configurações mostra o estado). Nada quebra.
+- Sem o binding KV (ex.: `next dev`), o site usa o seed e o ADM salva **só no
+  `localStorage`** (a tela Configurações mostra o estado). Nada quebra.
 - O `store` só sobrescreve o conteúdo local quando o backend é a fonte real
   (`source === "backend"`); um seed devolvido como placeholder nunca apaga edições
   locais.
@@ -72,9 +76,9 @@ ADM (browser)  ── PUT ──▶  /api/content (Next, token)  ── POST ─
 ### Próximos passos (Plano §4/§5)
 
 1. Conectar `login/page.tsx` a Auth real com papéis (admin geral / editor).
-2. Upload de mídia (banner, galeria, logos) para storage.
+2. Upload de mídia (banner, galeria, logos) para storage (ex.: Cloudflare R2).
 3. Rota do Strava (OAuth2) na seção Percurso, com fallback de GPX/imagem.
-4. Se o volume crescer, migrar o backend do Apps Script para Supabase — a fronteira
+4. Se o volume crescer, dá para trocar o KV por D1/Supabase — a fronteira
    (`/api/content` + `lib/content`) já isola isso dos componentes.
 
 ## Padrão de componentes
@@ -102,11 +106,11 @@ ADM (browser)  ── PUT ──▶  /api/content (Next, token)  ── POST ─
 - **Next.js/React** — recomendado pelo Plano §5; SSR ajuda SEO e performance.
 - **Tailwind v4 com tokens** — pareamento rápido do design com paleta `oklch`
   centralizada; evita CSS solto e mantém consistência.
-- **Apps Script como backend** — custo/servidor zero, dados numa planilha que a
-  organização inspeciona; ótimo para esta fase (Plano §5). O `localStorage` fica como
-  cache/offline e como persistência quando o backend não está configurado.
-- **Token só no servidor** — o ADM grava via `/api/content`, então o segredo de escrita
-  nunca vai para o navegador.
+- **Cloudflare KV como backend** — custo/servidor zero e no mesmo lugar do site
+  (o Worker), então dá para configurar tudo por linha de comando, sem contas externas.
+  O `localStorage` fica como cache/offline e como persistência quando não há binding.
+- **Sem segredos no cliente** — o binding KV vive no Worker; o navegador fala com o
+  KV apenas através da rota `/api/content`.
 - **Hospedagem na Cloudflare (Workers) via OpenNext** — como a Cloudflare não roda
   Next.js nativamente, o adaptador `@opennextjs/cloudflare` empacota o app num Worker
   (`open-next.config.ts`, `wrangler.jsonc`). Mantém runtime Node (a rota `/api/content`
