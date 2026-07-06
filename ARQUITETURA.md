@@ -35,8 +35,8 @@ O ponto central do princípio "nada hardcoded" (Plano §8):
   ADM: textos, edições, usuários, KPIs, log).
 - **`seed.ts`** — o conteúdo padrão, portado verbatim do handoff. É o fallback quando
   o backend ainda não tem dados.
-- **`kv.ts`** — `kvReadContent()` / `kvWriteContent()` / `kvResetContent()` (server-only):
-  leem/gravam o `SiteContent` no Cloudflare KV via o binding `CONTENT_KV`. Merge sobre
+- **`db.ts`** — `readContent()` / `writeContent()` / `resetContent()` (server-only):
+  leem/gravam o `SiteContent` no Cloudflare D1 via o binding `CONTENT_DB`. Merge sobre
   o seed e fallback total quando não há binding.
 - **`store.tsx`** — `ContentProvider` + hook `useContent()` usado pelo **ADM**. Carrega
   via `/api/content`, salva com `save(patch, logAction?)`, e expõe `status`
@@ -44,28 +44,29 @@ O ponto central do princípio "nada hardcoded" (Plano §8):
   em `localStorage`.
 - **`theme.ts`** — mapas de cor de badges (tiers de patrocínio, status de edição).
 
-## Backend (Cloudflare KV)
+## Backend (Cloudflare D1)
 
 Fluxo de dados:
 
 ```
-Site público (browser) ── GET ──▶  /api/content ──▶ KV (CONTENT_KV, chave "content")
-ADM (browser)          ── PUT ──▶  /api/content ──▶ KV
+Site público (browser) ── GET ──▶  /api/content ──▶ D1 (CONTENT_DB, linha id=1)
+ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 ```
 
-- **`src/app/api/content/route.ts`** — `GET` lê o conteúdo do KV; `PUT` grava/reseta.
-  Roda no Worker, onde o binding KV está disponível de forma confiável.
+- **`src/app/api/content/route.ts`** — `GET` lê o conteúdo do D1; `PUT` grava/reseta.
+  Roda no Worker, onde o binding D1 está disponível de forma confiável.
+- **D1 é fortemente consistente**: a leitura logo após a gravação reflete a mudança
+  para todos (diferente do KV, que propagava em até ~60s). O `SiteContent` inteiro
+  fica numa única linha JSON (`content`, `id = 1`); schema em `migrations/`.
 - **Leitura no site público é feita no cliente** (`components/site/SiteContent.tsx`):
   o servidor renderiza o baseline (seed) para SEO/primeiro paint e o navegador busca
   o conteúdo ao vivo em `/api/content`. Isso porque `getCloudflareContext()` é
-  instável dentro da renderização de React Server Components no OpenNext (devolve um
-  binding com leitura defasada), enquanto o caminho navegador → rota é sólido — o
-  mesmo que o ADM usa.
-- **`kv.ts`** guarda o `SiteContent` inteiro sob a chave `content`.
+  instável dentro da renderização de React Server Components no OpenNext, enquanto o
+  caminho navegador → rota é sólido — o mesmo que o ADM usa.
 
 ### Resiliência (sem backend / offline)
 
-- Sem o binding KV (ex.: `next dev`), o site usa o seed e o ADM salva **só no
+- Sem o binding D1 (ex.: `next dev`), o site usa o seed e o ADM salva **só no
   `localStorage`** (a tela Configurações mostra o estado). Nada quebra.
 - O `store` só sobrescreve o conteúdo local quando o backend é a fonte real
   (`source === "backend"`); um seed devolvido como placeholder nunca apaga edições
@@ -78,7 +79,7 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ KV
 1. Conectar `login/page.tsx` a Auth real com papéis (admin geral / editor).
 2. Upload de mídia (banner, galeria, logos) para storage (ex.: Cloudflare R2).
 3. Rota do Strava (OAuth2) na seção Percurso, com fallback de GPX/imagem.
-4. Se o volume crescer, dá para trocar o KV por D1/Supabase — a fronteira
+4. Se o volume crescer, dá para migrar o D1 para outro banco (ex.: Supabase) — a fronteira
    (`/api/content` + `lib/content`) já isola isso dos componentes.
 
 ## Padrão de componentes
@@ -106,9 +107,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ KV
 - **Next.js/React** — recomendado pelo Plano §5; SSR ajuda SEO e performance.
 - **Tailwind v4 com tokens** — pareamento rápido do design com paleta `oklch`
   centralizada; evita CSS solto e mantém consistência.
-- **Cloudflare KV como backend** — custo/servidor zero e no mesmo lugar do site
-  (o Worker), então dá para configurar tudo por linha de comando, sem contas externas.
-  O `localStorage` fica como cache/offline e como persistência quando não há binding.
+- **Cloudflare D1 como backend** — SQLite gerenciado, fortemente consistente e
+  gratuito; no mesmo lugar do site (o Worker), então dá para configurar tudo por linha
+  de comando, sem contas externas. Também serve de base para o login com usuários no
+  futuro. O `localStorage` fica como cache/offline e persistência quando não há binding.
 - **Sem segredos no cliente** — o binding KV vive no Worker; o navegador fala com o
   KV apenas através da rota `/api/content`.
 - **Hospedagem na Cloudflare (Workers) via OpenNext** — como a Cloudflare não roda

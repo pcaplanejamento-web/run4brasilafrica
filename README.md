@@ -19,13 +19,13 @@ O sistema tem dois lados:
 | Linguagem | TypeScript |
 | Estilo | Tailwind CSS v4 (design tokens em `src/app/globals.css`) |
 | Fontes | Space Grotesk (títulos) + IBM Plex Sans (texto) via `next/font` |
-| Backend | Cloudflare Workers KV (binding `CONTENT_KV` em `wrangler.jsonc`) |
+| Backend | Cloudflare D1 (SQLite, binding `CONTENT_DB` em `wrangler.jsonc`) |
 | Hospedagem | Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`) |
 | Cache/offline do ADM | `localStorage` (fallback quando não há binding, ex.: `next dev`) |
 
 A stack segue a recomendação do Plano §5 (Next.js/React). O conteúdo é persistido no
-**Cloudflare KV**; storage de mídia, Auth com papéis e integração Strava são os
-próximos passos descritos em [ARQUITETURA.md](ARQUITETURA.md).
+**Cloudflare D1** (fortemente consistente); storage de mídia, Auth com papéis e
+integração Strava são os próximos passos descritos em [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Como rodar
 
@@ -75,9 +75,10 @@ Na Cloudflare o app roda em **Workers** através do adaptador **OpenNext**
    > configuration" porque não roda a compilação.
 4. **Save and Deploy**. A cada `git push` na `main`, a Cloudflare publica de novo.
 
-> O backend (KV) já vem no `wrangler.jsonc` (binding `CONTENT_KV`) — não há
-> variáveis de ambiente a definir. Se recriar o Worker do zero, crie o namespace
-> com `npx wrangler kv namespace create CONTENT_KV` e atualize o `id`.
+> O backend (D1) já vem no `wrangler.jsonc` (binding `CONTENT_DB`) — não há
+> variáveis de ambiente a definir. Se recriar o Worker do zero, crie o banco com
+> `npx wrangler d1 create run4brasilafrica-content`, atualize o `database_id` e
+> aplique o schema: `npx wrangler d1 execute run4brasilafrica-content --remote --file migrations/0001_content.sql`.
 
 ### Opção B — Linha de comando (mais direto)
 
@@ -106,7 +107,7 @@ src/
     layout.tsx            # fontes, metadata, <noscript> fallback do reveal
     page.tsx              # home pública (SSR do seed; conteúdo ao vivo no client)
     globals.css          # design tokens (paleta oklch, fontes, animações)
-    api/content/route.ts  # backend: lê/grava o conteúdo no Cloudflare KV
+    api/content/route.ts  # backend: lê/grava o conteúdo no Cloudflare D1
     admin/
       page.tsx            # redireciona para /admin/login
       login/page.tsx      # login (porta de entrada)
@@ -121,10 +122,11 @@ src/
     types.ts              # modelo de conteúdo tipado
     seed.ts               # conteúdo padrão (portado do handoff)
     store.tsx             # store do ADM (backend + cache + log + status)
-    kv.ts                 # leitura/gravação no Cloudflare KV (usado pela rota)
+    db.ts                 # leitura/gravação no Cloudflare D1 (usado pela rota)
     theme.ts              # cores de badges (tiers de patrocínio, status de edição)
 open-next.config.ts       # adaptador OpenNext → Cloudflare
-wrangler.jsonc            # Worker + binding KV (CONTENT_KV) + assets
+wrangler.jsonc            # Worker + binding D1 (CONTENT_DB) + assets
+migrations/               # schema do D1 (0001_content.sql)
 design-source/            # bundle original do Claude Design (referência/provenância)
 ```
 

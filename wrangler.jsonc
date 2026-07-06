@@ -8,10 +8,11 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "kv_namespaces": [
+  "d1_databases": [
     {
-      "binding": "CONTENT_KV",
-      "id": "56e2c47738c448d89f3809843f5e7e7b"
+      "binding": "CONTENT_DB",
+      "database_name": "run4brasilafrica-content",
+      "database_id": "ff2921a5-fb48-45b7-afa4-a69c0682e3d0"
     }
   ]
 }

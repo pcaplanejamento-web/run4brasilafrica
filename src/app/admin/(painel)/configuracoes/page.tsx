@@ -16,7 +16,7 @@ import {
 } from "@/components/admin/ui";
 
 const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }> = {
-  backend: { text: "Backend conectado (Cloudflare KV)", dot: "#4a9d5f", tone: "#2f7a45" },
+  backend: { text: "Backend conectado (Cloudflare D1)", dot: "#4a9d5f", tone: "#2f7a45" },
   seed: {
     text: "Backend conectado — usando conteúdo padrão (nada salvo ainda)",
     dot: "#4a9d5f",
@@ -82,9 +82,9 @@ function ConfiguracoesForm({
             {b.text}
           </div>
           <p className="mt-2 text-[13px] leading-[1.6] text-adm-muted">
-            O conteúdo é gravado no Cloudflare KV (o banco do próprio site). Rodando
+            O conteúdo é gravado no Cloudflare D1 (o banco do próprio site). Rodando
             localmente sem o binding, as alterações ficam apenas neste navegador; no
-            site publicado, salvam para todos os visitantes.
+            site publicado, salvam para todos os visitantes na hora.
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2.5">
             <GhostButton
