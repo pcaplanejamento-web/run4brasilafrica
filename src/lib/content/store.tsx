@@ -15,10 +15,10 @@ import { seedContent } from "./seed";
 /**
  * ADM content store.
  *
- * Reads/writes through the same-origin `/api/content` route, which proxies the
- * Google Apps Script backend (token stays server-side). A localStorage copy is
- * kept as an offline cache and as the persistence layer when no backend is
- * configured, so the ADM is always usable.
+ * Reads/writes through the same-origin `/api/content` route, which stores the
+ * content in Cloudflare KV (the binding lives in the Worker). A localStorage copy
+ * is kept as an offline cache and as the persistence layer when there is no
+ * binding (e.g. `next dev`), so the ADM is always usable.
  */
 
 const CACHE_KEY = "r4ba:content:v2";
