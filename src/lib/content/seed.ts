@@ -169,33 +169,6 @@ export const seedContent: SiteContent = {
     { year: "2024", date: "9 set 2024", participants: "2.480", status: "Encerrada" },
   ],
 
-  users: [
-    {
-      name: "Fernanda Souza",
-      email: "fernanda@run4brasilafrica.com",
-      role: "Administrador geral",
-      lastAccess: "Hoje, 14:32",
-    },
-    {
-      name: "Bruno Alves",
-      email: "bruno@run4brasilafrica.com",
-      role: "Editor de conteúdo",
-      lastAccess: "Ontem, 09:10",
-    },
-    {
-      name: "Equipe Comunicação",
-      email: "comunicacao@run4brasilafrica.com",
-      role: "Editor de conteúdo",
-      lastAccess: "28/06, 16:20",
-    },
-    {
-      name: "Rafael Lima",
-      email: "rafael@run4brasilafrica.com",
-      role: "Administrador geral",
-      lastAccess: "25/06, 11:45",
-    },
-  ],
-
   dashboardKpis: [
     { label: "Inscritos (2026)", value: "1.840" },
     { label: "Vagas restantes", value: "660" },

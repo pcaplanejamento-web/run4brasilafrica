@@ -12,7 +12,6 @@
 
 export type SponsorTier = "Ouro" | "Prata" | "Bronze";
 export type EditionStatus = "Ativa" | "Encerrada";
-export type AdminRole = "Administrador geral" | "Editor de conteúdo";
 
 export interface EventInfo {
   brandName: string;
@@ -117,13 +116,6 @@ export interface Edition {
   status: EditionStatus;
 }
 
-export interface AdminUser {
-  name: string;
-  email: string;
-  role: AdminRole;
-  lastAccess: string;
-}
-
 export interface LogEntry {
   time: string;
   action: string;
@@ -152,7 +144,6 @@ export interface SiteContent {
   /* ADM-only content */
   contentSections: ContentSection[];
   editions: Edition[];
-  users: AdminUser[];
   dashboardKpis: DashboardKpi[];
   log: LogEntry[];
 }

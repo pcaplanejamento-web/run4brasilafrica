@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ADM_NAV } from "./nav";
+import { useAuth } from "./AuthProvider";
 
 /** ADM navigation rail (ported from AdmSidebar.dc.html). */
 export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-full min-h-full w-[240px] flex-col bg-adm-sidebar py-7 text-[#ddd]">
@@ -42,13 +44,22 @@ export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) 
       </nav>
 
       <div className="mt-auto border-t border-[#444] px-6 pt-5">
-        <Link
-          href="/admin/login"
-          onClick={onNavigate}
+        {user && (
+          <div className="mb-3">
+            <div className="text-[13px] font-semibold text-white">{user.name}</div>
+            <div className="text-[11px] text-[#999]">{user.role}</div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            logout();
+          }}
           className="text-[13px] text-[#999] transition-colors hover:text-white"
         >
           Sair
-        </Link>
+        </button>
       </div>
     </div>
   );

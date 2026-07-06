@@ -1,5 +1,5 @@
 import "server-only";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getDB } from "@/lib/cf";
 import { seedContent } from "./seed";
 import type { SiteContent } from "./types";
 
@@ -13,25 +13,6 @@ import type { SiteContent } from "./types";
  */
 
 export type ContentSource = "backend" | "seed" | "unset" | "error";
-
-interface D1Statement {
-  bind(...values: unknown[]): D1Statement;
-  first<T = unknown>(colName?: string): Promise<T | null>;
-  run(): Promise<unknown>;
-}
-interface D1Like {
-  prepare(query: string): D1Statement;
-}
-
-function getDB(): D1Like | null {
-  try {
-    const { env } = getCloudflareContext();
-    const db = (env as Record<string, unknown>).CONTENT_DB;
-    return (db as D1Like) ?? null;
-  } catch {
-    return null;
-  }
-}
 
 function merge(stored: Partial<SiteContent> | null): SiteContent {
   return stored ? { ...seedContent, ...stored } : seedContent;

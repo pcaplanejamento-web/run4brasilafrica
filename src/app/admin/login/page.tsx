@@ -14,10 +14,31 @@ export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    router.push("/admin/dashboard");
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = (await res.json()) as { ok: boolean; code?: string; error?: string };
+      // ok = authenticated; not_configured = local dev (open) → let in.
+      if (data.ok || data.code === "not_configured") {
+        router.push("/admin/dashboard");
+        return;
+      }
+      setError(data.error ?? "Não foi possível entrar.");
+    } catch {
+      setError("Falha de conexão. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -66,11 +87,18 @@ export default function AdminLogin() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-4 rounded-md border border-[#e0b4b0] bg-[#fdf2f1] px-3.5 py-2.5 text-[13px] text-[#c0392b]">
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
-          className="block w-full rounded-md bg-[oklch(0.55_0.16_35)] py-3.5 text-[15px] font-bold text-white transition-opacity hover:opacity-90"
+          disabled={loading}
+          className="block w-full rounded-md bg-[oklch(0.55_0.16_35)] py-3.5 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         >
-          Entrar
+          {loading ? "Entrando..." : "Entrar"}
         </button>
 
         <div className="mt-6 text-center text-[12px] text-[#aaa]">

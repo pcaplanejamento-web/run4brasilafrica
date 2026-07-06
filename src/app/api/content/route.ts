@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readContent, writeContent, resetContent } from "@/lib/content/db";
+import { authConfigured, getSessionUser } from "@/lib/auth";
 import type { SiteContent } from "@/lib/content/types";
 
 /**
@@ -17,6 +18,12 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  // When a backend exists, writes require a valid admin session. (Local dev has
+  // no binding → open, so the ADM stays usable offline.)
+  if (authConfigured() && !(await getSessionUser())) {
+    return NextResponse.json({ ok: false, error: "não autenticado" }, { status: 401 });
+  }
+
   let body: { content?: SiteContent; action?: string };
   try {
     body = (await req.json()) as { content?: SiteContent; action?: string };

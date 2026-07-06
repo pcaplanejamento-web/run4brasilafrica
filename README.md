@@ -47,8 +47,20 @@ npm run start    # servir o build
 npm run lint     # ESLint
 ```
 
-Acesso ao painel: rodapé do site → **"Acesso administrativo"**, ou `/admin/login`
-(qualquer e-mail/senha entra — a autenticação real ainda será conectada).
+## Login do painel (auth real)
+
+O ADM tem autenticação de verdade: usuários no D1 (senha com hash PBKDF2), sessão por
+cookie HttpOnly e papéis **Administrador geral** (controle total, gerencia usuários) e
+**Editor de conteúdo** (edita conteúdo, mas não usuários). A rota de escrita
+(`PUT /api/content`) e a API de usuários exigem sessão.
+
+- Acesso: rodapé do site → **"Acesso administrativo"**, ou `/admin/login`.
+- Usuário admin inicial: `admin@run4brasilafrica.com` (senha temporária definida na
+  criação — **troque após o primeiro login**, em Usuários).
+- Endpoints: `/api/auth/login|logout|me`, `/api/users`, `/api/users/[id]`. Schema em
+  `migrations/0002_auth.sql`.
+- Em `next dev` (sem binding D1) a auth fica **desligada** e o painel abre direto,
+  para não travar o desenvolvimento local.
 
 ## Deploy (Cloudflare)
 
