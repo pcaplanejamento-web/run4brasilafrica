@@ -50,6 +50,26 @@ npm run lint     # ESLint
 Acesso ao painel: rodapé do site → **"Acesso administrativo"**, ou `/admin/login`
 (qualquer e-mail/senha entra — a autenticação real ainda será conectada).
 
+## Deploy (Vercel)
+
+Este é um app Next.js com servidor (ADM, rota `/api/content`, renderização
+dinâmica). **GitHub Pages não serve** para isso — só hospeda arquivos estáticos.
+Use a **Vercel** (grátis; recomendada no Plano §5), que roda o app completo e
+mantém o token do backend no servidor.
+
+1. Acesse <https://vercel.com> e entre com a conta do **GitHub**.
+2. **Add New… → Project** e importe o repositório `run4brasilafrica`.
+3. A Vercel detecta o Next.js sozinho — não mude nada no build.
+4. Em **Environment Variables**, adicione as duas do Apps Script
+   (ver [`apps-script/README.md`](apps-script/README.md)):
+   - `GAS_WEB_APP_URL`
+   - `GAS_SHARED_TOKEN`
+5. Clique em **Deploy**. Ao terminar, a Vercel dá a URL pública do site.
+6. A cada `git push` na `main`, a Vercel publica automaticamente.
+
+> Se o GitHub Pages estiver ligado (mostrando este README), desative-o em
+> **Settings → Pages → Source: None** para não confundir com o site real.
+
 ## Estrutura
 
 ```
