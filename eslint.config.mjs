@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Original Claude Design handoff bundle — kept for provenance, not our code.
     "design-source/**",
+    // Generated deploy artifacts (Cloudflare/OpenNext).
+    ".open-next/**",
+    ".vercel/**",
+    ".wrangler/**",
   ]),
 ]);
 

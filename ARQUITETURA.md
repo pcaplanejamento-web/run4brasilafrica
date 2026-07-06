@@ -107,6 +107,11 @@ ADM (browser)  ── PUT ──▶  /api/content (Next, token)  ── POST ─
   cache/offline e como persistência quando o backend não está configurado.
 - **Token só no servidor** — o ADM grava via `/api/content`, então o segredo de escrita
   nunca vai para o navegador.
+- **Hospedagem na Cloudflare (Workers) via OpenNext** — como a Cloudflare não roda
+  Next.js nativamente, o adaptador `@opennextjs/cloudflare` empacota o app num Worker
+  (`open-next.config.ts`, `wrangler.jsonc`). Mantém runtime Node (a rota `/api/content`
+  e o fetch do servidor funcionam sem virar Edge). Deploy: ver README. A Vercel também
+  funciona sem adaptador, se um dia preferir migrar.
 - **Sem biblioteca de ícones** — o design usa formas geométricas simples; alinhado à
   regra "sem emojis" e reduz peso.
 

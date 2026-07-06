@@ -50,25 +50,55 @@ npm run lint     # ESLint
 Acesso ao painel: rodapé do site → **"Acesso administrativo"**, ou `/admin/login`
 (qualquer e-mail/senha entra — a autenticação real ainda será conectada).
 
-## Deploy (Vercel)
+## Deploy (Cloudflare)
 
 Este é um app Next.js com servidor (ADM, rota `/api/content`, renderização
 dinâmica). **GitHub Pages não serve** para isso — só hospeda arquivos estáticos.
-Use a **Vercel** (grátis; recomendada no Plano §5), que roda o app completo e
-mantém o token do backend no servidor.
+Na Cloudflare o app roda em **Workers** através do adaptador **OpenNext**
+(`@opennextjs/cloudflare`), já configurado neste repositório:
 
-1. Acesse <https://vercel.com> e entre com a conta do **GitHub**.
-2. **Add New… → Project** e importe o repositório `run4brasilafrica`.
-3. A Vercel detecta o Next.js sozinho — não mude nada no build.
-4. Em **Environment Variables**, adicione as duas do Apps Script
+- [`open-next.config.ts`](open-next.config.ts) e [`wrangler.jsonc`](wrangler.jsonc)
+- scripts em `package.json`: `cf:build`, `cf:preview`, `cf:deploy`
+
+### Opção A — Painel da Cloudflare (conectando ao GitHub)
+
+1. Acesse <https://dash.cloudflare.com> → **Workers & Pages** → **Create** →
+   **Import a repository** (autorize o app da Cloudflare no GitHub).
+2. Selecione o repositório `run4brasilafrica`.
+3. Em build, use:
+   - **Build command:** `npx opennextjs-cloudflare build`
+   - **Deploy command:** `npx wrangler deploy`
+4. Em **Variables and Secrets**, adicione as duas do Apps Script
    (ver [`apps-script/README.md`](apps-script/README.md)):
    - `GAS_WEB_APP_URL`
    - `GAS_SHARED_TOKEN`
-5. Clique em **Deploy**. Ao terminar, a Vercel dá a URL pública do site.
-6. A cada `git push` na `main`, a Vercel publica automaticamente.
+5. **Save and Deploy**. A cada `git push` na `main`, a Cloudflare publica de novo.
+
+### Opção B — Linha de comando (mais direto)
+
+```bash
+npx wrangler login        # abre o navegador para autenticar na Cloudflare
+npm run cf:deploy         # build do OpenNext + publica o Worker
+```
+
+Depois, defina as variáveis (uma vez):
+
+```bash
+npx wrangler secret put GAS_WEB_APP_URL
+npx wrangler secret put GAS_SHARED_TOKEN
+```
+
+### Testar o build da Cloudflare localmente
+
+```bash
+npm run cf:preview        # roda o Worker localmente (runtime workerd)
+```
 
 > Se o GitHub Pages estiver ligado (mostrando este README), desative-o em
 > **Settings → Pages → Source: None** para não confundir com o site real.
+
+> A Vercel também funciona (sem adaptador — detecta o Next.js sozinho), caso
+> queira comparar; basta importar o mesmo repositório lá.
 
 ## Estrutura
 
