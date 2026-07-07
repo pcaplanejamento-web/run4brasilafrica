@@ -35,9 +35,9 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
   const active = views.includes(view) ? view : views[0];
 
   if (views.length === 0) {
-    // Same height as a configured map so the section doesn't jump between routes.
+    // Same box as a configured map so the section doesn't jump between routes.
     return (
-      <div className="flex h-[474px] items-center justify-center md:h-[584px]">
+      <div className="flex aspect-[16/10] max-h-[600px] min-h-[400px] items-center justify-center">
         <span className="px-6 text-center font-[monospace] text-[12px] text-muted">
           [ mapa do percurso — configure Strava, Garmin ou uma imagem no ADM ]
         </span>
@@ -79,9 +79,11 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
         )}
       </div>
 
-      {/* Map area — a single fixed height for every provider so it never jumps.
-          Tall enough for the Strava map + elevation profile (no crop). */}
-      <div className="h-[430px] w-full md:h-[540px]">
+      {/* Map area — a proportional box (scales with the column width on every
+          screen) bounded by min/max height. Same width → same height for every
+          provider, so switching routes never moves anything, and the Strava
+          embed fits nicely across proportions instead of being clipped. */}
+      <div className="aspect-[16/10] max-h-[600px] min-h-[400px] w-full">
         {active === "strava" && strava && <StravaRoute stravaRef={route.stravaRouteRef!} />}
         {active === "garmin" && garmin?.kind === "embed" && <GarminRoute url={garmin.url} />}
         {active === "garmin" && garmin?.kind === "event" && <GarminEvent url={garmin.url} />}

@@ -274,9 +274,11 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   atualiza o mapa e os dados. Cada percurso usa `RouteViewer`.
 - `RouteViewer` (client, por percurso): monta as visões disponíveis — **Strava**, **Garmin**
   e/ou **Mapa** (fallback). **Layout estável**: uma barra de provider de **altura fixa** sempre
-  aparece (seletor quando há mais de uma visão; rótulo único quando há só uma) e a área do mapa
-  tem **altura fixa** (`h-[430px] md:h-[540px]`, comporta o mapa + perfil do Strava sem cortar).
-  Assim, **trocar de percurso não move os componentes**, tenha Garmin ou não.
+  aparece (seletor quando há mais de uma visão; rótulo único quando há só uma). A área do mapa é
+  uma **caixa proporcional** (`aspect-[16/10]`, limitada por `min-h-[400px]`/`max-h-[600px]`):
+  a altura acompanha a largura da coluna, então o Strava **cabe bem em qualquer proporção de
+  tela** (celular, tablet, desktop, ultrawide) sem cortar; e como a largura é a mesma para todos
+  os provedores, **trocar de percurso não move nada**, tenha Garmin ou não.
 - Garmin (`garminView`): course/activity/route (id numérico **ou** UUID) → mapa incorporado
   (`GarminRoute`, iframe `.../embed/<id>`). Um link de **evento** (`/modern/event/<uuid>`) é
   **aceito e apresentado** como um cartão com botão &ldquo;Ver evento no Garmin&rdquo;
