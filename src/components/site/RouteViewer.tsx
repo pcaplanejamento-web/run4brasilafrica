@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { PercursoRoute } from "@/lib/content/types";
-import { garminView, stravaRouteId } from "@/lib/content/percurso";
+import { garminView, hasStrava } from "@/lib/content/percurso";
 import StravaRoute from "./StravaRoute";
 import GarminRoute from "./GarminRoute";
 import GarminEvent from "./GarminEvent";
@@ -22,12 +22,12 @@ const LABEL: Record<View, string> = {
  * section width.
  */
 export default function RouteViewer({ route }: { route: PercursoRoute }) {
-  const stravaId = stravaRouteId(route.stravaRouteRef);
+  const strava = hasStrava(route.stravaRouteRef);
   const garmin = garminView(route.garminRouteRef);
   const fallback = route.fallbackImage;
 
   const views: View[] = [];
-  if (stravaId) views.push("strava");
+  if (strava) views.push("strava");
   if (garmin) views.push("garmin");
   if (fallback) views.push("fallback");
 
@@ -71,7 +71,7 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
         </div>
       )}
 
-      {active === "strava" && stravaId && <StravaRoute routeId={stravaId} />}
+      {active === "strava" && strava && <StravaRoute stravaRef={route.stravaRouteRef!} />}
       {active === "garmin" && garmin?.kind === "embed" && <GarminRoute url={garmin.url} />}
       {active === "garmin" && garmin?.kind === "event" && <GarminEvent url={garmin.url} />}
       {active === "fallback" && fallback && (

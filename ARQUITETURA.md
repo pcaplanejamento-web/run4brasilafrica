@@ -254,6 +254,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`GarminRoute`, iframe `.../embed/<id>`). Um link de **evento** (`/modern/event/<uuid>`) é
   **aceito e apresentado** como um cartão com botão &ldquo;Ver evento no Garmin&rdquo;
   (`GarminEvent`) — eventos não têm mapa incorporável.
+- **Strava por link curto**: o campo aceita o **ID**, o link `strava.com/routes/<id>` **ou**
+  o link curto `strava.app.link/XXXX`. Links curtos (Branch) não têm o id embutido, então
+  `StravaRoute` resolve em runtime via **`/api/strava-resolve`** (segue o redirect no Worker e
+  extrai `routes/<id>` ou `activities/<id>` do destino; só domínios do Strava, com cache).
+  Enquanto resolve mostra &ldquo;carregando mapa…&rdquo;; se falhar, oferece o botão
+  &ldquo;Ver rota no Strava&rdquo;. `hasStrava()` decide se a aba Strava aparece.
 - **Fallback manual**: imagem do mapa (upload) exibida quando não há Strava/Garmin, ou como
   opção &ldquo;Mapa&rdquo; ao lado deles. `StravaRoute` (embed.js) preenche a largura via
   `.route-embed` + `MutationObserver`. ADM > **Percurso** gerencia os percursos (adicionar,

@@ -130,11 +130,13 @@ function StravaForm({ initial }: { initial: Percurso }) {
               <TextInput
                 value={r.stravaRouteRef ?? ""}
                 onChange={(e) => setRoute(i, { stravaRouteRef: e.target.value })}
-                placeholder="ex.: 3300000 ou strava.com/routes/3300000"
+                placeholder="ex.: 3300000, strava.com/routes/3300000 ou strava.app.link/XXXX"
               />
               <p className="mt-1.5 text-[12px] text-adm-muted">
                 Rota <strong>pública</strong> do Strava — o mapa aparece sozinho, sem
-                credenciais.
+                credenciais. Aceita o <strong>ID</strong>, o link{" "}
+                <code>strava.com/routes/…</code> ou o <strong>link curto</strong>{" "}
+                <code>strava.app.link/…</code> (o sistema descobre a rota sozinho).
               </p>
             </div>
 

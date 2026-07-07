@@ -26,6 +26,16 @@ export function stravaRouteId(ref: string | undefined): string | null {
   return m ? m[1] : null;
 }
 
+/**
+ * Whether a Strava reference is usable — a direct id/route link, OR any Strava
+ * URL (including short links `strava.app.link/…` that must be resolved at
+ * runtime via /api/strava-resolve).
+ */
+export function hasStrava(ref: string | undefined): boolean {
+  if (!ref) return false;
+  return !!stravaRouteId(ref) || /strava\.(app\.link|com)/i.test(ref);
+}
+
 export interface GarminView {
   /** "embed" → an iframe map; "event" → a Garmin event page (link/card). */
   kind: "embed" | "event";
