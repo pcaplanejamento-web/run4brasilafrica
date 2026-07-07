@@ -60,18 +60,16 @@ function BannerForm({
       </div>
 
       <Card className="mb-7">
-        <SectionLabel>Vídeo de fundo do hero</SectionLabel>
-        <ImageUpload
-          value={hero.video}
-          onChange={(url) => setHero({ ...hero, video: url })}
-          className="h-52"
-          label="vídeo do hero"
-          video
+        <SectionLabel>Vídeo de fundo do hero (YouTube)</SectionLabel>
+        <FieldLabel>Link do vídeo no YouTube</FieldLabel>
+        <TextInput
+          value={hero.youtubeUrl ?? ""}
+          onChange={(e) => setHero({ ...hero, youtubeUrl: e.target.value })}
+          placeholder="ex.: https://www.youtube.com/watch?v=XXXXXXXXXXX"
         />
         <p className="mt-2 text-[12px] text-adm-muted">
-          Se enviado, o vídeo toca em silêncio, em loop, atrás do título (tem
-          prioridade sobre a imagem). MP4 ou WebM (recomendados) ou MOV, até 25 MB.
-          Use um clipe curto e leve.
+          Cole o link de um vídeo público do YouTube. Ele toca em silêncio, em loop,
+          atrás do título (tem prioridade sobre a imagem). Use um vídeo horizontal.
         </p>
       </Card>
 

@@ -38,6 +38,8 @@ export interface Hero {
   image?: string;
   /** Background video URL (takes priority over the image when set). */
   video?: string;
+  /** YouTube link for a background video (takes priority over image/video). */
+  youtubeUrl?: string;
 }
 
 export interface Stat {
