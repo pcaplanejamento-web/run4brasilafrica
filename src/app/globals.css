@@ -62,6 +62,30 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Accessibility: visible focus ring for keyboard users (não afeta o mouse). */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* "Pular para o conteúdo" — escondido até receber foco pelo teclado. */
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -60px;
+  z-index: 60;
+  background: var(--color-gold);
+  color: var(--color-gold-ink);
+  padding: 10px 16px;
+  font-weight: 700;
+  border-radius: 6px;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
 /* Angular clip used on gold CTAs (matches design's clip-path buttons) */
 .clip-cta {
   clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);

@@ -38,6 +38,7 @@ export default function Galeria({
   >({});
   const [mobile, setMobile] = useState(false);
   const [page, setPage] = useState(0);
+  const [settled, setSettled] = useState(0);
   const startX = useRef<number | null>(null);
 
   // Track the breakpoint (grid size differs on desktop vs mobile).
@@ -49,23 +50,27 @@ export default function Galeria({
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // Fetch Google Photos albums (client-side). Degrades to empty on failure.
+  // Fetch Google Photos albums (client-side). Degrades gracefully.
   const sourceKey = albums.map((a) => a.sourceUrl ?? "").join("|");
+  const sourceCount = albums.filter((a) => a.sourceUrl).length;
   useEffect(() => {
+    const srcs = albums.filter((a) => a.sourceUrl);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSettled(0);
     let alive = true;
-    albums
-      .filter((a) => a.sourceUrl)
-      .forEach(async (a) => {
-        try {
-          const r = await fetch(`/api/gphotos?url=${encodeURIComponent(a.sourceUrl!)}`);
-          const d = (await r.json()) as { ok: boolean; images?: { thumb: string }[] };
-          if (alive && d.ok && d.images) {
-            setFetched((prev) => ({ ...prev, [a.name]: d.images! }));
-          }
-        } catch {
-          /* keep empty */
+    srcs.forEach(async (a) => {
+      try {
+        const r = await fetch(`/api/gphotos?url=${encodeURIComponent(a.sourceUrl!)}`);
+        const d = (await r.json()) as { ok: boolean; images?: { thumb: string }[] };
+        if (alive && d.ok && d.images) {
+          setFetched((prev) => ({ ...prev, [a.name]: d.images! }));
         }
-      });
+      } catch {
+        /* keep empty */
+      } finally {
+        if (alive) setSettled((n) => n + 1);
+      }
+    });
     return () => {
       alive = false;
     };
@@ -118,6 +123,8 @@ export default function Galeria({
 
   const buyOn = !!gallery?.buyEnabled && !!gallery?.buyUrl;
   const hasPhotos = items.length > 0;
+  const loadingPhotos = sourceCount > 0 && settled < sourceCount;
+  const sourcesFailed = sourceCount > 0 && settled >= sourceCount && !hasPhotos;
 
   return (
     <section id="galeria" className="px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
@@ -225,6 +232,14 @@ export default function Galeria({
               </button>
             </div>
           )}
+        </div>
+      ) : loadingPhotos ? (
+        <div className="flex h-[160px] items-center justify-center text-[14px] text-muted">
+          Carregando fotos…
+        </div>
+      ) : sourcesFailed ? (
+        <div className="flex h-[160px] items-center justify-center rounded-lg border border-line bg-ink-panel px-5 text-center text-[14px] text-muted">
+          Não foi possível carregar as fotos agora. Tente recarregar a página.
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">

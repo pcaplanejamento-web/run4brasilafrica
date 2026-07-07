@@ -139,6 +139,8 @@ export const seedContent: SiteContent = {
 
   cloudinary: {},
 
+  analytics: {},
+
   galleryTiles: [
     { album: "LARGADA" },
     { album: "PERCURSO" },

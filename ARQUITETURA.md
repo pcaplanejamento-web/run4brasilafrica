@@ -309,6 +309,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   "Acesso rápido") — lista reordenável (setas ↑/↓, alvos ~36px), toggle **Ativo/Oculto** e o
   nome **linka para a página de configuração** da seção. Salva `{ layout }`.
 
+## Analytics, robustez e acessibilidade
+
+- **Analytics** (`content.analytics`): `Analytics` injeta **Cloudflare Web Analytics** (beacon
+  por token, sem cookies) e/ou **Google Analytics 4** (`gaId`) quando configurados em ADM >
+  Configurações. Vazio = nada carrega.
+- **Robustez da Galeria**: enquanto busca os álbuns do Google Fotos mostra "Carregando fotos…";
+  se falhar, "Não foi possível carregar…" (em vez de sumir). A Playlist já cai no player nativo.
+- **Acessibilidade**: link "Pular para o conteúdo" (`.skip-link`, aparece no foco) → `#conteudo`
+  (o `<main>`); anel de foco visível para teclado (`:focus-visible`). Imagens da galeria com
+  `loading="lazy"` + `decoding="async"` (performance no mobile).
+
 ## Padrão de componentes
 
 - **Site** (`components/site`): componentes de apresentação recebem sua fatia de

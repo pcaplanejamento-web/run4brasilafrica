@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { Backend } from "@/lib/content/store";
 import type {
+  Analytics,
   Branding,
   Cloudinary,
   EventInfo,
@@ -51,6 +52,7 @@ function ConfiguracoesForm({
   initialBranding,
   initialTheme,
   initialCloudinary,
+  initialAnalytics,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
@@ -58,6 +60,7 @@ function ConfiguracoesForm({
   initialBranding: Branding;
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
+  initialAnalytics: Analytics;
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
@@ -66,6 +69,7 @@ function ConfiguracoesForm({
   const [branding, setBranding] = useState(initialBranding);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
+  const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
 
   const b = BACKEND_LABEL[backend];
 
@@ -87,6 +91,7 @@ function ConfiguracoesForm({
     setBranding(initialBranding);
     setTheme(initialTheme);
     setCloudinary(initialCloudinary);
+    setAnalytics(initialAnalytics);
   }
 
   const THEME_FIELDS: { key: keyof ThemeColors; label: string; def: string }[] = [
@@ -281,6 +286,33 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
+        {/* Analytics / medição */}
+        <Card>
+          <SectionLabel>Analytics (medição de acessos)</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Meça quantas pessoas visitam o site e clicam em inscrever. Preencha um ou os dois —
+            vazio = desligado.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Cloudflare Web Analytics — token</FieldLabel>
+              <TextInput
+                value={analytics.cfBeaconToken ?? ""}
+                onChange={(e) => setAnalytics({ ...analytics, cfBeaconToken: e.target.value })}
+                placeholder="ex.: 0123ab...(token do beacon)"
+              />
+            </div>
+            <div>
+              <FieldLabel>Google Analytics 4 — ID de medição</FieldLabel>
+              <TextInput
+                value={analytics.gaId ?? ""}
+                onChange={(e) => setAnalytics({ ...analytics, gaId: e.target.value })}
+                placeholder="ex.: G-XXXXXXXXXX"
+              />
+            </div>
+          </div>
+        </Card>
+
         {/* Números do evento (manuais) */}
         <Card>
           <SectionLabel>Números do evento</SectionLabel>
@@ -328,7 +360,7 @@ function ConfiguracoesForm({
         <SaveBar
           onSave={() =>
             save(
-              { event, hero, metrics, branding, theme, cloudinary },
+              { event, hero, metrics, branding, theme, cloudinary, analytics },
               "Atualizou configurações do evento",
             )
           }
@@ -349,6 +381,7 @@ export default function ConfiguracoesPage() {
       initialBranding={content.branding ?? {}}
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}
+      initialAnalytics={content.analytics ?? {}}
     />
   );
 }

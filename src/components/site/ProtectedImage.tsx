@@ -25,6 +25,8 @@ export default function ProtectedImage({
         src={src}
         alt={alt ?? ""}
         draggable={false}
+        loading="lazy"
+        decoding="async"
         onContextMenu={(e) => e.preventDefault()}
         className={`pointer-events-none h-full w-full select-none ${className}`}
       />

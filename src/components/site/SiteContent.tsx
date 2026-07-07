@@ -13,6 +13,7 @@ import RaceDay from "./RaceDay";
 import RaceCountdownBar from "./RaceCountdownBar";
 import WhatsAppFloat from "./WhatsAppFloat";
 import EventJsonLd from "./EventJsonLd";
+import Analytics from "./Analytics";
 import { AudioBusProvider } from "./AudioBus";
 import InscricaoCTA from "./InscricaoCTA";
 import Galeria from "./Galeria";
@@ -74,12 +75,16 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   return (
     <>
       <EventJsonLd c={c} />
+      <Analytics analytics={c.analytics} />
+      <a href="#conteudo" className="skip-link">
+        Pular para o conteúdo
+      </a>
       <div className="sticky top-0 z-30">
         <SiteNav logo={c.branding?.logo} lotes={c.lotes ?? []} />
         <RaceCountdownBar inscricao={c.inscricao} />
       </div>
       <AudioBusProvider>
-        <main>
+        <main id="conteudo">
           {layout
             .filter((li) => li.enabled && rendered[li.key])
             .map((li) => (

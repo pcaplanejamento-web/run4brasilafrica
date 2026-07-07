@@ -198,6 +198,12 @@ export interface Cloudinary {
   uploadPreset?: string;
 }
 
+/** Web analytics — Cloudflare Web Analytics beacon and/or Google Analytics 4. */
+export interface Analytics {
+  cfBeaconToken?: string;
+  gaId?: string;
+}
+
 export interface Testimonial {
   quote: string;
   name: string;
@@ -300,6 +306,7 @@ export interface SiteContent {
   galleryPhotos: GalleryPhoto[];
   gallery: GalleryConfig;
   cloudinary: Cloudinary;
+  analytics: Analytics;
   sponsors: Sponsor[];
   testimonials: Testimonial[];
   faq: FaqItem[];
