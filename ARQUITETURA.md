@@ -343,6 +343,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   **Resultados** (`/admin/resultados`); render público em `components/site/Resultados.tsx`
   (é uma seção da home, reordenável pelo layout do Dashboard).
 
+## Premiação (pódio)
+
+- `content.premiacao` (`PremiacaoSection`): seção de **premiação** com um **pódio**. Cada
+  posição (`PodiumPlace`) tem `place` (rótulo, ex.: &ldquo;1º lugar&rdquo;) e `prize`
+  (premiação). Some quando `enabled` é falso ou sem dados.
+- Público (`components/site/Premiacao.tsx`): as **3 primeiras** posições viram um pódio — no
+  desktop o 1º fica ao **centro e mais alto** (2º à esquerda, 3º à direita, via `sm:order-*`);
+  no mobile empilham 1 → 2 → 3. Posições 4ª+ aparecem como lista. Cores por rank (ouro, prata,
+  bronze). Botão opcional para **resultados completos** (`resultsUrl`, nova aba).
+- É uma seção reordenável da home (registrada em `sections.ts` como `premiacao`), editável em
+  ADM > **Premiação** (`/admin/premiacao`).
+
 ## Componentes compartilhados, ordem de lotes e navegação do ADM
 
 - **`SlidePager`** (`components/site/SlidePager.tsx`) é o paginador **oficial** (setas

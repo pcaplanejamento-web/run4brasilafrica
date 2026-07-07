@@ -304,6 +304,26 @@ export interface ResultsSection {
   rows?: ResultRow[];
 }
 
+/** One podium position with its award. */
+export interface PodiumPlace {
+  /** Position label ("1º lugar", "Campeão", …). */
+  place: string;
+  /** Award for this position ("R$ 500 + troféu", "Medalha + kit", …). */
+  prize: string;
+}
+
+/** Awards section: a podium with the prize per position + optional results link. */
+export interface PremiacaoSection {
+  enabled?: boolean;
+  eyebrow?: string;
+  title?: string;
+  note?: string;
+  places: PodiumPlace[];
+  /** Optional link to full results elsewhere. */
+  resultsLabel?: string;
+  resultsUrl?: string;
+}
+
 export interface Edition {
   year: string;
   date: string;
@@ -354,6 +374,7 @@ export interface SiteContent {
   kit: KitSection;
   contact: ContactLinks;
   results: ResultsSection;
+  premiacao: PremiacaoSection;
   /* ADM-only content */
   contentSections: ContentSection[];
   editions: Edition[];

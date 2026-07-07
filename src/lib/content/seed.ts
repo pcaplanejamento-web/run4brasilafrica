@@ -150,6 +150,20 @@ export const seedContent: SiteContent = {
     rows: [],
   },
 
+  premiacao: {
+    enabled: false,
+    eyebrow: "PREMIAÇÃO",
+    title: "PÓDIO",
+    note: "",
+    places: [
+      { place: "1º lugar", prize: "" },
+      { place: "2º lugar", prize: "" },
+      { place: "3º lugar", prize: "" },
+    ],
+    resultsLabel: "Ver resultados completos",
+    resultsUrl: "",
+  },
+
   galleryTiles: [
     { album: "LARGADA" },
     { album: "PERCURSO" },

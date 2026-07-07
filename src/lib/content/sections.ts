@@ -21,6 +21,7 @@ export const SECTIONS: SectionMeta[] = [
   { key: "inscricao", label: "Inscrição / Lotes", href: "/admin/links" },
   { key: "galeria", label: "Galeria", href: "/admin/galeria" },
   { key: "resultados", label: "Resultados", href: "/admin/resultados" },
+  { key: "premiacao", label: "Premiação", href: "/admin/premiacao" },
   { key: "parceiros", label: "Parceiros", href: "/admin/patrocinadores" },
   { key: "depoimentos", label: "Quem já correu", href: "/admin/depoimentos" },
   { key: "faq", label: "Perguntas frequentes", href: "/admin/faq" },
