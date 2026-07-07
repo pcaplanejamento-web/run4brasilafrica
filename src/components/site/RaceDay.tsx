@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Inscricao } from "@/lib/content/types";
 import Countdown from "./Countdown";
 import Reveal from "./Reveal";
@@ -17,6 +18,14 @@ function fmtDate(iso: string): string {
  */
 export default function RaceDay({ inscricao }: { inscricao: Inscricao }) {
   const date = inscricao.raceDate;
+  const [past, setPast] = useState(false);
+
+  useEffect(() => {
+    if (!date) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPast(new Date(date).getTime() < Date.now());
+  }, [date]);
+
   if (!date) return null;
 
   return (
@@ -32,10 +41,18 @@ export default function RaceDay({ inscricao }: { inscricao: Inscricao }) {
             </div>
           </div>
           <div>
-            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] opacity-80">
-              Contagem para a largada
-            </div>
-            <Countdown date={date} />
+            {past ? (
+              <div className="font-display text-[22px] font-bold uppercase md:text-[26px]">
+                Evento realizado
+              </div>
+            ) : (
+              <>
+                <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] opacity-80">
+                  Contagem para a largada
+                </div>
+                <Countdown date={date} />
+              </>
+            )}
           </div>
         </div>
       </Reveal>

@@ -35,10 +35,15 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export default function RaceCountdownBar({ inscricao }: { inscricao: Inscricao }) {
   const date = inscricao.raceDate;
   const [parts, setParts] = useState<Parts | null>(null);
+  const [past, setPast] = useState(false);
 
   useEffect(() => {
     if (!date) return;
-    const tick = () => setParts(compute(date));
+    const tick = () => {
+      const p = compute(date);
+      setParts(p);
+      if (!p) setPast(new Date(date).getTime() < Date.now());
+    };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -57,11 +62,13 @@ export default function RaceCountdownBar({ inscricao }: { inscricao: Inscricao }
           {fmtDate(date)}
           {time && ` · ${time}`}
         </span>
-        {parts && (
+        {parts ? (
           <span className="tabular-nums text-muted-strong">
             faltam {parts.d}d {pad(parts.h)}h {pad(parts.m)}m {pad(parts.s)}s
           </span>
-        )}
+        ) : past ? (
+          <span className="font-semibold uppercase text-muted-strong">Evento realizado</span>
+        ) : null}
       </div>
     </div>
   );

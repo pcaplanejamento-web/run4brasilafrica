@@ -13,7 +13,7 @@ export interface SectionMeta {
 
 export const SECTIONS: SectionMeta[] = [
   { key: "hero", label: "Banner / Hero", href: "/admin/banner" },
-  { key: "stats", label: "Números em destaque", href: "/admin/conteudo" },
+  { key: "stats", label: "Números em destaque", href: "/admin/numeros" },
   { key: "about", label: "A Causa", href: "/admin/banner" },
   { key: "playlist", label: "Playlist do evento", href: "/admin/playlist" },
   { key: "percurso", label: "O Percurso", href: "/admin/strava" },

@@ -11,6 +11,7 @@ export const ADM_NAV: AdmNavItem[] = [
   { key: "playlist", label: "Playlist", href: "/admin/playlist" },
   { key: "galeria", label: "Galeria", href: "/admin/galeria" },
   { key: "conteudo", label: "Textos do site", href: "/admin/conteudo" },
+  { key: "numeros", label: "Números em destaque", href: "/admin/numeros" },
   { key: "depoimentos", label: "Depoimentos", href: "/admin/depoimentos" },
   { key: "faq", label: "FAQ", href: "/admin/faq" },
   { key: "kit", label: "Kit do atleta", href: "/admin/kit" },

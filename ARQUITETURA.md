@@ -170,8 +170,13 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **`RaceDay`** (`content.inscricao.raceDate`, client): faixa **"Dia da Corrida"** com a data
   + contagem regressiva para a largada, logo antes de `InscricaoCTA` (Percurso e lotes seguem
   seções próprias).
-- **`RaceCountdownBar`** (client): barra fina **abaixo do header** com data + hora da corrida
-  e contagem regressiva ao vivo (some sem `raceDate`).
+- **`RaceCountdownBar`** (client): barra fina **abaixo do header** (sticky junto do header,
+  linha única no mobile) com data + hora da corrida e contagem regressiva ao vivo; quando a
+  data **já passou**, mostra **"Evento realizado"** (idem em `RaceDay`).
+- **Números em destaque** (`content.stats`): editor próprio em **/admin/numeros** (item
+  `numeros` no `ADM_NAV`; a seção `stats` do dashboard aponta para lá).
+- **SEO**: `EventJsonLd` injeta **schema.org/SportsEvent** (nome, data da corrida, local,
+  oferta de inscrição) no HTML — o Google entende a corrida como evento.
 - **CTA do header** (`SiteNav`): o botão adapta o texto ao lote ativo via `loteCtaLabel` —
   "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou "Inscrições encerradas".
 - **`WhatsAppFloat`** (canto inferior direito): botão flutuante que abre `wa.me/<número>`;
