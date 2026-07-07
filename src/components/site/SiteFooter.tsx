@@ -6,7 +6,13 @@ function ext(url: string) {
 }
 
 /** Footer with social links and the discreet ADM entry point. */
-export default function SiteFooter({ contact }: { contact: ContactLinks }) {
+export default function SiteFooter({
+  contact,
+  logo,
+}: {
+  contact: ContactLinks;
+  logo?: string;
+}) {
   const socials = [
     { label: "Instagram", href: ext(contact.instagram) },
     { label: "WhatsApp", href: `https://wa.me/${contact.whatsapp.replace(/\D/g, "")}` },
@@ -15,9 +21,14 @@ export default function SiteFooter({ contact }: { contact: ContactLinks }) {
 
   return (
     <footer className="flex flex-col gap-8 bg-ink-deeper px-5 py-12 text-muted sm:px-8 md:flex-row md:items-center md:justify-between md:px-14 md:py-[60px]">
-      <div className="font-display text-[18px] uppercase text-white">
-        Run4BrasilAfrica
-      </div>
+      {logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logo} alt="Run4BrasilAfrica" className="h-9 w-auto" />
+      ) : (
+        <div className="font-display text-[18px] uppercase text-white">
+          Run4BrasilAfrica
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-5 text-[13px] uppercase">
         {socials.map((s) => (

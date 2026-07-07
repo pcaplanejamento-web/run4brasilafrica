@@ -20,7 +20,7 @@ function Wordmark({ className = "" }: { className?: string }) {
   );
 }
 
-export default function SiteNav() {
+export default function SiteNav({ logo }: { logo?: string }) {
   const [open, setOpen] = useState(false);
 
   // Lock body scroll while the mobile menu is open.
@@ -35,7 +35,12 @@ export default function SiteNav() {
     <header className="sticky top-0 z-30 border-b border-line bg-ink">
       <nav className="flex items-center justify-between px-5 py-4 sm:px-8 md:px-14 md:py-[26px]">
         <a href="#top" className="text-[19px] md:text-[22px]" aria-label="Run4BrasilAfrica — início">
-          <Wordmark />
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt="Run4BrasilAfrica" className="h-9 w-auto md:h-11" />
+          ) : (
+            <Wordmark />
+          )}
         </a>
 
         {/* Desktop links */}

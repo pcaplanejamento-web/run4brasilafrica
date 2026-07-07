@@ -89,6 +89,22 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   O público mostra o vídeo do hero (autoplay/mudo/loop; prioridade sobre a imagem),
   logos e fotos reais quando existem; senão, o placeholder.
 
+## Marca (logo + favicon)
+
+- `content.branding = { logo?, favicon? }`, editados em Configurações (uploads).
+- **Logo**: `SiteNav`/`SiteFooter` mostram a imagem quando existe; senão o wordmark.
+- **Favicon**: `components/site/FaviconManager.tsx` (no layout raiz) busca o conteúdo e
+  aplica o `<link rel="icon">` em todas as páginas. Padrão estático: `src/app/icon.svg`.
+
+## Percurso: Strava e/ou Garmin
+
+- Campos `percurso.stravaRouteRef` e `percurso.garminRouteRef` (ADM > Percurso).
+- `RouteViewer` (client): se os dois existem, mostra um **toggle** e o visitante escolhe;
+  senão mostra o que estiver configurado. `StravaRoute` (embed.js) e `GarminRoute`
+  (iframe `connect.garmin.com/.../embed/<id>`). Ambos usam rota/atividade **pública**
+  (sem credenciais). O wrapper `.route-embed` + CSS global forçam o iframe a **preencher
+  a largura** da seção (corrige o corte).
+
 ## Números do dashboard e texto do percurso
 
 - Dashboard: **Inscritos** e **Vagas restantes** são manuais (`content.metrics`,

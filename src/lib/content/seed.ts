@@ -14,6 +14,8 @@ export const seedContent: SiteContent = {
     tagline: "CORRA POR ALGO MAIOR.",
   },
 
+  branding: {},
+
   hero: {
     badge: "14 SET 2026 · RIO DE JANEIRO",
     title: "CORRA POR ALGO MAIOR.",
@@ -48,6 +50,7 @@ export const seedContent: SiteContent = {
     elevation: "+84 M",
     startFinish: "COPACABANA",
     stravaRouteRef: "strava.com/routes/•••••••",
+    garminRouteRef: "",
     connected: true,
   },
 

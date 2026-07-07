@@ -67,6 +67,22 @@ function StravaForm({ initial }: { initial: Percurso }) {
         </Card>
 
         <Card>
+          <SectionLabel>Garmin (opcional)</SectionLabel>
+          <FieldLabel>ID ou link do percurso/atividade pública do Garmin</FieldLabel>
+          <div className="mb-1.5">
+            <TextInput
+              value={p.garminRouteRef ?? ""}
+              onChange={(e) => set("garminRouteRef", e.target.value)}
+              placeholder="ex.: connect.garmin.com/modern/course/123456789"
+            />
+          </div>
+          <p className="text-[12px] text-adm-muted">
+            Use uma atividade ou percurso <strong>público</strong> do Garmin Connect.
+            Se você preencher Strava e Garmin, o visitante escolhe qual ver.
+          </p>
+        </Card>
+
+        <Card>
           <SectionLabel>Fallback manual (caso a API falhe)</SectionLabel>
           <div className="rounded-lg border-2 border-dashed border-[#ccc] p-7 text-center text-[13px] text-[#999]">
             Upload de arquivo GPX ou imagem do mapa

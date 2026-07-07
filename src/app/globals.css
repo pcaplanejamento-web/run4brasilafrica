@@ -73,6 +73,18 @@ body {
   clip-path: polygon(0 0, 100% 0, 100% 92%, 0 100%);
 }
 
+/* Route embeds (Strava / Garmin): force the injected iframe to fill the section */
+.route-embed {
+  width: 100%;
+  min-height: 320px;
+}
+.route-embed iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: 0;
+  display: block;
+}
+
 /* Scroll-reveal: elements start hidden, .is-visible reveals them */
 .reveal {
   opacity: 0;

@@ -59,7 +59,16 @@ export interface Percurso {
   elevation: string;
   startFinish: string;
   stravaRouteRef: string;
+  garminRouteRef?: string;
   connected: boolean;
+}
+
+/** Visual identity managed in ADM > Configurações. */
+export interface Branding {
+  /** Site logo shown in the header/footer (replaces the text wordmark). */
+  logo?: string;
+  /** Browser-tab icon (favicon). */
+  favicon?: string;
 }
 
 export interface Inscricao {
@@ -140,6 +149,7 @@ export interface Metrics {
 
 export interface SiteContent {
   event: EventInfo;
+  branding: Branding;
   hero: Hero;
   stats: Stat[];
   about: AboutSection;

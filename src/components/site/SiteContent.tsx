@@ -42,7 +42,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
 
   return (
     <>
-      <SiteNav />
+      <SiteNav logo={c.branding?.logo} />
       <main>
         <Hero hero={c.hero} />
         <StatsBar stats={c.stats} />
@@ -55,7 +55,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         <Faq items={c.faq} />
         <KitAtleta kit={c.kit} />
       </main>
-      <SiteFooter contact={c.contact} />
+      <SiteFooter contact={c.contact} logo={c.branding?.logo} />
     </>
   );
 }

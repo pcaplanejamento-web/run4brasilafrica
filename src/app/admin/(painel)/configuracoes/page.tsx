@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { Backend } from "@/lib/content/store";
-import type { EventInfo, Hero, Metrics } from "@/lib/content/types";
+import type { Branding, EventInfo, Hero, Metrics } from "@/lib/content/types";
+import ImageUpload from "@/components/admin/ImageUpload";
 import {
   AdmLoading,
   Card,
@@ -40,15 +41,18 @@ function ConfiguracoesForm({
   initialEvent,
   initialHero,
   initialMetrics,
+  initialBranding,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
   initialMetrics: Metrics;
+  initialBranding: Branding;
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
   const [hero, setHero] = useState(initialHero);
   const [metrics, setMetrics] = useState(initialMetrics);
+  const [branding, setBranding] = useState(initialBranding);
 
   const b = BACKEND_LABEL[backend];
 
@@ -67,6 +71,7 @@ function ConfiguracoesForm({
     setEvent(initialEvent);
     setHero(initialHero);
     setMetrics(initialMetrics);
+    setBranding(initialBranding);
   }
 
   return (
@@ -157,6 +162,38 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
+        {/* Marca: logo + favicon */}
+        <Card>
+          <SectionLabel>Logo e favicon</SectionLabel>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Logo do site (cabeçalho/rodapé)</FieldLabel>
+              <ImageUpload
+                value={branding.logo}
+                onChange={(url) => setBranding({ ...branding, logo: url })}
+                className="h-20 bg-[#2b2118]"
+                label="logo"
+              />
+              <p className="mt-1.5 text-[12px] text-adm-muted">
+                PNG com fundo transparente funciona melhor. Substitui o texto
+                &ldquo;RUN4BRASILAFRICA&rdquo;.
+              </p>
+            </div>
+            <div>
+              <FieldLabel>Favicon (ícone da aba do navegador)</FieldLabel>
+              <ImageUpload
+                value={branding.favicon}
+                onChange={(url) => setBranding({ ...branding, favicon: url })}
+                className="h-20 w-20 bg-[#2b2118]"
+                label="favicon"
+              />
+              <p className="mt-1.5 text-[12px] text-adm-muted">
+                Imagem quadrada pequena (ex.: PNG 64×64 ou 128×128).
+              </p>
+            </div>
+          </div>
+        </Card>
+
         {/* Números do evento (manuais) */}
         <Card>
           <SectionLabel>Números do evento</SectionLabel>
@@ -203,7 +240,10 @@ function ConfiguracoesForm({
       <div className="max-w-[760px]">
         <SaveBar
           onSave={() =>
-            save({ event, hero, metrics }, "Atualizou configurações do evento")
+            save(
+              { event, hero, metrics, branding },
+              "Atualizou configurações do evento",
+            )
           }
         />
       </div>
@@ -219,6 +259,7 @@ export default function ConfiguracoesPage() {
       initialEvent={content.event}
       initialHero={content.hero}
       initialMetrics={content.metrics}
+      initialBranding={content.branding ?? {}}
     />
   );
 }

@@ -1,6 +1,6 @@
 import type { Percurso as PercursoType } from "@/lib/content/types";
 import Reveal from "./Reveal";
-import StravaRoute from "./StravaRoute";
+import RouteViewer from "./RouteViewer";
 
 /** Extract a numeric Strava route ID from an ID or a strava.com/routes/<id> link. */
 function stravaRouteId(ref: string | undefined): string | null {
@@ -9,12 +9,23 @@ function stravaRouteId(ref: string | undefined): string | null {
   return m ? m[1] : null;
 }
 
+/** Build a Garmin Connect embed URL from an ID or a connect.garmin.com link. */
+function garminEmbedUrl(ref: string | undefined): string | null {
+  if (!ref) return null;
+  const m = ref.match(/(\d{5,})/);
+  if (!m) return null;
+  const kind = /course/i.test(ref) ? "course" : "activity";
+  return `https://connect.garmin.com/modern/${kind}/embed/${m[1]}`;
+}
+
 /**
- * Course section. Shows the Strava route map (public embed) when a route ID is
- * configured in ADM > Strava; otherwise a placeholder. Facts come from the ADM.
+ * Course section. Shows the Strava and/or Garmin map (public embeds) configured
+ * in ADM > Percurso; the visitor picks the provider when both exist. Facts come
+ * from the ADM. Heading adapts to the entered distance.
  */
 export default function Percurso({ percurso }: { percurso: PercursoType }) {
-  const routeId = stravaRouteId(percurso.stravaRouteRef);
+  const stravaId = stravaRouteId(percurso.stravaRouteRef);
+  const garminUrl = garminEmbedUrl(percurso.garminRouteRef);
   // Heading adapts to the distance entered in the ADM: "10 KM" → "10KM DE PURA ...".
   const compactDistance = (percurso.distance || "").replace(/\s+/g, "");
   const heading = [compactDistance, percurso.title].filter(Boolean).join(" ");
@@ -35,15 +46,7 @@ export default function Percurso({ percurso }: { percurso: PercursoType }) {
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr] md:gap-12">
         <Reveal className="overflow-hidden border-2 border-gold bg-ink-panel">
-          {routeId ? (
-            <StravaRoute routeId={routeId} />
-          ) : (
-            <div className="flex h-[240px] items-center justify-center md:h-[320px]">
-              <span className="font-[monospace] text-[12px] text-muted">
-                [ mapa do percurso — configure a rota no ADM &gt; Strava ]
-              </span>
-            </div>
-          )}
+          <RouteViewer stravaId={stravaId} garminUrl={garminUrl} />
         </Reveal>
 
         <Reveal delay={120} className="flex flex-col justify-center gap-6 md:gap-[26px]">
