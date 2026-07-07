@@ -327,7 +327,7 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (o `<main>`); anel de foco visível para teclado (`:focus-visible`). Imagens da galeria com
   `loading="lazy"` + `decoding="async"` (performance no mobile).
 
-## Captura de e-mails (avisos) e Resultados
+## Captura de e-mails (avisos)
 
 - **Avisos por e-mail** (guardado no próprio sistema, sem serviço externo):
   - Tabela D1 `subscribers` (`id`, `email` único, `created_at`) — `migrations/0003_subscribers.sql`.
@@ -336,22 +336,20 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   - **`NotifyForm`** aparece na seção de Inscrição quando o lote ativo ainda vai abrir
     (`upcoming`): o visitante deixa o e-mail para ser avisado.
   - ADM > **Avisos (e-mails)** (`/admin/inscritos`): lista, exporta CSV e remove e-mails.
-- **Resultados** (`content.results`, `ResultsSection`): o ADM escolhe **como** mostrar —
-  `mode: "link"` (botão para um sistema externo de cronometragem) ou `mode: "table"`
-  (tabela pesquisável no próprio site, com colar em massa de "posição, nome, categoria,
-  tempo"). Seção some quando `enabled` é falso ou sem dados. Editável em ADM >
-  **Resultados** (`/admin/resultados`); render público em `components/site/Resultados.tsx`
-  (é uma seção da home, reordenável pelo layout do Dashboard).
 
-## Premiação (pódio)
+## Premiação (pódio animado)
 
-- `content.premiacao` (`PremiacaoSection`): seção de **premiação** com um **pódio**. Cada
+- **Resultado e Premiação são a mesma seção** — a antiga seção «Resultados» foi removida e o
+  link para resultados externos vive dentro da Premiação (`resultsUrl`).
+- `content.premiacao` (`PremiacaoSection`): **pódio** com a premiação por posição. Cada
   posição (`PodiumPlace`) tem `place` (rótulo, ex.: &ldquo;1º lugar&rdquo;) e `prize`
   (premiação). Some quando `enabled` é falso ou sem dados.
-- Público (`components/site/Premiacao.tsx`): as **3 primeiras** posições viram um pódio — no
-  desktop o 1º fica ao **centro e mais alto** (2º à esquerda, 3º à direita, via `sm:order-*`);
-  no mobile empilham 1 → 2 → 3. Posições 4ª+ aparecem como lista. Cores por rank (ouro, prata,
-  bronze). Botão opcional para **resultados completos** (`resultsUrl`, nova aba).
+- Público (`components/site/Premiacao.tsx`, client): **pódio animado** — ao entrar na tela
+  (IntersectionObserver) as barras **crescem da base** (o 1º sobe por último, com stagger) e os
+  cartões de premiação fazem fade-in mostrando os valores cadastrados. No desktop o 1º fica ao
+  **centro e mais alto** (2º à esquerda, 3º à direita, via `sm:order-*`); no mobile empilham
+  1 → 2 → 3. Cores por rank (ouro, prata, bronze). Posições 4ª+ listam abaixo; botão opcional
+  para **resultados completos** (`resultsUrl`, nova aba). Respeita `prefers-reduced-motion`.
 - É uma seção reordenável da home (registrada em `sections.ts` como `premiacao`), editável em
   ADM > **Premiação** (`/admin/premiacao`).
 

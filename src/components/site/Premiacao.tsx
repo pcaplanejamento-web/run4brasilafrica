@@ -1,18 +1,53 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { PremiacaoSection } from "@/lib/content/types";
 
-/** Podium medal styling per rank (0 = 1st). */
+/** Podium styling per rank (0 = 1st). `delay` staggers the reveal (1st last). */
 const MEDAL = [
-  { color: "var(--color-gold)", text: "var(--color-gold-ink)", height: "h-40 md:h-48" },
-  { color: "#c9ccd2", text: "#1a1400", height: "h-32 md:h-36" },
-  { color: "#cd7f4d", text: "#1a1400", height: "h-24 md:h-28" },
+  { color: "var(--color-gold)", text: "var(--color-gold-ink)", height: "h-44 md:h-52", delay: 260 },
+  { color: "#c9ccd2", text: "#1a1400", height: "h-32 md:h-40", delay: 0 },
+  { color: "#cd7f4d", text: "#1a1400", height: "h-24 md:h-28", delay: 120 },
 ];
+/** Desktop order so 1st is centered (2nd left, 3rd right). Mobile keeps 1→2→3. */
+const SM_ORDER = ["sm:order-2", "sm:order-1", "sm:order-3"];
+
 /**
- * Awards section rendered as a podium: each of the top-3 positions shows its
- * award; on desktop the 1st place is centered and tallest (2nd left, 3rd right),
- * on mobile they stack 1 → 2 → 3. Extra positions (4th+) appear as a list. An
- * optional button links to the full results elsewhere. Hidden until enabled.
+ * Awards section rendered as an **animated podium**: when it scrolls into view
+ * the bars grow up from the base (1st rising last for drama) and each prize
+ * card fades in, showing the registered award per position. On desktop the 1st
+ * place is centered and tallest; on mobile the columns stack 1 → 2 → 3. Extra
+ * positions (4th+) list below, plus an optional link to full results. Respects
+ * reduced-motion and stays hidden until enabled.
  */
 export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+          }
+        });
+      },
+      // Same proven config as the site's Reveal component.
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   if (!premiacao?.enabled) return null;
   const places = (premiacao.places ?? []).filter((p) => p.place || p.prize);
   if (places.length === 0 && !premiacao.resultsUrl) return null;
@@ -20,35 +55,36 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
   const title = premiacao.title || "Pódio";
   const podium = places.slice(0, 3);
   const extra = places.slice(3);
-  // Natural DOM order (1º, 2º, 3º) → mobile stacks 1→2→3. On desktop `sm:order-*`
-  // reorders to 2º | 1º | 3º so the 1st place is centered and tallest.
-  const SM_ORDER = ["sm:order-2", "sm:order-1", "sm:order-3"];
-  const cols = podium.map((place, rank) => ({ place, rank, order: SM_ORDER[rank] }));
+  const cols = podium.map((place, rank) => ({ place, rank }));
 
   return (
-    <section id="premiacao" className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
+    <section id="premiacao" ref={ref} className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <div className="mb-2 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
         {premiacao.eyebrow || "Premiação"}
       </div>
-      <h2 className="mb-3 font-display text-[30px] font-bold uppercase md:text-[40px]">
-        {title}
-      </h2>
+      <h2 className="mb-3 font-display text-[30px] font-bold uppercase md:text-[40px]">{title}</h2>
       {premiacao.note && (
         <p className="mb-8 max-w-[640px] text-[15px] text-muted-strong">{premiacao.note}</p>
       )}
 
       {podium.length > 0 && (
         <div className="mt-8 flex flex-col items-stretch justify-center gap-4 sm:flex-row sm:items-end sm:gap-5">
-          {cols.map(({ place, rank, order }) => {
+          {cols.map(({ place, rank }) => {
             const medal = MEDAL[rank];
+            const cardStyle = {
+              transitionDelay: `${medal.delay}ms`,
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateY(0)" : "translateY(14px)",
+            };
             return (
               <div
                 key={rank}
-                className={`flex flex-1 flex-col sm:max-w-[280px] ${order}`}
+                className={`flex flex-1 flex-col sm:max-w-[280px] ${SM_ORDER[rank]}`}
               >
+                {/* Prize card */}
                 <div
-                  className="mb-3 rounded-lg border bg-ink-panel p-4 text-center"
-                  style={{ borderColor: medal.color }}
+                  className="mb-3 rounded-lg border bg-ink-panel p-4 text-center transition-all duration-700 ease-out"
+                  style={{ ...cardStyle, borderColor: medal.color }}
                 >
                   <div
                     className="text-[13px] font-bold uppercase tracking-[0.04em]"
@@ -62,12 +98,29 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
                     </div>
                   )}
                 </div>
-                <div
-                  className={`flex items-center justify-center rounded-t-lg font-display text-[36px] font-bold md:text-[44px] ${medal.height}`}
-                  style={{ background: medal.color, color: medal.text }}
-                  aria-hidden="true"
-                >
-                  {rank + 1}
+
+                {/* Growing podium block */}
+                <div className={`relative overflow-hidden rounded-t-lg ${medal.height}`}>
+                  <div
+                    className="absolute inset-0 origin-bottom ease-out"
+                    style={{
+                      background: medal.color,
+                      transform: inView ? "scaleY(1)" : "scaleY(0)",
+                      transition: "transform 900ms cubic-bezier(0.22,1,0.36,1)",
+                      transitionDelay: `${medal.delay}ms`,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 flex items-center justify-center font-display text-[36px] font-bold transition-opacity duration-500 md:text-[44px]"
+                    style={{
+                      color: medal.text,
+                      opacity: inView ? 1 : 0,
+                      transitionDelay: `${medal.delay + 450}ms`,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {rank + 1}
+                  </div>
                 </div>
               </div>
             );
