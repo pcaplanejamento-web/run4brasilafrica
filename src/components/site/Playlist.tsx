@@ -24,25 +24,66 @@ function spotifyUri(url: string | undefined): string | null {
   return null;
 }
 
-const floatWrap =
-  "fixed bottom-4 right-4 z-[60] w-[min(360px,88vw)] overflow-hidden rounded-lg bg-ink shadow-2xl ring-1 ring-white/10";
+const floatWrapBase =
+  "fixed bottom-4 right-4 z-[60] overflow-hidden rounded-lg bg-ink shadow-2xl ring-1 ring-white/10";
+/** Floating player widths (pequeno / médio / grande), responsivos ao viewport. */
+const FLOAT_SIZES = ["w-[min(260px,64vw)]", "w-[min(380px,86vw)]", "w-[min(560px,96vw)]"];
 
-function FloatBar({ title, onClose }: { title: string; onClose: () => void }) {
+function IconBtn({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center gap-2 bg-ink-card px-3 py-2">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+}
+
+function FloatBar({
+  title,
+  onClose,
+  size,
+  onSize,
+}: {
+  title: string;
+  onClose: () => void;
+  size: number;
+  onSize: (delta: -1 | 1) => void;
+}) {
+  return (
+    <div className="flex items-center gap-0.5 bg-ink-card px-2.5 py-2">
       <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-cream">
         {title}
       </span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Fechar player"
-        className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
-      >
+      <IconBtn label="Diminuir player" onClick={() => onSize(-1)} disabled={size <= 0}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+          <path d="M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      </IconBtn>
+      <IconBtn label="Aumentar player" onClick={() => onSize(1)} disabled={size >= FLOAT_SIZES.length - 1}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      </IconBtn>
+      <IconBtn label="Fechar player" onClick={onClose}>
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         </svg>
-      </button>
+      </IconBtn>
     </div>
   );
 }
@@ -93,6 +134,9 @@ function YouTubePlaylist({ listId, outOfView }: { listId: string; outOfView: boo
   const [mode, setMode] = useState<"loading" | "list" | "native">("loading");
   const [started, setStarted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [size, setSize] = useState(1);
+  const onSize = (d: -1 | 1) =>
+    setSize((s) => Math.min(FLOAT_SIZES.length - 1, Math.max(0, s + d)));
   const audioBus = useAudioBus();
   const videoSoundOn = audioBus?.videoSoundOn ?? false;
 
@@ -207,10 +251,12 @@ function YouTubePlaylist({ listId, outOfView }: { listId: string; outOfView: boo
       }
     >
       <div>
-        <div className={floating ? floatWrap : "relative"}>
+        <div className={floating ? `${floatWrapBase} ${FLOAT_SIZES[size]}` : "relative"}>
           {floating && (
             <FloatBar
               title={currentTitle || "Playlist do evento"}
+              size={size}
+              onSize={onSize}
               onClose={() => {
                 playerRef.current?.pauseVideo();
                 setDismissed(true);
@@ -224,7 +270,8 @@ function YouTubePlaylist({ listId, outOfView }: { listId: string; outOfView: boo
       </div>
 
       {mode === "list" && (
-      <ul className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1 md:max-h-[420px]">
+      // p-1 so the active item's ring (box-shadow) isn't clipped by overflow-y.
+      <ul className="flex max-h-[336px] flex-col gap-2 overflow-y-auto p-1 md:max-h-[436px]">
         {ordered.map((v) => {
           const active = v.id === currentId;
           return (
@@ -315,6 +362,9 @@ function SpotifyPlaylist({ uri, outOfView }: { uri: string; outOfView: boolean }
   const autoPausedRef = useRef(false);
   const [started, setStarted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [size, setSize] = useState(1);
+  const onSize = (d: -1 | 1) =>
+    setSize((s) => Math.min(FLOAT_SIZES.length - 1, Math.max(0, s + d)));
   const audioBus = useAudioBus();
   const videoSoundOn = audioBus?.videoSoundOn ?? false;
 
@@ -364,10 +414,12 @@ function SpotifyPlaylist({ uri, outOfView }: { uri: string; outOfView: boolean }
   const floating = outOfView && started && !dismissed;
 
   return (
-    <div className={floating ? floatWrap : "max-w-[720px]"}>
+    <div className={floating ? `${floatWrapBase} ${FLOAT_SIZES[size]}` : "max-w-[720px]"}>
       {floating && (
         <FloatBar
           title="Playlist no Spotify"
+          size={size}
+          onSize={onSize}
           onClose={() => {
             controllerRef.current?.pause();
             setDismissed(true);

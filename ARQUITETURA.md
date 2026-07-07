@@ -172,8 +172,13 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   controlável só por play/pause (sem mutar nem autoplay); a própria lista do Spotify aparece.
 - **Minimiza flutuante**: um `IntersectionObserver` na seção detecta quando ela sai da tela;
   se já houve play, o player vira **fixo no canto inferior direito** (mesmo elemento, só muda o
-  CSS → sem recarregar/parar), com barra de título + fechar. Volta ao normal quando a seção
-  reaparece. (Os players ficam **fora** de `Reveal` para o `position:fixed` valer na viewport.)
+  CSS → sem recarregar/parar), com barra de título + **botões de tamanho (− / +)** e fechar. O
+  tamanho tem 3 níveis (`FLOAT_SIZES`, pequeno/médio/grande) responsivos ao viewport
+  (`w-[min(px,vw)]`), então dá para **ajustar a janela no mobile e no desktop**. Volta ao normal
+  quando a seção reaparece. (Os players ficam **fora** de `Reveal` para o `position:fixed` valer.)
+- **Lista sem corte**: a `<ul>` de vídeos tem `p-1` para o **anel do item "Tocando agora"**
+  (que é `box-shadow`/`ring`) não ser cortado pelo `overflow-y-auto` — como o vídeo atual fica
+  em 1º, o anel dele encostava no topo e era clipado.
 - **`AudioBus`** (client Context, envolve o `<main>` em `SiteContent`) — os players de vídeo
   do banner/A Causa (`YouTubePlayer`) registram se o som está ligado (`setVideoSound`, com
   `useId`; um poll de 800ms cobre também o unmute pelos controles nativos). A `Playlist` lê
