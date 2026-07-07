@@ -8,6 +8,11 @@ function ms(s: string | undefined): number | null {
   return Number.isNaN(t) ? null : t;
 }
 
+function fmtDate(iso: string | undefined): string {
+  const p = (iso || "").slice(0, 10).split("-");
+  return p.length === 3 && p[0] ? `${p[2]}/${p[1]}/${p[0]}` : "";
+}
+
 /** Order lotes by when they open (falling back to their close date). */
 export function sortLotes(lotes: Lote[]): Lote[] {
   return [...(lotes ?? [])].sort((a, b) =>
@@ -78,9 +83,16 @@ export function validateLotes(lotes: Lote[], raceDate?: string): string[] {
 
   const rd = ms(raceDate);
   if (rd !== null) {
-    const closes = lotes.map((l) => ms(l.date)).filter((v): v is number => v !== null);
-    if (closes.length && rd <= Math.max(...closes)) {
-      errors.push("O dia da corrida deve ser depois do encerramento do último lote.");
+    const withClose = lotes
+      .map((l) => ({ name: l.name || "Lote", raw: l.date, c: ms(l.date) }))
+      .filter((x): x is { name: string; raw: string; c: number } => x.c !== null);
+    if (withClose.length) {
+      const last = withClose.reduce((a, b) => (b.c > a.c ? b : a));
+      if (rd <= last.c) {
+        errors.push(
+          `O dia da corrida deve ser depois do encerramento do lote que fecha por último — «${last.name}» (${fmtDate(last.raw)}).`,
+        );
+      }
     }
   }
 
