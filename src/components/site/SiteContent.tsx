@@ -21,6 +21,7 @@ import Parceiros from "./Parceiros";
 import Depoimentos from "./Depoimentos";
 import Faq from "./Faq";
 import KitAtleta from "./KitAtleta";
+import Resultados from "./Resultados";
 import SiteFooter from "./SiteFooter";
 
 /**
@@ -69,6 +70,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     depoimentos: <Depoimentos testimonials={c.testimonials} />,
     faq: <Faq items={c.faq} />,
     kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,
+    resultados: <Resultados results={c.results} />,
   };
   const layout = resolveLayout(c.layout);
 

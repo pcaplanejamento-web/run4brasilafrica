@@ -320,6 +320,22 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (o `<main>`); anel de foco visível para teclado (`:focus-visible`). Imagens da galeria com
   `loading="lazy"` + `decoding="async"` (performance no mobile).
 
+## Captura de e-mails (avisos) e Resultados
+
+- **Avisos por e-mail** (guardado no próprio sistema, sem serviço externo):
+  - Tabela D1 `subscribers` (`id`, `email` único, `created_at`) — `migrations/0003_subscribers.sql`.
+  - **`src/app/api/subscribe/route.ts`**: `POST` público valida o e-mail e faz
+    `INSERT OR IGNORE`; `GET`/`DELETE` são só do ADM (exigem sessão) para listar/remover.
+  - **`NotifyForm`** aparece na seção de Inscrição quando o lote ativo ainda vai abrir
+    (`upcoming`): o visitante deixa o e-mail para ser avisado.
+  - ADM > **Avisos (e-mails)** (`/admin/inscritos`): lista, exporta CSV e remove e-mails.
+- **Resultados** (`content.results`, `ResultsSection`): o ADM escolhe **como** mostrar —
+  `mode: "link"` (botão para um sistema externo de cronometragem) ou `mode: "table"`
+  (tabela pesquisável no próprio site, com colar em massa de "posição, nome, categoria,
+  tempo"). Seção some quando `enabled` é falso ou sem dados. Editável em ADM >
+  **Resultados** (`/admin/resultados`); render público em `components/site/Resultados.tsx`
+  (é uma seção da home, reordenável pelo layout do Dashboard).
+
 ## Padrão de componentes
 
 - **Site** (`components/site`): componentes de apresentação recebem sua fatia de

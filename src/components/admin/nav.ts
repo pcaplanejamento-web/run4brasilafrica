@@ -18,6 +18,8 @@ export const ADM_NAV: AdmNavItem[] = [
   { key: "strava", label: "Percurso (Strava)", href: "/admin/strava" },
   { key: "patrocinadores", label: "Patrocinadores", href: "/admin/patrocinadores" },
   { key: "links", label: "Links & inscrição", href: "/admin/links" },
+  { key: "resultados", label: "Resultados", href: "/admin/resultados" },
+  { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },
   { key: "edicoes", label: "Edições", href: "/admin/edicoes" },
   { key: "log", label: "Log de alterações", href: "/admin/log" },

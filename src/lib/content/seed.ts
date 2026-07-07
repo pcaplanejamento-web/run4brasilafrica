@@ -141,6 +141,15 @@ export const seedContent: SiteContent = {
 
   analytics: {},
 
+  results: {
+    enabled: false,
+    title: "Resultados",
+    mode: "link",
+    linkLabel: "Ver resultados",
+    url: "",
+    rows: [],
+  },
+
   galleryTiles: [
     { album: "LARGADA" },
     { album: "PERCURSO" },

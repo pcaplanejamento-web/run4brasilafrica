@@ -263,6 +263,26 @@ export interface ContentSection {
   body: string;
 }
 
+/** One row in the results table. */
+export interface ResultRow {
+  pos: string;
+  name: string;
+  category?: string;
+  time?: string;
+}
+
+/** Race results section — a link to an external system OR a table on the site. */
+export interface ResultsSection {
+  enabled?: boolean;
+  title?: string;
+  mode?: "link" | "table";
+  /** link mode */
+  linkLabel?: string;
+  url?: string;
+  /** table mode */
+  rows?: ResultRow[];
+}
+
 export interface Edition {
   year: string;
   date: string;
@@ -312,6 +332,7 @@ export interface SiteContent {
   faq: FaqItem[];
   kit: KitSection;
   contact: ContactLinks;
+  results: ResultsSection;
   /* ADM-only content */
   contentSections: ContentSection[];
   editions: Edition[];

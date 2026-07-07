@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Inscricao, Lote } from "@/lib/content/types";
 import Countdown from "./Countdown";
+import NotifyForm from "./NotifyForm";
 import {
   activeLote,
   loteCountdown,
@@ -119,6 +120,7 @@ export default function InscricaoCTA({
               <Countdown date={cd.date} />
             </div>
           )}
+          {activeStatus === "upcoming" && <NotifyForm />}
         </div>
         {activeStatus === "open" ? (
           <a
