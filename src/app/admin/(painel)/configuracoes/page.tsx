@@ -5,6 +5,7 @@ import { useContent } from "@/lib/content/store";
 import type { Backend } from "@/lib/content/store";
 import type {
   Branding,
+  Cloudinary,
   EventInfo,
   Hero,
   Metrics,
@@ -49,12 +50,14 @@ function ConfiguracoesForm({
   initialMetrics,
   initialBranding,
   initialTheme,
+  initialCloudinary,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
   initialMetrics: Metrics;
   initialBranding: Branding;
   initialTheme: ThemeColors;
+  initialCloudinary: Cloudinary;
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
@@ -62,6 +65,7 @@ function ConfiguracoesForm({
   const [metrics, setMetrics] = useState(initialMetrics);
   const [branding, setBranding] = useState(initialBranding);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
+  const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
 
   const b = BACKEND_LABEL[backend];
 
@@ -82,6 +86,7 @@ function ConfiguracoesForm({
     setMetrics(initialMetrics);
     setBranding(initialBranding);
     setTheme(initialTheme);
+    setCloudinary(initialCloudinary);
   }
 
   const THEME_FIELDS: { key: keyof ThemeColors; label: string; def: string }[] = [
@@ -248,6 +253,34 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
+        {/* Cloudinary (galeria) */}
+        <Card>
+          <SectionLabel>Galeria via Cloudinary (opcional)</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Se preenchido, as fotos da galeria passam a ser enviadas para o Cloudinary.
+            Crie uma conta gratuita, um <strong>upload preset não assinado</strong> e
+            informe abaixo. Vazio = usa o armazenamento próprio.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Cloud name</FieldLabel>
+              <TextInput
+                value={cloudinary.cloudName ?? ""}
+                onChange={(e) => setCloudinary({ ...cloudinary, cloudName: e.target.value })}
+                placeholder="ex.: run4brasilafrica"
+              />
+            </div>
+            <div>
+              <FieldLabel>Upload preset (não assinado)</FieldLabel>
+              <TextInput
+                value={cloudinary.uploadPreset ?? ""}
+                onChange={(e) => setCloudinary({ ...cloudinary, uploadPreset: e.target.value })}
+                placeholder="ex.: r4ba_galeria"
+              />
+            </div>
+          </div>
+        </Card>
+
         {/* Números do evento (manuais) */}
         <Card>
           <SectionLabel>Números do evento</SectionLabel>
@@ -295,7 +328,7 @@ function ConfiguracoesForm({
         <SaveBar
           onSave={() =>
             save(
-              { event, hero, metrics, branding, theme },
+              { event, hero, metrics, branding, theme, cloudinary },
               "Atualizou configurações do evento",
             )
           }
@@ -315,6 +348,7 @@ export default function ConfiguracoesPage() {
       initialMetrics={content.metrics}
       initialBranding={content.branding ?? {}}
       initialTheme={content.theme ?? {}}
+      initialCloudinary={content.cloudinary ?? {}}
     />
   );
 }

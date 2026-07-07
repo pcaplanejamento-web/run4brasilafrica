@@ -79,7 +79,13 @@ export default function GaleriaPage() {
         <div className="mb-2.5 text-[13px] text-adm-muted">
           ADICIONAR FOTO — ÁLBUM &ldquo;{albumName.toUpperCase()}&rdquo;
         </div>
-        <ImageUpload value="" onChange={addPhoto} className="h-32" label="foto" />
+        <ImageUpload
+          value=""
+          onChange={addPhoto}
+          className="h-32"
+          label="foto"
+          cloudinary={content.cloudinary}
+        />
         <p className="mt-2 text-[12px] text-adm-muted">
           Cada envio adiciona uma foto ao álbum selecionado. JPG/PNG/WebP, até 8 MB.
         </p>

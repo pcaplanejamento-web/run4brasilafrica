@@ -126,6 +126,12 @@ export interface GalleryPhoto {
   album: string;
 }
 
+/** Cloudinary config for gallery uploads (unsigned). Set in ADM > Configurações. */
+export interface Cloudinary {
+  cloudName?: string;
+  uploadPreset?: string;
+}
+
 export interface Testimonial {
   quote: string;
   name: string;
@@ -190,6 +196,7 @@ export interface SiteContent {
   albums: Album[];
   galleryTiles: { album: string }[];
   galleryPhotos: GalleryPhoto[];
+  cloudinary: Cloudinary;
   sponsors: Sponsor[];
   testimonials: Testimonial[];
   faq: FaqItem[];

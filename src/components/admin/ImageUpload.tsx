@@ -10,6 +10,8 @@ interface ImageUploadProps {
   label?: string;
   /** When true, accepts a video (mp4/webm/mov) and previews it. */
   video?: boolean;
+  /** When set, uploads go to Cloudinary (unsigned) instead of /api/media. */
+  cloudinary?: { cloudName?: string; uploadPreset?: string };
 }
 
 /**
@@ -23,6 +25,7 @@ export default function ImageUpload({
   className = "h-40",
   label = "Imagem",
   video = false,
+  cloudinary,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -32,6 +35,27 @@ export default function ImageUpload({
     setError(null);
     setBusy(true);
     try {
+      // Cloudinary path (unsigned, direct from the browser) when configured.
+      if (cloudinary?.cloudName && cloudinary?.uploadPreset) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("upload_preset", cloudinary.uploadPreset);
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudinary.cloudName}/${video ? "video" : "image"}/upload`,
+          { method: "POST", body: fd },
+        );
+        const data = (await res.json()) as {
+          secure_url?: string;
+          error?: { message?: string };
+        };
+        if (data.secure_url) {
+          onChange(data.secure_url);
+        } else {
+          setError(data.error?.message ?? "Falha no upload (Cloudinary).");
+        }
+        return;
+      }
+
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/media", { method: "POST", body: fd });
