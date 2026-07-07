@@ -16,6 +16,9 @@ import {
   TextInput,
 } from "@/components/admin/ui";
 
+/** Default podium colors (ouro / prata / bronze) used when a position has none. */
+const DEFAULT_HEX = ["#c8ce2e", "#c9ccd2", "#cd7f4d"];
+
 function PremiacaoForm({ initial }: { initial: PremiacaoSection }) {
   const { save } = useContent();
   const [p, setP] = useState<PremiacaoSection>({
@@ -113,7 +116,7 @@ function PremiacaoForm({ initial }: { initial: PremiacaoSection }) {
             {places.map((place, i) => (
               <div
                 key={i}
-                className="grid grid-cols-1 items-end gap-3 rounded-lg border border-adm-border p-3 sm:grid-cols-[160px_1fr_auto]"
+                className="grid grid-cols-1 items-end gap-3 rounded-lg border border-adm-border p-3 sm:grid-cols-[150px_1fr_auto_auto]"
               >
                 <div>
                   <FieldLabel>Posição</FieldLabel>
@@ -130,6 +133,27 @@ function PremiacaoForm({ initial }: { initial: PremiacaoSection }) {
                     onChange={(e) => setPlace(i, { prize: e.target.value })}
                     placeholder="ex.: R$ 500 + troféu + kit"
                   />
+                </div>
+                <div>
+                  <FieldLabel>Cor do pódio</FieldLabel>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      aria-label={`Cor do pódio ${place.place || i + 1}`}
+                      value={place.color || DEFAULT_HEX[i] || "#c8ce2e"}
+                      onChange={(e) => setPlace(i, { color: e.target.value })}
+                      className="h-9 w-10 cursor-pointer rounded border border-adm-border bg-transparent"
+                    />
+                    {place.color && (
+                      <button
+                        type="button"
+                        onClick={() => setPlace(i, { color: "" })}
+                        className="text-[11px] text-adm-muted underline"
+                      >
+                        Padrão
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-1.5">
                   <GhostButton onClick={() => move(i, -1)} className="px-3 py-2 text-[12px]">

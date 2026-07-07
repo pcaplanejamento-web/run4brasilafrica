@@ -12,6 +12,18 @@ const MEDAL = [
 /** Desktop order so 1st is centered (2nd left, 3rd right). Mobile keeps 1→2→3. */
 const SM_ORDER = ["sm:order-2", "sm:order-1", "sm:order-3"];
 
+/** Readable text (dark/light) over a hex background, by luminance. */
+function textOn(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return "#1a1400";
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "#1a1400" : "#ffffff";
+}
+
 /**
  * Awards section rendered as an **animated podium**: when it scrolls into view
  * the bars grow up from the base (1st rising last for drama) and each prize
@@ -82,6 +94,9 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
         <div className="mt-8 flex flex-col items-stretch justify-center gap-4 sm:flex-row sm:items-end sm:gap-5">
           {cols.map(({ place, rank }) => {
             const medal = MEDAL[rank];
+            // Configured color per position, else the default (ouro/prata/bronze).
+            const barColor = place.color || medal.color;
+            const numColor = place.color ? textOn(place.color) : medal.text;
             const cardStyle = {
               transitionDelay: `${medal.delay}ms`,
               opacity: inView ? 1 : 0,
@@ -95,11 +110,11 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
                 {/* Prize card */}
                 <div
                   className="mb-3 rounded-lg border bg-ink-panel p-4 text-center transition-all duration-700 ease-out"
-                  style={{ ...cardStyle, borderColor: medal.color }}
+                  style={{ ...cardStyle, borderColor: barColor }}
                 >
                   <div
                     className="text-[13px] font-bold uppercase tracking-[0.04em]"
-                    style={{ color: medal.color }}
+                    style={{ color: barColor }}
                   >
                     {place.place || `${rank + 1}º lugar`}
                   </div>
@@ -115,7 +130,7 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
                   <div
                     className="absolute inset-0 origin-bottom ease-out"
                     style={{
-                      background: medal.color,
+                      background: barColor,
                       transform: inView ? "scaleY(1)" : "scaleY(0)",
                       transition: "transform 900ms cubic-bezier(0.22,1,0.36,1)",
                       transitionDelay: `${medal.delay}ms`,
@@ -124,7 +139,7 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
                   <div
                     className="absolute inset-0 flex items-center justify-center font-display text-[36px] font-bold transition-opacity duration-500 md:text-[44px]"
                     style={{
-                      color: medal.text,
+                      color: numColor,
                       opacity: inView ? 1 : 0,
                       transitionDelay: `${medal.delay + 450}ms`,
                     }}
@@ -146,7 +161,10 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
               key={i}
               className="flex items-baseline justify-between gap-3 rounded-lg border border-line bg-ink-panel px-4 py-3"
             >
-              <span className="text-[13px] font-bold uppercase tracking-[0.04em] text-gold">
+              <span
+                className="text-[13px] font-bold uppercase tracking-[0.04em] text-gold"
+                style={p.color ? { color: p.color } : undefined}
+              >
                 {p.place || `${i + 4}º lugar`}
               </span>
               <span className="text-right text-[14px] text-muted-strong">{p.prize}</span>

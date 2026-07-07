@@ -290,6 +290,8 @@ export interface PodiumPlace {
   place: string;
   /** Award for this position ("R$ 500 + troféu", "Medalha + kit", …). */
   prize: string;
+  /** Podium bar/accent color (hex). Empty → default per rank (ouro/prata/bronze). */
+  color?: string;
 }
 
 /**

@@ -377,8 +377,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Resultado e Premiação são a mesma seção** — a antiga seção «Resultados» foi removida e o
   link para resultados externos vive dentro da Premiação (`resultsUrl`).
 - `content.premiacao` (`PremiacaoSection`): **pódio** com a premiação por posição. Cada
-  posição (`PodiumPlace`) tem `place` (rótulo, ex.: &ldquo;1º lugar&rdquo;) e `prize`
-  (premiação). O componente renderiza quando há dados (posições ou link).
+  posição (`PodiumPlace`) tem `place` (rótulo, ex.: &ldquo;1º lugar&rdquo;), `prize`
+  (premiação) e **`color`** (cor do degrau/acento — opcional; vazio usa o padrão ouro/prata/
+  bronze por posição). O número do degrau escolhe texto claro/escuro por contraste
+  automaticamente. O componente renderiza quando há dados (posições ou link).
 - **Exibir/ocultar é só no Dashboard** — a Premiação **não** tem toggle próprio de exibição; a
   visibilidade vem do `content.layout` («Componentes da tela inicial», ativar/ocultar +
   ordenar), como qualquer seção da home. (Fonte única de verdade; evita duas chaves conflitantes.)
