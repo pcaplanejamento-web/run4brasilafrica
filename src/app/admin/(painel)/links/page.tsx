@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
-import type { ContactLinks, Inscricao } from "@/lib/content/types";
+import type { ContactLinks, Inscricao, Lote } from "@/lib/content/types";
 import {
   AdmLoading,
   Card,
   FieldLabel,
+  GhostButton,
   PageTitle,
+  PrimaryButton,
   SaveBar,
   SectionLabel,
   TextInput,
@@ -16,13 +18,48 @@ import {
 function LinksForm({
   initialInscricao,
   initialContact,
+  initialLotes,
 }: {
   initialInscricao: Inscricao;
   initialContact: ContactLinks;
+  initialLotes: Lote[];
 }) {
   const { save } = useContent();
   const [inscricao, setInscricao] = useState(initialInscricao);
   const [contact, setContact] = useState(initialContact);
+  const [lotes, setLotes] = useState<Lote[]>(initialLotes);
+
+  function setLote(i: number, patch: Partial<Lote>) {
+    setLotes((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  }
+  // Only one lote open at a time.
+  function openOnly(i: number) {
+    setLotes((ls) => ls.map((l, idx) => ({ ...l, open: idx === i })));
+  }
+  function remove(i: number) {
+    setLotes((ls) => ls.filter((_, idx) => idx !== i));
+  }
+  function add() {
+    setLotes((ls) => [
+      ...ls,
+      {
+        id: `lote-${ls.length + 1}-${Math.floor(Date.now() / 1000)}`,
+        name: `Lote ${ls.length + 1}`,
+        text: "",
+        ctaLabel: "Inscreva-se",
+        url: inscricao.url,
+        date: "",
+        colorBg: "#c8ce2e",
+        colorText: "#1a1400",
+        open: false,
+      },
+    ]);
+  }
+
+  // Display in date order (the public site orders the same way).
+  const ordered = lotes
+    .map((l, i) => ({ l, i }))
+    .sort((a, b) => (a.l.date || "").localeCompare(b.l.date || ""));
 
   return (
     <>
@@ -30,23 +67,125 @@ function LinksForm({
         <PageTitle>Links & inscrição</PageTitle>
       </div>
 
-      <div className="flex max-w-[760px] flex-col gap-5">
+      <div className="flex max-w-[820px] flex-col gap-5">
         <Card>
-          <SectionLabel>Inscrição</SectionLabel>
+          <SectionLabel>Inscrição (plataforma)</SectionLabel>
           <FieldLabel>Plataforma</FieldLabel>
           <div className="mb-3.5">
             <TextInput
               value={inscricao.platform}
-              onChange={(e) =>
-                setInscricao({ ...inscricao, platform: e.target.value })
-              }
+              onChange={(e) => setInscricao({ ...inscricao, platform: e.target.value })}
             />
           </div>
-          <FieldLabel>URL de inscrição</FieldLabel>
+          <FieldLabel>URL de inscrição padrão</FieldLabel>
           <TextInput
             value={inscricao.url}
             onChange={(e) => setInscricao({ ...inscricao, url: e.target.value })}
           />
+        </Card>
+
+        {/* Lotes */}
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <SectionLabel>Lotes de inscrição</SectionLabel>
+            <PrimaryButton onClick={add} className="px-4 py-2 text-[13px]">
+              + Novo lote
+            </PrimaryButton>
+          </div>
+          <p className="mb-4 text-[12px] text-adm-muted">
+            Os lotes aparecem no site em ordem de data. Apenas <strong>1 lote aberto</strong>{" "}
+            por vez; os demais ficam em cinza e sem link. O lote aberto mostra um cronômetro
+            até a data.
+          </p>
+
+          <div className="flex flex-col gap-4">
+            {ordered.map(({ l, i }) => (
+              <div
+                key={l.id}
+                className="rounded-lg border p-4"
+                style={{ borderColor: l.open ? "#4a9d5f" : "#e2e2dc", background: l.open ? "#f3faf4" : "#fff" }}
+              >
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[13px] font-bold text-adm-ink">
+                    {l.name}{" "}
+                    <span style={{ color: l.open ? "#2f7a45" : "#999" }}>
+                      · {l.open ? "Aberto" : "Fechado"}
+                    </span>
+                  </span>
+                  <div className="flex gap-2">
+                    {l.open ? (
+                      <GhostButton onClick={() => setLote(i, { open: false })}>
+                        Fechar lote
+                      </GhostButton>
+                    ) : (
+                      <GhostButton onClick={() => openOnly(i)}>Abrir lote</GhostButton>
+                    )}
+                    <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel>Nome</FieldLabel>
+                    <TextInput value={l.name} onChange={(e) => setLote(i, { name: e.target.value })} />
+                  </div>
+                  <div>
+                    <FieldLabel>Data limite/virada</FieldLabel>
+                    <TextInput
+                      type="datetime-local"
+                      value={l.date}
+                      onChange={(e) => setLote(i, { date: e.target.value })}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <FieldLabel>Texto base</FieldLabel>
+                    <TextInput
+                      value={l.text}
+                      onChange={(e) => setLote(i, { text: e.target.value })}
+                      placeholder="ex.: A partir de R$ 129 · 5KM e 10KM · kit incluído"
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Texto do botão</FieldLabel>
+                    <TextInput value={l.ctaLabel} onChange={(e) => setLote(i, { ctaLabel: e.target.value })} />
+                  </div>
+                  <div>
+                    <FieldLabel>URL de inscrição</FieldLabel>
+                    <TextInput value={l.url} onChange={(e) => setLote(i, { url: e.target.value })} />
+                  </div>
+                  <div>
+                    <FieldLabel>Cor de fundo</FieldLabel>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={l.colorBg}
+                        onChange={(e) => setLote(i, { colorBg: e.target.value })}
+                        className="h-9 w-12 rounded border border-[#ccc]"
+                      />
+                      <TextInput value={l.colorBg} onChange={(e) => setLote(i, { colorBg: e.target.value })} />
+                    </div>
+                  </div>
+                  <div>
+                    <FieldLabel>Cor do texto</FieldLabel>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={l.colorText}
+                        onChange={(e) => setLote(i, { colorText: e.target.value })}
+                        className="h-9 w-12 rounded border border-[#ccc]"
+                      />
+                      <TextInput value={l.colorText} onChange={(e) => setLote(i, { colorText: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {lotes.length === 0 && (
+              <div className="text-[13px] text-adm-muted">
+                Nenhum lote. Clique em &ldquo;+ Novo lote&rdquo;.
+              </div>
+            )}
+          </div>
         </Card>
 
         <Card>
@@ -76,17 +215,15 @@ function LinksForm({
           <SectionLabel>Doações</SectionLabel>
           <TextInput
             value={contact.donationsUrl}
-            onChange={(e) =>
-              setContact({ ...contact, donationsUrl: e.target.value })
-            }
+            onChange={(e) => setContact({ ...contact, donationsUrl: e.target.value })}
           />
         </Card>
       </div>
 
-      <div className="max-w-[760px]">
+      <div className="max-w-[820px]">
         <SaveBar
           onSave={() =>
-            save({ inscricao, contact }, "Atualizou links & inscrição")
+            save({ inscricao, contact, lotes }, "Atualizou links, lotes & inscrição")
           }
         />
       </div>
@@ -101,6 +238,7 @@ export default function LinksPage() {
     <LinksForm
       initialInscricao={content.inscricao}
       initialContact={content.contact}
+      initialLotes={content.lotes ?? []}
     />
   );
 }

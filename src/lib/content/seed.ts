@@ -62,6 +62,31 @@ export const seedContent: SiteContent = {
     url: "https://ticketsports.com.br/run4brasilafrica-2026",
   },
 
+  lotes: [
+    {
+      id: "lote-1",
+      name: "Lote 1",
+      text: "A partir de R$ 129 · 5KM e 10KM · kit incluído",
+      ctaLabel: "Inscreva-se",
+      url: "https://ticketsports.com.br/run4brasilafrica-2026",
+      date: "2026-08-01T23:59",
+      colorBg: "#c8ce2e",
+      colorText: "#1a1400",
+      open: true,
+    },
+    {
+      id: "lote-2",
+      name: "Lote 2",
+      text: "A partir de R$ 149 · últimas vagas",
+      ctaLabel: "Inscreva-se",
+      url: "https://ticketsports.com.br/run4brasilafrica-2026",
+      date: "2026-09-01T23:59",
+      colorBg: "#c8ce2e",
+      colorText: "#1a1400",
+      open: false,
+    },
+  ],
+
   albums: [
     { name: "Largada", count: 48 },
     { name: "Percurso", count: 62 },

@@ -48,7 +48,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         <StatsBar stats={c.stats} />
         <Sobre about={c.about} />
         <Percurso percurso={c.percurso} />
-        <InscricaoCTA inscricao={c.inscricao} />
+        <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />
         <Galeria tiles={c.galleryTiles} photos={c.galleryPhotos ?? []} />
         <Parceiros sponsors={c.sponsors} />
         <Depoimentos testimonials={c.testimonials} />

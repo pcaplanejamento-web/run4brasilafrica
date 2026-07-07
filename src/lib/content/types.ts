@@ -81,6 +81,20 @@ export interface Inscricao {
   url: string;
 }
 
+/** A registration batch ("lote"). Only one should be open at a time. */
+export interface Lote {
+  id: string;
+  name: string;
+  text: string;
+  ctaLabel: string;
+  url: string;
+  /** Deadline/turnover date (datetime-local / ISO) — used to order + count down. */
+  date: string;
+  colorBg: string;
+  colorText: string;
+  open: boolean;
+}
+
 export interface Album {
   name: string;
   count: number;
@@ -157,6 +171,7 @@ export interface SiteContent {
   about: AboutSection;
   percurso: Percurso;
   inscricao: Inscricao;
+  lotes: Lote[];
   albums: Album[];
   galleryTiles: { album: string }[];
   galleryPhotos: GalleryPhoto[];
