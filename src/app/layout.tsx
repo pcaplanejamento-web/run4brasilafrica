@@ -37,8 +37,20 @@ export const metadata: Metadata = {
     title: "Run4BrasilAfrica — Corra por algo maior",
     description:
       "Corrida de rua que conecta esporte e causa social entre o Brasil e a África. 14 de setembro de 2026, Rio de Janeiro.",
+    url: "/",
+    siteName: "Run4BrasilAfrica",
     locale: "pt_BR",
     type: "website",
+    images: [
+      { url: "/og.png", width: 1200, height: 630, alt: "Run4BrasilAfrica" },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Run4BrasilAfrica — Corra por algo maior",
+    description:
+      "Corrida de rua que conecta esporte e causa social entre o Brasil e a África. 14 de setembro de 2026, Rio de Janeiro.",
+    images: ["/og.png"],
   },
 };
 
