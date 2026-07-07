@@ -56,7 +56,26 @@ interface YTP {
   loadVideoById(id: string): void;
   playVideo(): void;
   pauseVideo(): void;
+  getIframe(): HTMLIFrameElement;
   destroy(): void;
+}
+
+/** The IFrame API replaces the host div with the raw iframe (default 640×360),
+ *  so we stretch it to fill its 16:9 box. */
+function fillIframe(p: YTP) {
+  try {
+    const f = p.getIframe();
+    if (f)
+      Object.assign(f.style, {
+        position: "absolute",
+        inset: "0",
+        width: "100%",
+        height: "100%",
+        border: "0",
+      });
+  } catch {
+    /* ignore */
+  }
 }
 interface YTNS {
   Player: new (el: HTMLElement, opts: unknown) => YTP;
@@ -110,6 +129,7 @@ function YouTubePlaylist({ listId, outOfView }: { listId: string; outOfView: boo
       const YT = (window as unknown as { YT?: YTNS }).YT;
       if (!YT) return;
       const events = {
+        onReady: (e: { target: YTP }) => fillIframe(e.target),
         onStateChange: (e: { data: number }) => {
           if (e.data === 1) setStarted(true); // playing
         },
@@ -179,8 +199,14 @@ function YouTubePlaylist({ listId, outOfView }: { listId: string; outOfView: boo
     : videos;
 
   return (
-    <div className={mode === "list" ? "grid gap-5 md:grid-cols-[1.6fr_1fr]" : ""}>
-      <div className={mode === "native" ? "mx-auto max-w-[860px]" : undefined}>
+    <div
+      className={
+        mode === "list"
+          ? "grid gap-4 md:grid-cols-[1.7fr_1fr] md:items-start lg:mx-auto lg:max-w-[1120px] lg:gap-6"
+          : "mx-auto max-w-[900px]"
+      }
+    >
+      <div>
         <div className={floating ? floatWrap : "relative"}>
           {floating && (
             <FloatBar
@@ -192,16 +218,13 @@ function YouTubePlaylist({ listId, outOfView }: { listId: string; outOfView: boo
             />
           )}
           <div className="relative aspect-video overflow-hidden rounded-lg bg-ink">
-            <div
-              ref={hostRef}
-              className="absolute inset-0 [&>iframe]:h-full [&>iframe]:w-full"
-            />
+            <div ref={hostRef} className="absolute inset-0" />
           </div>
         </div>
       </div>
 
       {mode === "list" && (
-      <ul className="flex max-h-[360px] flex-col gap-2 overflow-y-auto pr-1">
+      <ul className="flex max-h-[320px] flex-col gap-2 overflow-y-auto pr-1 md:max-h-[420px]">
         {ordered.map((v) => {
           const active = v.id === currentId;
           return (
