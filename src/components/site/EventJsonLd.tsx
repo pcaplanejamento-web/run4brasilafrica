@@ -29,7 +29,7 @@ export default function EventJsonLd({ c }: { c: SiteContent }) {
         addressCountry: "BR",
       },
     },
-    image: [`${SITE}/og.png`],
+    image: [`${SITE}/opengraph-image`],
     url: `${SITE}/`,
     organizer: {
       "@type": "Organization",

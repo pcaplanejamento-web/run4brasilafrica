@@ -68,6 +68,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Domínio único** (`src/middleware.ts`): qualquer acesso a `www.<apex>` ou a um
   `*.workers.dev` é 308-redirecionado para `https://run4brasilafrica.com.br` (preserva
   caminho/query). Só o apex e o localhost passam direto.
+- **Compartilhamento (Open Graph) dinâmico**: `app/layout.tsx` usa `generateMetadata()`
+  lendo o conteúdo ao vivo — título e descrição saem de `event` (marca, `dateLabel`, cidade),
+  então o card do WhatsApp/Twitter nunca diverge das Configurações. A **imagem** do card é
+  gerada em runtime por `app/opengraph-image.tsx` (`next/og`/ImageResponse, `force-dynamic`)
+  com a marca, a chamada e o selo de data/cidade — funciona no runtime do Worker. O JSON-LD
+  (`EventJsonLd`) também aponta a imagem para `/opengraph-image`. (Redes sociais fazem cache
+  do card; um link já compartilhado pode continuar mostrando o antigo até revalidar — ex.:
+  Facebook Sharing Debugger.)
 
 ## Autenticação (ADM)
 
