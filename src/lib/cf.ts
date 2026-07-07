@@ -27,13 +27,16 @@ export function getDB(): D1Like | null {
   }
 }
 
-/** Minimal KV typings for the media store (binary values + metadata). */
+/** Minimal KV typings for the media store (binary values + metadata) and small
+ *  text/json values (e.g. rate-limit counters) with optional TTL. */
 export interface MediaKV {
   put(
     key: string,
     value: ArrayBuffer | ArrayBufferView | string,
-    options?: { metadata?: Record<string, unknown> },
+    options?: { metadata?: Record<string, unknown>; expirationTtl?: number },
   ): Promise<void>;
+  get(key: string, type: "text"): Promise<string | null>;
+  get(key: string, type: "json"): Promise<unknown>;
   getWithMetadata(
     key: string,
     type: "arrayBuffer",

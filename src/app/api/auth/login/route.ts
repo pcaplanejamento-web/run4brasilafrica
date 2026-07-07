@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB } from "@/lib/cf";
+import { getDB, getMediaKV } from "@/lib/cf";
 import {
   createSession,
   verifyPassword,
@@ -8,6 +8,9 @@ import {
 } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+
+const MAX_FAILS = 5; // failures before a temporary lock
+const LOCK_SECONDS = 15 * 60; // 15 min
 
 export async function POST(req: Request) {
   const db = getDB();
@@ -25,14 +28,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "informe e-mail e senha" }, { status: 400 });
   }
 
+  // Brute-force protection: temporary lock after repeated failures (KV-backed).
+  const kv = getMediaKV();
+  const failKey = `login:fail:${email}`;
+  if (kv) {
+    const rec = (await kv.get(failKey, "json")) as { n: number; until?: number } | null;
+    if (rec?.until && Date.now() < rec.until) {
+      const mins = Math.ceil((rec.until - Date.now()) / 60000);
+      return NextResponse.json(
+        { ok: false, error: `Muitas tentativas. Tente novamente em ~${mins} min.` },
+        { status: 429 },
+      );
+    }
+  }
+
   const user = await db
     .prepare("SELECT id, name, role, password_hash FROM users WHERE email = ?1")
     .bind(email)
     .first<{ id: number; name: string; role: Role; password_hash: string }>();
 
   if (!user || !(await verifyPassword(password, user.password_hash))) {
+    if (kv) {
+      const rec = (await kv.get(failKey, "json")) as { n: number } | null;
+      const n = (rec?.n ?? 0) + 1;
+      const until = n >= MAX_FAILS ? Date.now() + LOCK_SECONDS * 1000 : undefined;
+      await kv.put(failKey, JSON.stringify({ n, until }), { expirationTtl: LOCK_SECONDS });
+    }
     return NextResponse.json({ ok: false, error: "Credenciais inválidas" }, { status: 401 });
   }
+
+  if (kv) await kv.delete(failKey); // reset on success
 
   const session = await createSession(user.id);
   if (!session) {

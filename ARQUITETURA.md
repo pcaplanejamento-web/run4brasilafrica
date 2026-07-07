@@ -74,6 +74,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   papel **Administrador geral**. A UI (`AuthProvider`) redireciona para o login quando
   não há sessão — mas a proteção real está nas rotas de escrita.
 - Guardas: não é possível remover/rebaixar o **último administrador** (evita lockout).
+- **Proteção contra força bruta** no login: após **5 tentativas** erradas por e-mail, bloqueia
+  por **15 min** (contador em KV com TTL); acerto zera o contador.
+- **Backup** (`/admin/backup`): exportar/importar todo o `SiteContent` em JSON; além disso o
+  D1 tem **Time Travel** (restauração de qualquer ponto dos últimos 30 dias).
 - Em `next dev` (sem D1) a auth fica desligada (painel aberto), para desenvolvimento.
 
 ## Imagens e vídeo (mídia)

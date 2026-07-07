@@ -21,5 +21,6 @@ export const ADM_NAV: AdmNavItem[] = [
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },
   { key: "edicoes", label: "Edições", href: "/admin/edicoes" },
   { key: "log", label: "Log de alterações", href: "/admin/log" },
+  { key: "backup", label: "Backup", href: "/admin/backup" },
   { key: "configuracoes", label: "Configurações", href: "/admin/configuracoes" },
 ];
