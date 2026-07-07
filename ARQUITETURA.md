@@ -109,7 +109,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   Fallback de slides legados: `title||text`, `ctaLabel||cta`.
 - **`Sobre`** ("A Causa", client) — caixa de mídia com a proporção escolhida
   (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, **9/16 Reels**, 21/9): imagem `object-cover`,
-  ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Textos
+  ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Em
+  proporções **retrato** (arH > arW, ex. 9/16) a caixa é limitada a **70vh** e a largura segue
+  a proporção (centralizada), então cabe na tela — mesma regra no desktop e no mobile (é vh).
+  Textos
   (`eyebrow`, `title`, `body`) e botão (`linkLabel`→`linkUrl`, fallback `#parceiros`)
   totalmente editáveis.
 - **Navegação do banner**: setas (anterior/próximo) + bolinhas maiores, alvos de toque

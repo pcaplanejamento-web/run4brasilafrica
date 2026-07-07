@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type { AboutSection } from "@/lib/content/types";
 import Reveal from "./Reveal";
 import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
@@ -7,12 +8,25 @@ import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
 /**
  * "A causa" — social mission. Media (image OR YouTube video) in a box with the
  * chosen aspect ratio (media adapts via cover); editable title, body and button.
+ * For portrait ratios (e.g. 9:16 Reels) the box is capped by viewport height and
+ * its width follows the ratio (centered) so it always fits the screen — same
+ * rule on desktop and mobile since it's vh-based.
  */
+const MEDIA_MAX_VH = 70;
+
 export default function Sobre({ about }: { about: AboutSection }) {
   const ytId = about.mediaType === "video" ? youtubeId(about.videoUrl) : null;
   const linkHref = about.linkUrl || "#parceiros";
   const external = /^https?:\/\//.test(linkHref);
   const aspect = about.aspectRatio || "4/3";
+
+  const [arW, arH] = aspect.split("/").map((n) => parseFloat(n));
+  const portrait = arW > 0 && arH > 0 && arH > arW;
+  const boxStyle: CSSProperties = { aspectRatio: aspect };
+  if (portrait) {
+    boxStyle.maxHeight = `${MEDIA_MAX_VH}vh`;
+    boxStyle.maxWidth = `calc(${MEDIA_MAX_VH}vh * ${arW} / ${arH})`;
+  }
 
   return (
     <section
@@ -21,8 +35,8 @@ export default function Sobre({ about }: { about: AboutSection }) {
     >
       <Reveal>
         <div
-          className="relative w-full overflow-hidden bg-ink-panel"
-          style={{ aspectRatio: aspect }}
+          className="relative mx-auto w-full overflow-hidden bg-ink-panel"
+          style={boxStyle}
         >
           {about.mediaType === "image" && about.image ? (
             // eslint-disable-next-line @next/next/no-img-element
