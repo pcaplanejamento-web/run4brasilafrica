@@ -14,6 +14,7 @@ import {
   SectionLabel,
   TextInput,
 } from "@/components/admin/ui";
+import ChangePassword from "@/components/admin/ChangePassword";
 
 const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }> = {
   backend: { text: "Backend conectado (Cloudflare D1)", dot: "#4a9d5f", tone: "#2f7a45" },
@@ -151,6 +152,9 @@ function ConfiguracoesForm({
             />
           </div>
         </Card>
+
+        {/* Change my password */}
+        <ChangePassword />
 
         {/* Danger zone */}
         <Card>
