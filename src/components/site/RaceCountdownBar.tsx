@@ -48,17 +48,17 @@ export default function RaceCountdownBar({ inscricao }: { inscricao: Inscricao }
   const time = date.slice(11, 16);
 
   return (
-    <div className="border-b border-line bg-ink-panel px-5 py-2.5 sm:px-8 md:px-14">
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center">
-        <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-gold">
+    <div className="overflow-x-auto border-b border-line bg-ink-panel px-3 py-2 sm:px-8 md:px-14 md:py-2.5">
+      <div className="flex items-center justify-center gap-2.5 whitespace-nowrap text-[10.5px] sm:gap-4 sm:text-[13px]">
+        <span className="font-bold uppercase tracking-[0.08em] text-gold">
           Dia da corrida
         </span>
-        <span className="text-[13px] font-semibold text-cream">
+        <span className="font-semibold text-cream">
           {fmtDate(date)}
           {time && ` · ${time}`}
         </span>
         {parts && (
-          <span className="text-[13px] tabular-nums text-muted-strong">
+          <span className="tabular-nums text-muted-strong">
             faltam {parts.d}d {pad(parts.h)}h {pad(parts.m)}m {pad(parts.s)}s
           </span>
         )}
