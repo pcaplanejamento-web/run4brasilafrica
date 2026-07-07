@@ -100,10 +100,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ### Próximos passos (Plano §4/§5)
 
-1. Conectar `login/page.tsx` a Auth real com papéis (admin geral / editor).
-2. Upload de mídia (banner, galeria, logos) para storage (ex.: Cloudflare R2).
-3. Rota do Strava (OAuth2) na seção Percurso, com fallback de GPX/imagem.
-4. Se o volume crescer, dá para migrar o D1 para outro banco (ex.: Supabase) — a fronteira
+1. ~~Auth real com papéis~~ — **feito** (D1 + sessões).
+2. ~~Upload de mídia~~ — **feito** (KV / `ImageUpload`).
+3. ~~Percurso do Strava~~ — **feito** via embed público (`StravaRoute`, só precisa de um
+   ID de rota **pública**; sem OAuth). OAuth2 + pull de dados via API fica para o futuro.
+4. Checkout próprio de inscrição (hoje é link para parceiro — Opção A do Plano).
+5. Se o volume crescer, dá para migrar o D1 para outro banco (ex.: Supabase) — a fronteira
    (`/api/content` + `lib/content`) já isola isso dos componentes.
 
 ## Padrão de componentes

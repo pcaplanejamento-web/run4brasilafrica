@@ -17,6 +17,8 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://run4brasilafrica.com.br"),
+  alternates: { canonical: "/" },
   title: "Run4BrasilAfrica — Corra por algo maior",
   description:
     "Run4BrasilAfrica: corrida de rua que conecta esporte e causa social entre o Brasil e a África. 14 de setembro de 2026, Rio de Janeiro. Inscrições abertas.",

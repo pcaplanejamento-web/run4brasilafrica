@@ -31,12 +31,17 @@ function StravaForm({ initial }: { initial: Percurso }) {
       <div className="flex max-w-[760px] flex-col gap-5">
         <Card>
           <FieldLabel>ID ou link da rota no Strava</FieldLabel>
-          <div className="mb-4">
+          <div className="mb-1.5">
             <TextInput
               value={p.stravaRouteRef}
               onChange={(e) => set("stravaRouteRef", e.target.value)}
+              placeholder="ex.: 3300000 ou strava.com/routes/3300000"
             />
           </div>
+          <p className="mb-4 text-[12px] text-adm-muted">
+            Cole o ID ou o link de uma rota <strong>pública</strong> do Strava. O mapa
+            aparece no site automaticamente — não precisa de credenciais.
+          </p>
 
           <div className="mb-4 flex items-center gap-2 text-[13px]">
             <span

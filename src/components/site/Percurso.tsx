@@ -1,11 +1,20 @@
 import type { Percurso as PercursoType } from "@/lib/content/types";
 import Reveal from "./Reveal";
+import StravaRoute from "./StravaRoute";
+
+/** Extract a numeric Strava route ID from an ID or a strava.com/routes/<id> link. */
+function stravaRouteId(ref: string | undefined): string | null {
+  if (!ref) return null;
+  const m = ref.match(/(\d{4,})/);
+  return m ? m[1] : null;
+}
 
 /**
- * Course section. Map frame is a placeholder for the Strava route embed
- * (Plano §4.1.3); the numeric facts come from ADM > Strava.
+ * Course section. Shows the Strava route map (public embed) when a route ID is
+ * configured in ADM > Strava; otherwise a placeholder. Facts come from the ADM.
  */
 export default function Percurso({ percurso }: { percurso: PercursoType }) {
+  const routeId = stravaRouteId(percurso.stravaRouteRef);
   const facts = [
     { label: "Distância", value: percurso.distance, big: true },
     { label: "Elevação", value: percurso.elevation, big: true },
@@ -22,10 +31,16 @@ export default function Percurso({ percurso }: { percurso: PercursoType }) {
       </h2>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr] md:gap-12">
-        <Reveal className="flex h-[240px] items-center justify-center border-2 border-gold bg-ink-panel md:h-[320px]">
-          <span className="font-[monospace] text-[12px] text-muted">
-            [ mapa do percurso — Strava API ]
-          </span>
+        <Reveal className="overflow-hidden border-2 border-gold bg-ink-panel">
+          {routeId ? (
+            <StravaRoute routeId={routeId} />
+          ) : (
+            <div className="flex h-[240px] items-center justify-center md:h-[320px]">
+              <span className="font-[monospace] text-[12px] text-muted">
+                [ mapa do percurso — configure a rota no ADM &gt; Strava ]
+              </span>
+            </div>
+          )}
         </Reveal>
 
         <Reveal delay={120} className="flex flex-col justify-center gap-6 md:gap-[26px]">
