@@ -35,9 +35,8 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
   const active = views.includes(view) ? view : views[0];
 
   if (views.length === 0) {
-    // Same box as a configured map so the section doesn't jump between routes.
     return (
-      <div className="flex aspect-[16/10] max-h-[600px] min-h-[400px] items-center justify-center">
+      <div className="flex h-[400px] items-center justify-center md:h-[520px]">
         <span className="px-6 text-center font-[monospace] text-[12px] text-muted">
           [ mapa do percurso — configure Strava, Garmin ou uma imagem no ADM ]
         </span>
@@ -79,11 +78,11 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
         )}
       </div>
 
-      {/* Map area — a proportional box (scales with the column width on every
-          screen) bounded by min/max height. Same width → same height for every
-          provider, so switching routes never moves anything, and the Strava
-          embed fits nicely across proportions instead of being clipped. */}
-      <div className="aspect-[16/10] max-h-[600px] min-h-[400px] w-full">
+      {/* Map area — auto height. The Strava embed sizes itself to its width
+          (responsive), so it fits at every proportion (no cut, no empty space).
+          Two Strava routes at the same width get the same height → switching
+          routes doesn't move anything. Garmin/fallback use their own heights. */}
+      <div className="w-full">
         {active === "strava" && strava && <StravaRoute stravaRef={route.stravaRouteRef!} />}
         {active === "garmin" && garmin?.kind === "embed" && <GarminRoute url={garmin.url} />}
         {active === "garmin" && garmin?.kind === "event" && <GarminEvent url={garmin.url} />}
@@ -92,7 +91,7 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
           <img
             src={fallback}
             alt={`Mapa do percurso ${route.title}`}
-            className="h-full w-full bg-ink object-contain"
+            className="h-[400px] w-full bg-ink object-contain md:h-[520px]"
           />
         )}
       </div>

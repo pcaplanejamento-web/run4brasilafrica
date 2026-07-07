@@ -274,11 +274,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   atualiza o mapa e os dados. Cada percurso usa `RouteViewer`.
 - `RouteViewer` (client, por percurso): monta as visões disponíveis — **Strava**, **Garmin**
   e/ou **Mapa** (fallback). **Layout estável**: uma barra de provider de **altura fixa** sempre
-  aparece (seletor quando há mais de uma visão; rótulo único quando há só uma). A área do mapa é
-  uma **caixa proporcional** (`aspect-[16/10]`, limitada por `min-h-[400px]`/`max-h-[600px]`):
-  a altura acompanha a largura da coluna, então o Strava **cabe bem em qualquer proporção de
-  tela** (celular, tablet, desktop, ultrawide) sem cortar; e como a largura é a mesma para todos
-  os provedores, **trocar de percurso não move nada**, tenha Garmin ou não.
+  aparece (seletor quando há mais de uma visão; rótulo único quando há só uma).
+- **Tamanho do mapa**: a área do mapa tem **altura automática**. O embed do Strava é
+  **responsivo** — ele mesmo calcula a altura pela largura da coluna (via `postMessage`); nós
+  forçamos só a **largura** (`.route-embed iframe { width:100% }`, sem `height`), então o card
+  cabe **exatamente** em qualquer proporção — **sem corte no desktop e sem espaço vazio no
+  mobile**. (Forçar `height:100%` era o que cortava/deixava sobra.) Dois percursos com Strava na
+  mesma largura têm a mesma altura → **trocar de percurso não move nada**. Garmin/evento/imagem
+  usam alturas próprias (`h-[400px] md:h-[520px]`).
 - Garmin (`garminView`): course/activity/route (id numérico **ou** UUID) → mapa incorporado
   (`GarminRoute`, iframe `.../embed/<id>`). Um link de **evento** (`/modern/event/<uuid>`) é
   **aceito e apresentado** como um cartão com botão &ldquo;Ver evento no Garmin&rdquo;
