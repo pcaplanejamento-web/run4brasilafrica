@@ -1,5 +1,6 @@
 import type { GalleryPhoto } from "@/lib/content/types";
 import Reveal from "./Reveal";
+import ProtectedImage from "./ProtectedImage";
 
 /**
  * Photo gallery grid. Shows real photos uploaded via ADM > Galeria when present;
@@ -26,9 +27,8 @@ export default function Galeria({
                 delay={(i % 4) * 70}
                 className="relative h-[130px] overflow-hidden md:h-[190px]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={p.album} className="h-full w-full object-cover" />
-                <span className="absolute bottom-2.5 left-2.5 rounded bg-black/45 px-1.5 py-0.5 font-[monospace] text-[11px] uppercase text-white/90">
+                <ProtectedImage src={p.url} alt={p.album} className="object-cover" />
+                <span className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 rounded bg-black/45 px-1.5 py-0.5 font-[monospace] text-[11px] uppercase text-white/90">
                   {p.album}
                 </span>
               </Reveal>

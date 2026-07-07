@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import SiteChrome from "@/components/site/SiteChrome";
+import ImageProtection from "@/components/site/ImageProtection";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -53,6 +54,7 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <SiteChrome />
+        <ImageProtection />
         {/* Without JS the scroll-reveal observer never runs — force content
             visible so no-JS users and crawlers still see everything. */}
         <noscript>
