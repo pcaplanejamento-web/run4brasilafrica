@@ -58,11 +58,16 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **D1 é fortemente consistente**: a leitura logo após a gravação reflete a mudança
   para todos (diferente do KV, que propagava em até ~60s). O `SiteContent` inteiro
   fica numa única linha JSON (`content`, `id = 1`); schema em `migrations/`.
-- **Leitura no site público é feita no cliente** (`components/site/SiteContent.tsx`):
-  o servidor renderiza o baseline (seed) para SEO/primeiro paint e o navegador busca
-  o conteúdo ao vivo em `/api/content`. Isso porque `getCloudflareContext()` é
-  instável dentro da renderização de React Server Components no OpenNext, enquanto o
-  caminho navegador → rota é sólido — o mesmo que o ADM usa.
+- **Primeiro paint já com o conteúdo ao vivo** (`app/page.tsx`): a home é `force-dynamic`
+  e, no servidor, busca o conteúdo real via **`fetch` para `/api/content`** (o mesmo route
+  handler do ADM — caminho confiável ao D1 no OpenNext), passando como `initial`. Evita o
+  &ldquo;piscar&rdquo; do seed → conteúdo real. Se o fetch falhar, cai no seed. Não lemos o
+  binding direto no RSC porque `getCloudflareContext()` é instável nesse ponto do OpenNext.
+- **`components/site/SiteContent.tsx`** ainda rebusca no cliente para pegar edições feitas
+  após o render; como o `initial` já é o real, não há troca visível.
+- **Domínio único** (`src/middleware.ts`): qualquer acesso a `www.<apex>` ou a um
+  `*.workers.dev` é 308-redirecionado para `https://run4brasilafrica.com.br` (preserva
+  caminho/query). Só o apex e o localhost passam direto.
 
 ## Autenticação (ADM)
 

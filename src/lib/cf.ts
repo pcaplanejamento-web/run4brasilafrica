@@ -27,6 +27,21 @@ export function getDB(): D1Like | null {
   }
 }
 
+/**
+ * Async variant of {@link getDB} for use during **RSC/SSG render**, where the
+ * sync context is unavailable (OpenNext async context). Returns null on failure
+ * so callers can fall back to the seed.
+ */
+export async function getDBAsync(): Promise<D1Like | null> {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    const db = (env as Record<string, unknown>).CONTENT_DB;
+    return (db as D1Like) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Minimal KV typings for the media store (binary values + metadata) and small
  *  text/json values (e.g. rate-limit counters) with optional TTL. */
 export interface MediaKV {

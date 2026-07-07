@@ -51,9 +51,10 @@ export default function PercursoRoutes({ routes }: { routes: PercursoRoute[] }) 
       )}
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr] md:gap-12">
-        {/* keyed by route so RouteViewer's view resets when the route changes */}
-        <Reveal key={route.id} className="overflow-hidden border-2 border-gold bg-ink-panel">
-          <RouteViewer route={route} />
+        {/* The bordered box stays mounted (no reveal replay on switch); only the
+            inner RouteViewer is keyed by route so its view/state reset cleanly. */}
+        <Reveal className="overflow-hidden border-2 border-gold bg-ink-panel">
+          <RouteViewer key={route.id} route={route} />
         </Reveal>
 
         <Reveal delay={120} className="flex flex-col justify-center gap-6 md:gap-[26px]">

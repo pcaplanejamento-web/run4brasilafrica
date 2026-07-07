@@ -130,11 +130,17 @@ img {
 /* Route embeds (Strava / Garmin): force the injected iframe to fill the section */
 .route-embed {
   width: 100%;
-  min-height: 320px;
+  height: 360px; /* fixed so switching routes never jumps the layout */
+}
+@media (min-width: 768px) {
+  .route-embed {
+    height: 440px;
+  }
 }
 .route-embed iframe {
   width: 100% !important;
   max-width: 100% !important;
+  height: 100% !important;
   border: 0;
   display: block;
 }

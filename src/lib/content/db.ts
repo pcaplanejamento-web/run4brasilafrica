@@ -1,5 +1,5 @@
 import "server-only";
-import { getDB } from "@/lib/cf";
+import { getDB, getDBAsync, type D1Like } from "@/lib/cf";
 import { seedContent } from "./seed";
 import type { SiteContent } from "./types";
 
@@ -18,11 +18,9 @@ function merge(stored: Partial<SiteContent> | null): SiteContent {
   return stored ? { ...seedContent, ...stored } : seedContent;
 }
 
-export async function readContent(): Promise<{
-  content: SiteContent;
-  source: ContentSource;
-}> {
-  const db = getDB();
+async function readFrom(
+  db: D1Like | null,
+): Promise<{ content: SiteContent; source: ContentSource }> {
   if (!db) return { content: seedContent, source: "unset" };
   try {
     const row = await db
@@ -33,6 +31,22 @@ export async function readContent(): Promise<{
   } catch {
     return { content: seedContent, source: "error" };
   }
+}
+
+/** Read content using the sync binding (route handlers). */
+export async function readContent(): Promise<{
+  content: SiteContent;
+  source: ContentSource;
+}> {
+  return readFrom(getDB());
+}
+
+/** Read content using the async binding — safe during RSC/SSG render. */
+export async function readContentAsync(): Promise<{
+  content: SiteContent;
+  source: ContentSource;
+}> {
+  return readFrom(await getDBAsync());
 }
 
 /** Returns true when written, false when no binding (local dev). */
