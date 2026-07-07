@@ -11,7 +11,7 @@ export default function GarminRoute({ url }: { url: string }) {
       <iframe
         src={url}
         title="Percurso no Garmin"
-        className="h-[360px] w-full md:h-[440px]"
+        className="h-full w-full"
         loading="lazy"
         allowFullScreen
       />

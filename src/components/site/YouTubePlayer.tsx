@@ -24,6 +24,7 @@ interface YTPlayer {
   isMuted(): boolean;
   setVolume(v: number): void;
   playVideo(): void;
+  getPlayerState(): number;
   getIframe(): HTMLIFrameElement;
   destroy(): void;
 }
@@ -141,6 +142,8 @@ export default function YouTubePlayer({
   const [muted, setMuted] = useState(true);
   const [started, setStarted] = useState(!clickToPlay);
   const [ready, setReady] = useState(false);
+  // Autoplay is often blocked on mobile — when it is, show a tap-to-play overlay.
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +221,38 @@ export default function YouTubePlayer({
     return () => clearInterval(poll);
   }, [ready]);
 
+  // Detect blocked autoplay: if, shortly after ready, the video isn't playing or
+  // buffering, surface a tap-to-play overlay (mobile browsers block autoplay).
+  useEffect(() => {
+    if (!ready || clickToPlay) return;
+    let tries = 0;
+    const id = setInterval(() => {
+      const p = playerRef.current;
+      if (!p) return;
+      const st = p.getPlayerState?.();
+      if (st === 1 || st === 3) {
+        setBlocked(false);
+        clearInterval(id);
+      } else if (++tries >= 3) {
+        setBlocked(true);
+        clearInterval(id);
+      }
+    }, 800);
+    return () => clearInterval(id);
+  }, [ready, clickToPlay]);
+
+  function resume() {
+    const p = playerRef.current;
+    if (!p) return;
+    p.playVideo();
+    if (!startMuted) {
+      p.unMute();
+      p.setVolume(100);
+      setMuted(false);
+    }
+    setBlocked(false);
+  }
+
   useEffect(() => {
     return () => {
       audioBus?.setVideoSound(playerId, false);
@@ -271,17 +306,18 @@ export default function YouTubePlayer({
     >
       <div ref={hostRef} />
 
-      {clickToPlay && !started && (
+      {((clickToPlay && !started) || blocked) && (
         <button
           type="button"
-          onClick={start}
+          onClick={clickToPlay && !started ? start : resume}
+          aria-label="Reproduzir vídeo"
           className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center bg-black/45"
         >
           <span className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-[14px] font-bold uppercase text-gold-ink">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
               <path d="M8 5v14l11-7z" />
             </svg>
-            Clique para começar o vídeo
+            {clickToPlay && !started ? "Clique para começar o vídeo" : "Tocar vídeo"}
           </span>
         </button>
       )}

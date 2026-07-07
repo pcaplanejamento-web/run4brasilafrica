@@ -35,9 +35,10 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
   const active = views.includes(view) ? view : views[0];
 
   if (views.length === 0) {
+    // Same height as a configured map so the section doesn't jump between routes.
     return (
-      <div className="flex h-[240px] items-center justify-center md:h-[320px]">
-        <span className="font-[monospace] text-[12px] text-muted">
+      <div className="flex h-[474px] items-center justify-center md:h-[584px]">
+        <span className="px-6 text-center font-[monospace] text-[12px] text-muted">
           [ mapa do percurso — configure Strava, Garmin ou uma imagem no ADM ]
         </span>
       </div>
@@ -46,13 +47,16 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
 
   return (
     <div className="flex w-full flex-col">
-      {views.length > 1 && (
-        <div
-          className="flex overflow-hidden border-b border-line-soft"
-          role="tablist"
-          aria-label="Escolha a visualização do percurso"
-        >
-          {views.map((v) => (
+      {/* Toolbar — ALWAYS present (fixed height) so switching between routes with
+          or without Garmin never moves the map/facts. Toggle when >1 view, else
+          a static label of the single provider. */}
+      <div
+        className="flex min-h-11 items-stretch overflow-hidden border-b border-line-soft"
+        role={views.length > 1 ? "tablist" : undefined}
+        aria-label="Visualização do percurso"
+      >
+        {views.length > 1 ? (
+          views.map((v) => (
             <button
               key={v}
               type="button"
@@ -67,21 +71,29 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
             >
               {LABEL[v]}
             </button>
-          ))}
-        </div>
-      )}
+          ))
+        ) : (
+          <span className="flex min-h-11 items-center px-4 text-[13px] font-bold uppercase tracking-[0.06em] text-muted-strong">
+            {LABEL[views[0]]}
+          </span>
+        )}
+      </div>
 
-      {active === "strava" && strava && <StravaRoute stravaRef={route.stravaRouteRef!} />}
-      {active === "garmin" && garmin?.kind === "embed" && <GarminRoute url={garmin.url} />}
-      {active === "garmin" && garmin?.kind === "event" && <GarminEvent url={garmin.url} />}
-      {active === "fallback" && fallback && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={fallback}
-          alt={`Mapa do percurso ${route.title}`}
-          className="h-[360px] w-full bg-ink object-contain md:h-[440px]"
-        />
-      )}
+      {/* Map area — a single fixed height for every provider so it never jumps.
+          Tall enough for the Strava map + elevation profile (no crop). */}
+      <div className="h-[430px] w-full md:h-[540px]">
+        {active === "strava" && strava && <StravaRoute stravaRef={route.stravaRouteRef!} />}
+        {active === "garmin" && garmin?.kind === "embed" && <GarminRoute url={garmin.url} />}
+        {active === "garmin" && garmin?.kind === "event" && <GarminEvent url={garmin.url} />}
+        {active === "fallback" && fallback && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={fallback}
+            alt={`Mapa do percurso ${route.title}`}
+            className="h-full w-full bg-ink object-contain"
+          />
+        )}
+      </div>
     </div>
   );
 }

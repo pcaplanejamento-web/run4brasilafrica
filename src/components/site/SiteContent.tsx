@@ -1,6 +1,4 @@
-"use client";
-
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import type { SiteContent as SiteContentType } from "@/lib/content/types";
 import { resolveLayout } from "@/lib/content/sections";
 import SiteNav from "./SiteNav";
@@ -25,29 +23,16 @@ import Premiacao from "./Premiacao";
 import SiteFooter from "./SiteFooter";
 
 /**
- * Renders the public site. Server-renders from `initial` (the seed) for SEO and
- * instant paint, then fetches the live content from /api/content on the client
- * and swaps it in. We hydrate on the client because reading the Cloudflare D1
- * binding during server rendering is unreliable under OpenNext, whereas the
- * browser → route handler path is solid (it's what the ADM uses).
+ * Renders the public site from the LIVE content already read on the server
+ * (`page.tsx` → D1 per request via the OpenNext async binding). No client-side
+ * content swap, so there's no flash of seed/placeholder — colors (SSR theme),
+ * banner, images and components are correct on the first paint.
  */
 export default function SiteContent({ initial }: { initial: SiteContentType }) {
-  const [c, setC] = useState(initial);
-
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/content", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (alive && data?.content) setC(data.content as SiteContentType);
-      })
-      .catch(() => {
-        /* keep the seed we rendered with */
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  // The server already rendered the live content (page.tsx reads D1 per request),
+  // so there is no client-side swap — this avoids flashes (colors, hero image,
+  // gallery reload). `force-dynamic` means every page load is already fresh.
+  const c = initial;
 
   // Each homepage section keyed so the ADM dashboard can reorder / toggle them.
   const rendered: Record<string, ReactNode> = {

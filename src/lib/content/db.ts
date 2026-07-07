@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getDB, getDBAsync, type D1Like } from "@/lib/cf";
 import { seedContent } from "./seed";
 import type { SiteContent } from "./types";
@@ -48,6 +49,20 @@ export async function readContentAsync(): Promise<{
 }> {
   return readFrom(await getDBAsync());
 }
+
+/**
+ * The live content for the current server render, **deduped per request** via
+ * React `cache()` — layout (theme + metadata) and the page all share one D1
+ * read. Falls back to the seed on any failure.
+ */
+export const getSiteContent = cache(async (): Promise<SiteContent> => {
+  try {
+    const { content } = await readContentAsync();
+    return content;
+  } catch {
+    return seedContent;
+  }
+});
 
 /** Returns true when written, false when no binding (local dev). */
 export async function writeContent(content: SiteContent): Promise<boolean> {

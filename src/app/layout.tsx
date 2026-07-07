@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
-import SiteChrome from "@/components/site/SiteChrome";
 import ImageProtection from "@/components/site/ImageProtection";
-import { readContentAsync } from "@/lib/content/db";
-import { seedContent } from "@/lib/content/seed";
+import { getSiteContent } from "@/lib/content/db";
+import { themeCss } from "@/lib/content/theme";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -27,13 +26,9 @@ const ibmPlexSans = IBM_Plex_Sans({
  * seed if the content read fails.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  let event = seedContent.event;
-  try {
-    const { content } = await readContentAsync();
-    event = content.event ?? event;
-  } catch {
-    /* keep seed */
-  }
+  const content = await getSiteContent();
+  const event = content.event;
+  const favicon = content.branding?.favicon;
 
   const brand = event.brandName || "Run4BrasilAfrica";
   const headline = event.tagline || "Corra por algo maior";
@@ -49,6 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL("https://run4brasilafrica.com.br"),
     alternates: { canonical: "/" },
+    ...(favicon ? { icons: { icon: favicon } } : {}),
     title,
     description,
     keywords: [
@@ -76,18 +72,31 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = await getSiteContent();
+  // Theme colors applied on the server → correct colors on the FIRST paint.
+  const theme = themeCss(content.theme);
+  // Preload the first hero image / the logo so they show up immediately.
+  const firstSlide = content.hero?.slides?.[0];
+  const heroImg =
+    firstSlide?.mediaType === "image" && firstSlide.image ? firstSlide.image : null;
+  const logo = content.branding?.logo;
+
   return (
     <html
       lang="pt-BR"
       className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} h-full`}
     >
+      <head>
+        {theme && <style id="r4ba-theme" dangerouslySetInnerHTML={{ __html: theme }} />}
+        {heroImg && <link rel="preload" as="image" href={heroImg} fetchPriority="high" />}
+        {logo && <link rel="preload" as="image" href={logo} />}
+      </head>
       <body className="min-h-full">
-        <SiteChrome />
         <ImageProtection />
         {/* Without JS the scroll-reveal observer never runs — force content
             visible so no-JS users and crawlers still see everything. */}

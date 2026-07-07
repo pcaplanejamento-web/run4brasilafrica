@@ -97,7 +97,7 @@ export default function StravaRoute({ stravaRef }: { stravaRef: string }) {
 
   if (failed) {
     return (
-      <div className="flex h-[360px] flex-col items-center justify-center gap-4 p-6 text-center md:h-[440px]">
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
         <p className="max-w-[420px] text-[14px] text-muted-strong">
           Não foi possível carregar o mapa do Strava aqui.
         </p>
@@ -116,7 +116,7 @@ export default function StravaRoute({ stravaRef }: { stravaRef: string }) {
   }
 
   return (
-    <div className="flex h-[360px] items-center justify-center md:h-[440px]">
+    <div className="flex h-full items-center justify-center">
       <span className="font-[monospace] text-[12px] text-muted">carregando mapa…</span>
     </div>
   );

@@ -63,8 +63,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   handler do ADM — caminho confiável ao D1 no OpenNext), passando como `initial`. Evita o
   &ldquo;piscar&rdquo; do seed → conteúdo real. Se o fetch falhar, cai no seed. Não lemos o
   binding direto no RSC porque `getCloudflareContext()` é instável nesse ponto do OpenNext.
-- **`components/site/SiteContent.tsx`** ainda rebusca no cliente para pegar edições feitas
-  após o render; como o `initial` já é o real, não há troca visível.
+- **`components/site/SiteContent.tsx`** apenas renderiza o `initial` (real, vindo do servidor)
+  — **sem re-fetch no cliente**, para não ter troca/piscar (cores, imagem do banner, galeria
+  recarregando). Cada acesso já é fresco (a home é `force-dynamic`).
+- **Tema e favicon no servidor** (`app/layout.tsx` + `lib/content/theme.ts`): o layout injeta
+  `:root{--color-…}` (de `content.theme`) num `<style>` no `<head>` e o favicon via
+  `metadata.icons` — cores corretas já no **primeiro paint**, sem flash. (O antigo `SiteChrome`
+  que fazia isso no cliente foi removido.) `getSiteContent` (`react cache()`) faz **uma** leitura
+  do D1 por request, compartilhada por layout (tema+metadados) e página.
+- **Preload** da 1ª imagem do hero (`fetchPriority="high"`) e do logo no `<head>` para
+  aparecerem imediatamente. Mídia enviada (`/api/media`) é servida com
+  `Cache-Control: public, max-age=31536000, immutable` — fica em cache no navegador.
 - **Domínio único** (`src/middleware.ts`): qualquer acesso a `www.<apex>` ou a um
   `*.workers.dev` é 308-redirecionado para `https://run4brasilafrica.com.br` (preserva
   caminho/query). Só o apex e o localhost passam direto.
@@ -116,6 +125,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   do vídeo — 16:9, ou **9:16 quando é um Short** (detectado por `/shorts/` na URL via
   `isVerticalYouTube`), para preencher a caixa sem tarjas pretas; iframe com
   `pointer-events:none` (controles por cima clicáveis). Helper `youtubeId(url)` extrai o ID.
+  **Autoplay bloqueado no mobile**: se o vídeo não começa logo após ficar pronto (detecção via
+  `getPlayerState`), aparece um overlay **"Tocar vídeo"** que dá play no toque — assim o vídeo
+  da A Causa funciona no celular.
 - **`Hero`** (client) é um carrossel de verdade sobre `hero.slides` — **só slides criados
   aparecem** (0 → não renderiza nada); **sem imagem de fundo global**. Renderiza só o slide
   ativo (1 player por vez, destruído na troca). Cada slide tem sua mídia: `mediaType:"image"`
@@ -261,8 +273,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (client). Com mais de um percurso, um **seletor** (abas, alvos ≥44px) troca o percurso e
   atualiza o mapa e os dados. Cada percurso usa `RouteViewer`.
 - `RouteViewer` (client, por percurso): monta as visões disponíveis — **Strava**, **Garmin**
-  e/ou **Mapa** (fallback). Com mais de uma, um seletor segmentado deixa escolher; com uma,
-  mostra direto; nenhuma → placeholder.
+  e/ou **Mapa** (fallback). **Layout estável**: uma barra de provider de **altura fixa** sempre
+  aparece (seletor quando há mais de uma visão; rótulo único quando há só uma) e a área do mapa
+  tem **altura fixa** (`h-[430px] md:h-[540px]`, comporta o mapa + perfil do Strava sem cortar).
+  Assim, **trocar de percurso não move os componentes**, tenha Garmin ou não.
 - Garmin (`garminView`): course/activity/route (id numérico **ou** UUID) → mapa incorporado
   (`GarminRoute`, iframe `.../embed/<id>`). Um link de **evento** (`/modern/event/<uuid>`) é
   **aceito e apresentado** como um cartão com botão &ldquo;Ver evento no Garmin&rdquo;
