@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Album, GalleryConfig, GalleryPhoto } from "@/lib/content/types";
 import ProtectedImage from "./ProtectedImage";
+import SlidePager from "./SlidePager";
 
 interface GalleryItem {
   thumb: string;
@@ -182,56 +183,17 @@ export default function Galeria({
             </div>
           </div>
 
-          {pageCount > 1 && (
-            <div className="mt-5 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-2">
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                aria-label="Fotos anteriores"
-                className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-ink-panel text-cream transition-colors hover:bg-ink-card"
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-                  <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-
-              {pageCount <= 12 ? (
-                <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
-                  {pages.map((_, k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => setPage(k)}
-                      aria-label={`Página ${k + 1}`}
-                      aria-current={k === current ? "true" : undefined}
-                      className="flex h-8 items-center px-1"
-                    >
-                      <span
-                        className={`block h-2 rounded-full transition-all ${
-                          k === current ? "w-6 bg-gold" : "w-2 bg-white/30"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <span className="text-[13px] font-semibold text-muted-strong">
-                  {current + 1} / {pageCount}
-                </span>
-              )}
-
-              <button
-                type="button"
-                onClick={() => go(1)}
-                aria-label="Próximas fotos"
-                className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-ink-panel text-cream transition-colors hover:bg-ink-card"
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          )}
+          <SlidePager
+            count={pageCount}
+            current={current}
+            onGo={go}
+            onSelect={setPage}
+            tone="solid"
+            prevLabel="Fotos anteriores"
+            nextLabel="Próximas fotos"
+            dotLabel={(i) => `Página ${i + 1}`}
+            className="mt-5 w-full flex-wrap"
+          />
         </div>
       ) : loadingPhotos ? (
         <div className="flex h-[160px] items-center justify-center text-[14px] text-muted">

@@ -38,6 +38,11 @@ export function sortLotes(lotes: Lote[]): Lote[] {
   });
 }
 
+/** Same order as `sortLotes` but reversed (Lote N … 1) — newest/highest first. */
+export function sortLotesDesc(lotes: Lote[]): Lote[] {
+  return sortLotes(lotes).reverse();
+}
+
 /** Status of a lote at time `now` (ms). Date-driven; falls back to `open` flag. */
 export function loteStatus(l: Lote, now: number): LoteStatus {
   const openT = ms(l.openDate);

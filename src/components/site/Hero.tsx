@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import type { Hero as HeroType, HeroSlide } from "@/lib/content/types";
 import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
+import CtaButton from "./CtaButton";
+import SlidePager from "./SlidePager";
 
 const title = (s: HeroSlide) => s.title || s.text || "";
 const ctaLabel = (s: HeroSlide) => s.ctaLabel || s.cta || "Inscreva-se";
@@ -44,7 +46,6 @@ export default function Hero({ hero }: { hero: HeroType }) {
   const slide = slides[i];
   const ytId = slide.mediaType === "video" ? youtubeId(slide.videoUrl) : null;
   const url = ctaUrl(slide);
-  const external = /^https?:\/\//.test(url);
   const fade = reduced ? "" : "r4ba-fade";
 
   return (
@@ -107,65 +108,41 @@ export default function Hero({ hero }: { hero: HeroType }) {
         </h1>
 
         <div className="mt-7 md:mt-8">
-          <a
-            key={`cta-${i}`}
-            href={url}
-            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className={`clip-cta-lg inline-block bg-gold px-7 py-4 text-[15px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 md:px-[34px] md:py-[17px] md:text-[16px] ${fade}`}
-          >
+          <CtaButton key={`cta-${i}`} href={url} size="lg" className={fade}>
             {ctaLabel(slide)}
-          </a>
+          </CtaButton>
         </div>
+
+        {/* Mobile: pager isolated, centered, right below the button. */}
+        {slides.length > 1 && (
+          <div className="mt-7 flex justify-center md:hidden">
+            <SlidePager
+              count={slides.length}
+              current={i}
+              onGo={go}
+              onSelect={setIndex}
+              tone="overlay"
+              prevLabel="Slide anterior"
+              nextLabel="Próximo slide"
+              dotLabel={(k) => `Ir para o slide ${k + 1}`}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Slide navigation — larger, touch-friendly, bottom-right */}
+      {/* Desktop: pager floats at the bottom-right of the banner. */}
       {slides.length > 1 && (
-        <div
-          className="absolute bottom-12 right-5 z-10 flex items-center gap-1.5 sm:right-8 md:bottom-[90px] md:right-14"
-          aria-label="Navegação do banner"
-        >
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            aria-label="Slide anterior"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white transition-colors hover:bg-black/70"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-              <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          <div className="flex items-center">
-            {slides.map((_, k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setIndex(k)}
-                aria-label={`Ir para o slide ${k + 1}`}
-                aria-current={k === i ? "true" : undefined}
-                className="group flex h-11 items-center px-1.5"
-              >
-                <span
-                  className={`block h-2.5 rounded-full transition-all ${
-                    k === i
-                      ? "w-7 bg-gold"
-                      : "w-2.5 bg-white/40 group-hover:bg-white/70"
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => go(1)}
-            aria-label="Próximo slide"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white transition-colors hover:bg-black/70"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-              <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+        <div className="absolute bottom-[90px] right-14 z-10 hidden md:flex">
+          <SlidePager
+            count={slides.length}
+            current={i}
+            onGo={go}
+            onSelect={setIndex}
+            tone="overlay"
+            prevLabel="Slide anterior"
+            nextLabel="Próximo slide"
+            dotLabel={(k) => `Ir para o slide ${k + 1}`}
+          />
         </div>
       )}
     </section>

@@ -237,28 +237,35 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Favicon**: `components/site/FaviconManager.tsx` (no layout raiz) busca o conteúdo e
   aplica o `<link rel="icon">` em todas as páginas. Padrão estático: `src/app/icon.svg`.
 
-## Percurso: Strava e/ou Garmin
+## Percurso: múltiplos percursos (Strava / Garmin / fallback)
 
-- Campos `percurso.title` (editável no ADM), `percurso.stravaRouteRef` e
-  `percurso.garminRouteRef` (ADM > Percurso). O título é mostrado **exatamente** como
-  digitado (sem prefixar o km).
-- `RouteViewer` (client): quando os **dois** estão configurados, um **seletor** (Strava |
-  Garmin, alvos ≥44px, default Strava) deixa o visitante escolher qual mapa ver; com só um,
-  mostra ele direto; nenhum → placeholder.
-- Garmin (`garminEmbedUrl`) aceita links de **course/activity/route** com id numérico **ou
-  UUID**; links de **event** (`/modern/event/<uuid>`) não têm mapa incorporável → ignorados
-  (use um link de course/percurso). `StravaRoute` (embed.js) e `GarminRoute` (iframe
-  `connect.garmin.com/.../embed/<id>`). Rota/atividade **pública** (sem credenciais). O
-  wrapper `.route-embed` + CSS global **e** um `MutationObserver` no `StravaRoute` forçam o
-  iframe a **preencher a largura** da seção.
+- **Vários percursos**: `percurso.routes: PercursoRoute[]` — cada um com `title`,
+  `stravaRouteRef`, `garminRouteRef`, `fallbackImage`/`fallbackNote` e dados complementares
+  (`distance`/`elevation`/`startFinish`). Os campos antigos de rota única continuam no modelo
+  e são migrados para um único `routes[0]` via `percursoRoutes()` (`src/lib/content/percurso.ts`)
+  — nada quebra em conteúdos já salvos.
+- Público: `Percurso` (server) mostra eyebrow + título da seção e delega a `PercursoRoutes`
+  (client). Com mais de um percurso, um **seletor** (abas, alvos ≥44px) troca o percurso e
+  atualiza o mapa e os dados. Cada percurso usa `RouteViewer`.
+- `RouteViewer` (client, por percurso): monta as visões disponíveis — **Strava**, **Garmin**
+  e/ou **Mapa** (fallback). Com mais de uma, um seletor segmentado deixa escolher; com uma,
+  mostra direto; nenhuma → placeholder.
+- Garmin (`garminView`): course/activity/route (id numérico **ou** UUID) → mapa incorporado
+  (`GarminRoute`, iframe `.../embed/<id>`). Um link de **evento** (`/modern/event/<uuid>`) é
+  **aceito e apresentado** como um cartão com botão &ldquo;Ver evento no Garmin&rdquo;
+  (`GarminEvent`) — eventos não têm mapa incorporável.
+- **Fallback manual**: imagem do mapa (upload) exibida quando não há Strava/Garmin, ou como
+  opção &ldquo;Mapa&rdquo; ao lado deles. `StravaRoute` (embed.js) preenche a largura via
+  `.route-embed` + `MutationObserver`. ADM > **Percurso** gerencia os percursos (adicionar,
+  reordenar, remover) com todos esses campos.
 
 ## Números do dashboard e texto do percurso
 
 - Dashboard: **Inscritos** e **Vagas restantes** são manuais (`content.metrics`,
   editados em Configurações); **Fotos na galeria** = `galleryPhotos.length` e
   **Patrocinadores** = `sponsors.length` (contagens reais, automáticas).
-- Percurso: o título adapta-se à **distância** inserida no ADM — o público monta
-  `"<distância compacta> " + percurso.title` (ex.: `10 KM` → `10KM DE PURA ADRENALINA.`).
+- Percurso: `percurso.title` é o título da **seção**; cada percurso tem o seu próprio
+  título e dados (ver «Percurso: múltiplos percursos»).
 
 ### Resiliência (sem backend / offline)
 
@@ -335,6 +342,25 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   tempo"). Seção some quando `enabled` é falso ou sem dados. Editável em ADM >
   **Resultados** (`/admin/resultados`); render público em `components/site/Resultados.tsx`
   (é uma seção da home, reordenável pelo layout do Dashboard).
+
+## Componentes compartilhados, ordem de lotes e navegação do ADM
+
+- **`SlidePager`** (`components/site/SlidePager.tsx`) é o paginador **oficial** (setas
+  circulares + bolinhas, alvo ≥44px). Usado na Galeria (`tone="solid"`) e no Banner
+  (`tone="overlay"`, sobre a mídia). Sempre que um componente trocar slides, usa este.
+- **`CtaButton`** (`components/site/CtaButton.tsx`) é o botão de inscrição **padrão** (pílula
+  dourada, cantos cortados). O mesmo componente é usado no **header** (`size="sm"`) e no
+  **Banner** (`size="lg"`), garantindo botões idênticos em todo o site.
+- **Banner no mobile**: o paginador aparece isolado, centralizado, **logo abaixo do botão**
+  (`md:hidden`); no desktop ele flutua no canto inferior direito (`hidden md:flex`).
+- **Ordem dos lotes**: o destaque é o lote **aberto** (senão o próximo a abrir), e **não se
+  repete** na lista abaixo. Os demais aparecem em ordem **regressiva** (`sortLotesDesc`), e o
+  ADM (Links & inscrição) também lista os lotes de forma regressiva.
+- **Navegação do ADM** (`AdmSidebar`): as abas de **seção** seguem a mesma ordem dos
+  Componentes da tela inicial definida no Dashboard (`content.layout` → página de cada seção,
+  deduplicada). As configs que **não** são seções da home (Textos, Avisos, Edições, Log,
+  Backup, Configurações, Usuários) ficam fixas na **parte inferior**, logo acima do bloco do
+  administrador. O Dashboard fica no topo. (Sem marcador/ícone quadrado nos itens.)
 
 ## Padrão de componentes
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Lote } from "@/lib/content/types";
 import { loteCtaLabel } from "@/lib/content/lotes";
+import CtaButton from "./CtaButton";
 
 const LINKS = [
   { href: "#sobre", label: "Sobre" },
@@ -43,10 +44,6 @@ export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[]
   }, []);
 
   const cta = loteCtaLabel(lotes ?? [], now);
-  const ctaExternal = /^https?:\/\//.test(cta.url);
-  const ctaProps = ctaExternal
-    ? { target: "_blank", rel: "noopener noreferrer" }
-    : {};
 
   return (
     <header className="border-b border-line bg-ink">
@@ -69,14 +66,10 @@ export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[]
           ))}
         </div>
 
-        {/* Desktop CTA (adapts to the active lote) */}
-        <a
-          href={cta.url}
-          {...ctaProps}
-          className="clip-cta hidden whitespace-nowrap bg-gold px-6 py-3 text-[14px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 lg:inline-block"
-        >
+        {/* Desktop CTA (adapts to the active lote) — standard CtaButton */}
+        <CtaButton href={cta.url} size="sm" className="hidden lg:inline-block">
           {cta.label}
-        </a>
+        </CtaButton>
 
         {/* Mobile menu button */}
         <button
@@ -121,14 +114,14 @@ export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[]
               {l.label}
             </a>
           ))}
-          <a
+          <CtaButton
             href={cta.url}
-            {...ctaProps}
+            size="sm"
             onClick={() => setOpen(false)}
-            className="clip-cta my-4 bg-gold px-6 py-4 text-center text-[15px] font-bold uppercase text-gold-ink"
+            className="my-4 block w-full text-center"
           >
             {cta.label}
-          </a>
+          </CtaButton>
         </div>
       </div>
     </header>

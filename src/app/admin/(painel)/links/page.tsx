@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { ContactLinks, Inscricao, Lote } from "@/lib/content/types";
-import { validateLotes } from "@/lib/content/lotes";
+import { sortLotesDesc, validateLotes } from "@/lib/content/lotes";
 import {
   AdmLoading,
   Card,
@@ -59,12 +59,9 @@ function LinksForm({
     ]);
   }
 
-  // Display in opening-date order (the public site orders the same way).
-  const ordered = lotes
-    .map((l, i) => ({ l, i }))
-    .sort((a, b) =>
-      (a.l.openDate || a.l.date || "").localeCompare(b.l.openDate || b.l.date || ""),
-    );
+  // Display regressively (Lote N…1), the same order the public site uses below
+  // the highlight. `i` keeps pointing at the real index in `lotes` for edits.
+  const ordered = sortLotesDesc(lotes).map((l) => ({ l, i: lotes.indexOf(l) }));
 
   const errors = validateLotes(lotes, inscricao.raceDate);
 

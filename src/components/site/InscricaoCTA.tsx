@@ -9,6 +9,7 @@ import {
   loteCountdown,
   loteStatus,
   sortLotes,
+  sortLotesDesc,
   type LoteStatus,
 } from "@/lib/content/lotes";
 
@@ -88,6 +89,9 @@ export default function InscricaoCTA({
   }
 
   const active = (ready ? activeLote(sorted, now) : sorted[0]) ?? sorted[0];
+  // Other lotes below the highlight: descending (Lote N…1), never repeating the
+  // highlighted one.
+  const others = sortLotesDesc(sorted).filter((l) => l.id !== active.id);
   const activeStatus: LoteStatus = ready ? loteStatus(active, now) : "upcoming";
   const cd = loteCountdown(active, activeStatus);
   const headline =
@@ -138,8 +142,9 @@ export default function InscricaoCTA({
         )}
       </div>
 
+      {others.length > 0 && (
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {sorted.map((l) => {
+        {others.map((l) => {
           const st: LoteStatus = ready
             ? loteStatus(l, now)
             : l.open
@@ -186,6 +191,7 @@ export default function InscricaoCTA({
           );
         })}
       </div>
+      )}
     </section>
   );
 }

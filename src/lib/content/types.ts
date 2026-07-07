@@ -113,9 +113,30 @@ export interface GalleryConfig {
   slideSeconds?: number;
 }
 
+/** One course/route the visitor can select in the Percurso section. */
+export interface PercursoRoute {
+  id: string;
+  /** Route title (e.g. "10 KM", "Percurso Kids"). */
+  title: string;
+  stravaRouteRef?: string;
+  garminRouteRef?: string;
+  /** Manual fallback shown when there's no embeddable map (uploaded image). */
+  fallbackImage?: string;
+  /** Optional caption for the fallback. */
+  fallbackNote?: string;
+  /** Complementary data. */
+  distance?: string;
+  elevation?: string;
+  startFinish?: string;
+}
+
 export interface Percurso {
   eyebrow: string;
   title: string;
+  /** Multiple routes the visitor can switch between. When empty, the legacy
+   * single-route fields below are used (migrated on read). */
+  routes?: PercursoRoute[];
+  /** Legacy single-route fields (kept for back-compat / migration). */
   distance: string;
   elevation: string;
   startFinish: string;
