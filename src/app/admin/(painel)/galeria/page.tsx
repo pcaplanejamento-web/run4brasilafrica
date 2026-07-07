@@ -2,8 +2,65 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
-import { AdmLoading, PageHeader, PrimaryButton } from "@/components/admin/ui";
+import type { GalleryConfig } from "@/lib/content/types";
+import {
+  AdmLoading,
+  Card,
+  FieldLabel,
+  GhostButton,
+  PageHeader,
+  PrimaryButton,
+  SectionLabel,
+  Select,
+  TextInput,
+} from "@/components/admin/ui";
 import ImageUpload from "@/components/admin/ImageUpload";
+
+function BuyButtonCard({ initial }: { initial: GalleryConfig }) {
+  const { save, status } = useContent();
+  const [buy, setBuy] = useState<GalleryConfig>(initial);
+  return (
+    <Card dashed className="mb-6">
+      <SectionLabel>Botão &quot;comprar fotos&quot; (ao lado do título)</SectionLabel>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <FieldLabel>Mostrar o botão?</FieldLabel>
+          <Select
+            value={buy.buyEnabled ? "sim" : "nao"}
+            onChange={(e) => setBuy({ ...buy, buyEnabled: e.target.value === "sim" })}
+          >
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+          </Select>
+        </div>
+        <div>
+          <FieldLabel>Texto do botão</FieldLabel>
+          <TextInput
+            value={buy.buyLabel ?? ""}
+            onChange={(e) => setBuy({ ...buy, buyLabel: e.target.value })}
+            placeholder="Comprar fotos"
+          />
+        </div>
+        <div>
+          <FieldLabel>Link (site de venda das fotos)</FieldLabel>
+          <TextInput
+            value={buy.buyUrl ?? ""}
+            onChange={(e) => setBuy({ ...buy, buyUrl: e.target.value })}
+            placeholder="https://..."
+          />
+        </div>
+      </div>
+      <div className="mt-4 flex justify-end">
+        <GhostButton
+          onClick={() => save({ gallery: buy }, "Atualizou o botão de comprar fotos")}
+          disabled={status === "saving"}
+        >
+          Salvar botão
+        </GhostButton>
+      </div>
+    </Card>
+  );
+}
 
 export default function GaleriaPage() {
   const { content, hydrated, save } = useContent();
@@ -57,6 +114,11 @@ export default function GaleriaPage() {
         aside={<PrimaryButton onClick={addAlbum}>+ Novo álbum</PrimaryButton>}
       />
 
+      <BuyButtonCard initial={content.gallery ?? {}} />
+
+      <div className="mb-2 text-[13px] font-bold uppercase text-adm-muted">
+        Seções (álbuns)
+      </div>
       <div className="mb-6 flex flex-wrap gap-2.5">
         {albums.map((a, i) => {
           const on = i === active;

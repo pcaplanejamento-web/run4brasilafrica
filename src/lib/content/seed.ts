@@ -61,6 +61,13 @@ export const seedContent: SiteContent = {
     aspectRatio: "4/3",
   },
 
+  playlist: {
+    enabled: false,
+    title: "Playlist do evento",
+    note: "A trilha para embalar seus treinos até a largada.",
+    visible: "both",
+  },
+
   percurso: {
     eyebrow: "O PERCURSO",
     title: "PURA ADRENALINA.",
@@ -113,6 +120,11 @@ export const seedContent: SiteContent = {
   ],
 
   galleryPhotos: [],
+
+  gallery: {
+    buyEnabled: false,
+    buyLabel: "Comprar fotos",
+  },
 
   cloudinary: {},
 

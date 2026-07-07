@@ -38,6 +38,8 @@ export default function Sobre({ about }: { about: AboutSection }) {
               startMuted={about.videoStartMuted !== false}
               clickToPlay={!!about.clickToPlay}
               vertical={isVerticalYouTube(about.videoUrl)}
+              showControls={!!about.videoControls}
+              showCaptions={!!about.videoCaptions}
             />
           ) : (
             <div

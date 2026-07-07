@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useAudioBus } from "./AudioBus";
 
 /** Extract a YouTube video ID from watch/youtu.be/embed/shorts links or a bare ID. */
 export function youtubeId(url: string | undefined): string | null {
@@ -35,7 +36,8 @@ type YTWindow = Window & {
 };
 
 let ytPromise: Promise<void> | null = null;
-function loadYT(): Promise<void> {
+/** Load the YouTube IFrame API once (shared across all players/playlists). */
+export function loadYT(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   const w = window as YTWindow;
   if (w.YT?.Player) return Promise.resolve();
@@ -55,8 +57,16 @@ function loadYT(): Promise<void> {
   return ytPromise;
 }
 
-/** Size the iframe to COVER the container for a video of the given ratio (centered). */
-function coverIframe(container: HTMLElement, iframe: HTMLIFrameElement, ar: number) {
+/**
+ * Size the iframe to COVER the container for a video of the given ratio (centered).
+ * `interactive` lets clicks through to the YouTube controls when they are shown.
+ */
+function coverIframe(
+  container: HTMLElement,
+  iframe: HTMLIFrameElement,
+  ar: number,
+  interactive: boolean,
+) {
   const cw = container.clientWidth;
   const ch = container.clientHeight;
   if (!cw || !ch) return;
@@ -74,7 +84,7 @@ function coverIframe(container: HTMLElement, iframe: HTMLIFrameElement, ar: numb
     width: `${w}px`,
     height: `${h}px`,
     border: "0",
-    pointerEvents: "none",
+    pointerEvents: interactive ? "auto" : "none",
   });
 }
 
@@ -108,6 +118,8 @@ export default function YouTubePlayer({
   clickToPlay = false,
   showSoundToggle = true,
   vertical = false,
+  showControls = false,
+  showCaptions = false,
 }: {
   videoId: string;
   startMuted?: boolean;
@@ -115,8 +127,14 @@ export default function YouTubePlayer({
   showSoundToggle?: boolean;
   /** Cover using a 9:16 (portrait, e.g. YouTube Shorts) ratio instead of 16:9. */
   vertical?: boolean;
+  /** Show the native YouTube control bar (play/pause, fullscreen, share, logo). */
+  showControls?: boolean;
+  /** Force closed captions on. */
+  showCaptions?: boolean;
 }) {
   const videoAr = vertical ? 9 / 16 : 16 / 9;
+  const playerId = useId();
+  const audioBus = useAudioBus();
   const containerRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
@@ -136,14 +154,15 @@ export default function YouTubePlayer({
         playerVars: {
           autoplay: clickToPlay ? 0 : 1,
           mute: 1,
-          controls: 0,
+          controls: showControls ? 1 : 0,
           loop: 1,
           playlist: videoId,
           playsinline: 1,
           modestbranding: 1,
           rel: 0,
-          disablekb: 1,
-          fs: 0,
+          disablekb: showControls ? 0 : 1,
+          fs: showControls ? 1 : 0,
+          cc_load_policy: showCaptions ? 1 : 0,
           iv_load_policy: 3,
         },
         events: {
@@ -154,8 +173,10 @@ export default function YouTubePlayer({
             const iframe = e.target.getIframe();
             const cont = containerRef.current;
             if (cont && iframe) {
-              coverIframe(cont, iframe, videoAr);
-              ro = new ResizeObserver(() => coverIframe(cont, iframe, videoAr));
+              coverIframe(cont, iframe, videoAr, showControls);
+              ro = new ResizeObserver(() =>
+                coverIframe(cont, iframe, videoAr, showControls),
+              );
               ro.observe(cont);
             }
             if (!clickToPlay) {
@@ -178,7 +199,30 @@ export default function YouTubePlayer({
       }
       playerRef.current = null;
     };
-  }, [videoId, clickToPlay, videoAr]);
+  }, [videoId, clickToPlay, videoAr, showControls, showCaptions]);
+
+  // Keep the audio bus in sync with the real mute state (covers native
+  // controls too) and unregister on unmount.
+  useEffect(() => {
+    audioBus?.setVideoSound(playerId, !muted);
+  }, [audioBus, playerId, muted]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const poll = setInterval(() => {
+      const p = playerRef.current;
+      if (!p) return;
+      const m = p.isMuted();
+      setMuted((prev) => (prev === m ? prev : m));
+    }, 800);
+    return () => clearInterval(poll);
+  }, [ready]);
+
+  useEffect(() => {
+    return () => {
+      audioBus?.setVideoSound(playerId, false);
+    };
+  }, [audioBus, playerId]);
 
   // Autoplay mode: honor "start with sound" on the first page interaction.
   useEffect(() => {
@@ -242,7 +286,7 @@ export default function YouTubePlayer({
         </button>
       )}
 
-      {showSoundToggle && started && ready && (
+      {showSoundToggle && !showControls && started && ready && (
         <button
           type="button"
           onClick={toggleSound}

@@ -108,15 +108,38 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`slideDurationSeconds`, reinicia ao escolher um slide) respeitando reduce-motion.
   Fallback de slides legados: `title||text`, `ctaLabel||cta`.
 - **`Sobre`** ("A Causa", client) — caixa de mídia com a proporção escolhida
-  (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, 21/9): imagem `object-cover`, ou
-  `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Textos
+  (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, **9/16 Reels**, 21/9): imagem `object-cover`,
+  ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Textos
   (`eyebrow`, `title`, `body`) e botão (`linkLabel`→`linkUrl`, fallback `#parceiros`)
   totalmente editáveis.
+- **Navegação do banner**: setas (anterior/próximo) + bolinhas maiores, alvos de toque
+  ≥44px, agrupadas no canto inferior direito (separadas do CTA). Auto-advance reinicia ao
+  escolher um slide.
+- **Config de vídeo (YouTube)**: por slide e em A Causa o ADM liga/desliga a **barra de
+  controles** (`videoControls` → `controls`/`fs`: play/pausa, tela cheia, compartilhar,
+  logo — a API do YouTube não permite isolar cada um) e as **legendas** (`videoCaptions` →
+  `cc_load_policy`). Quando os controles nativos aparecem, o iframe fica clicável
+  (`pointer-events:auto`) e o botão de som próprio é ocultado.
 - **ADM** (`/admin/banner`): editor de slides (tipo Foto|Vídeo, upload ou link do YouTube +
-  "iniciar com som", selo/título/botão/destino, reordenar/remover/adicionar; normaliza
-  slides legados no load), configurações gerais (duração, reduce-motion) e o grupo
+  "iniciar com som", controles/legendas, selo/título/botão/destino, reordenar/remover;
+  normaliza slides legados no load), configurações gerais (duração, reduce-motion) e o grupo
   **"Seção A Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som,
-  proporção). Salva `{ hero, about }`.
+  controles/legendas, proporção). Salva `{ hero, about }`.
+
+## Playlist do evento + coordenação de áudio
+
+- **`Playlist`** (client, entre A Causa e Percurso) — só aparece com `playlist.enabled` e ≥1
+  link. `playlist.visible` (`youtube`|`spotify`|`both`) decide o que mostra; com os dois, um
+  seletor (abas) troca a plataforma. **YouTube**: player da playlist via IFrame API
+  (`listType/list`), controlável. **Spotify**: embed via **Spotify IFrame API**
+  (`createController`), controlável só por play/pause (sem mutar nem autoplay).
+- **`AudioBus`** (client Context, envolve o `<main>` em `SiteContent`) — os players de vídeo
+  do banner/A Causa (`YouTubePlayer`) registram se o som está ligado (`setVideoSound`, com
+  `useId`; um poll de 800ms cobre também o unmute pelos controles nativos). A `Playlist` lê
+  `videoSoundOn`: **muta o YouTube** e **pausa o Spotify** enquanto houver áudio de vídeo, e
+  retoma depois (só se foi ela quem pausou). Fora do provider (ADM) o hook é null-safe.
+- **ADM** (`/admin/playlist`, novo item no `ADM_NAV`): exibir seção, título, nota, o que fica
+  visível, links do YouTube e do Spotify. Salva `{ playlist }`.
 
 ## Lotes de inscrição
 
@@ -132,18 +155,28 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `SiteChrome` (client, no layout) — que também aplica o favicon. Editável em
   Configurações (seletores de cor). Vazio = padrão.
 
-## Galeria via Cloudinary (opcional)
+## Galeria (seções + lightbox + comprar)
 
-- `content.cloudinary { cloudName, uploadPreset }` (Configurações). Quando preenchido,
-  `ImageUpload` envia **direto do navegador** ao Cloudinary (unsigned) e guarda a
-  `secure_url`; senão usa `/api/media`. O público carrega da URL salva.
+- **`Galeria`** (client) agrupa `galleryPhotos` em **seções** (por `album`, na ordem de
+  aparição), cada uma com um título; a grade continua 2→4 colunas. Fotos ficam **só no site**
+  (upload via Cloudinary/`/api/media`), sem import externo (Google Fotos/iCloud não têm API
+  estável para isso). Sem fotos → tiles de placeholder.
+- **Lightbox** (`Lightbox`, client): clicar numa foto abre o visualizador em tela cheia com a
+  **mesma proteção** (`ProtectedImage`/marca d'água, sem arraste/menu, escondido na
+  impressão), com fechar, ←/→ e navegação por teclado sobre **todas** as fotos.
+- **Botão "comprar fotos"**: `content.gallery { buyEnabled, buyLabel, buyUrl }` — quando
+  ligado, um CTA ao lado do título "Galeria" abre o site de venda em nova aba.
+- **Cloudinary (opcional)**: `content.cloudinary { cloudName, uploadPreset }` (Configurações).
+  Quando preenchido, `ImageUpload` envia **direto do navegador** (unsigned) e guarda a
+  `secure_url`; senão usa `/api/media`.
+- **ADM** (`/admin/galeria`): seções (álbuns) + upload por seção + bloco do botão de compra.
 
 ## Proteção de imagens
 
 - `ImageProtection` (global) bloqueia menu de contexto e arraste em imagens;
-  `ProtectedImage` (galeria) adiciona **marca d'água** + camada que intercepta salvar;
-  CSS esconde `.protected-media` na impressão. Limite honesto: screenshots do SO não são
-  bloqueáveis — a marca d'água cobre esse caso.
+  `ProtectedImage` (galeria + lightbox) adiciona **marca d'água** + camada que intercepta
+  salvar; CSS esconde `.protected-media` na impressão. Limite honesto: screenshots do SO não
+  são bloqueáveis — a marca d'água cobre esse caso.
 
 ## Marca (logo + favicon)
 
@@ -157,11 +190,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - Campos `percurso.title` (editável no ADM), `percurso.stravaRouteRef` e
   `percurso.garminRouteRef` (ADM > Percurso). O título é mostrado **exatamente** como
   digitado (sem prefixar o km).
-- `RouteViewer`: quando os **dois** estão configurados, mostra **ambos** os mapas
-  (rotulados, empilhados); senão, o que estiver configurado. `StravaRoute` (embed.js)
-  e `GarminRoute` (iframe `connect.garmin.com/.../embed/<id>`). Rota/atividade
-  **pública** (sem credenciais). O wrapper `.route-embed` + CSS global **e** um
-  `MutationObserver` no `StravaRoute` forçam o iframe a **preencher a largura** da seção.
+- `RouteViewer` (client): quando os **dois** estão configurados, um **seletor** (Strava |
+  Garmin, alvos ≥44px, default Strava) deixa o visitante escolher qual mapa ver; com só um,
+  mostra ele direto; nenhum → placeholder. `StravaRoute` (embed.js) e `GarminRoute` (iframe
+  `connect.garmin.com/.../embed/<id>`). Rota/atividade **pública** (sem credenciais). O
+  wrapper `.route-embed` + CSS global **e** um `MutationObserver` no `StravaRoute` forçam o
+  iframe a **preencher a largura** da seção.
 
 ## Números do dashboard e texto do percurso
 

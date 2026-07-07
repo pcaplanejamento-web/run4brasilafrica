@@ -8,6 +8,7 @@ export interface AdmNavItem {
 export const ADM_NAV: AdmNavItem[] = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard" },
   { key: "banner", label: "Banner / Hero", href: "/admin/banner" },
+  { key: "playlist", label: "Playlist", href: "/admin/playlist" },
   { key: "galeria", label: "Galeria", href: "/admin/galeria" },
   { key: "conteudo", label: "Textos do site", href: "/admin/conteudo" },
   { key: "strava", label: "Percurso (Strava)", href: "/admin/strava" },

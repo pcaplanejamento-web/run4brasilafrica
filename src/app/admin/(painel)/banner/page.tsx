@@ -29,6 +29,8 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
     subtitle: s.subtitle ?? "",
     ctaLabel: s.ctaLabel || s.cta || "Inscreva-se",
     ctaUrl: s.ctaUrl || "#inscricao",
+    videoControls: s.videoControls,
+    videoCaptions: s.videoCaptions,
   };
 }
 
@@ -37,6 +39,7 @@ const ASPECT_OPTIONS = [
   { value: "16/9", label: "16:9 (widescreen)" },
   { value: "1/1", label: "1:1 (quadrado)" },
   { value: "3/4", label: "3:4 (retrato)" },
+  { value: "9/16", label: "9:16 (Reels)" },
   { value: "21/9", label: "21:9 (cinema)" },
 ];
 
@@ -185,6 +188,36 @@ function BannerForm({
                           Navegadores só permitem som após um clique. Há sempre um
                           botão de som sobre o vídeo.
                         </p>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                          <FieldLabel>Controles do YouTube</FieldLabel>
+                          <Select
+                            value={sl.videoControls ? "sim" : "nao"}
+                            onChange={(e) =>
+                              setSlide(i, {
+                                videoControls: e.target.value === "sim",
+                              })
+                            }
+                          >
+                            <option value="nao">Ocultar (só o vídeo)</option>
+                            <option value="sim">Mostrar (play/pausa, tela cheia, compartilhar, logo)</option>
+                          </Select>
+                        </div>
+                        <div>
+                          <FieldLabel>Legendas</FieldLabel>
+                          <Select
+                            value={sl.videoCaptions ? "sim" : "nao"}
+                            onChange={(e) =>
+                              setSlide(i, {
+                                videoCaptions: e.target.value === "sim",
+                              })
+                            }
+                          >
+                            <option value="nao">Não mostrar</option>
+                            <option value="sim">Mostrar legendas</option>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -394,6 +427,36 @@ function BannerForm({
                     >
                       <option value="nao">Não — começa mudo</option>
                       <option value="sim">Sim — som ao interagir</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <FieldLabel>Controles do YouTube</FieldLabel>
+                    <Select
+                      value={about.videoControls ? "sim" : "nao"}
+                      onChange={(e) =>
+                        setAbout({
+                          ...about,
+                          videoControls: e.target.value === "sim",
+                        })
+                      }
+                    >
+                      <option value="nao">Ocultar (só o vídeo)</option>
+                      <option value="sim">Mostrar (play/pausa, tela cheia, compartilhar, logo)</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <FieldLabel>Legendas</FieldLabel>
+                    <Select
+                      value={about.videoCaptions ? "sim" : "nao"}
+                      onChange={(e) =>
+                        setAbout({
+                          ...about,
+                          videoCaptions: e.target.value === "sim",
+                        })
+                      }
+                    >
+                      <option value="nao">Não mostrar</option>
+                      <option value="sim">Mostrar legendas</option>
                     </Select>
                   </div>
                 </div>

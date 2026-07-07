@@ -36,6 +36,9 @@ export default function Hero({ hero }: { hero: HeroType }) {
     return () => clearTimeout(id);
   }, [slides.length, reduced, hero.slideDurationSeconds, index]);
 
+  const go = (dir: number) =>
+    setIndex((k) => (k + dir + slides.length) % slides.length);
+
   if (slides.length === 0) return null;
   const i = Math.min(index, slides.length - 1);
   const slide = slides[i];
@@ -67,6 +70,8 @@ export default function Hero({ hero }: { hero: HeroType }) {
           videoId={ytId}
           startMuted={slide.videoStartMuted !== false}
           vertical={isVerticalYouTube(slide.videoUrl)}
+          showControls={!!slide.videoControls}
+          showCaptions={!!slide.videoCaptions}
         />
       ) : (
         <div
@@ -101,34 +106,68 @@ export default function Hero({ hero }: { hero: HeroType }) {
           {title(slide)}
         </h1>
 
-        <div className="mt-7 flex items-center gap-5 md:mt-8">
+        <div className="mt-7 md:mt-8">
           <a
             key={`cta-${i}`}
             href={url}
             {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className={`clip-cta-lg bg-gold px-7 py-4 text-[15px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 md:px-[34px] md:py-[17px] md:text-[16px] ${fade}`}
+            className={`clip-cta-lg inline-block bg-gold px-7 py-4 text-[15px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 md:px-[34px] md:py-[17px] md:text-[16px] ${fade}`}
           >
             {ctaLabel(slide)}
           </a>
-
-          {slides.length > 1 && (
-            <div className="flex gap-2" aria-label="Slides do banner">
-              {slides.map((_, k) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setIndex(k)}
-                  aria-label={`Ir para o slide ${k + 1}`}
-                  aria-current={k === i ? "true" : undefined}
-                  className={`h-1 transition-all ${
-                    k === i ? "w-[26px] bg-gold" : "w-2.5 bg-white/35"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Slide navigation — larger, touch-friendly, bottom-right */}
+      {slides.length > 1 && (
+        <div
+          className="absolute bottom-12 right-5 z-10 flex items-center gap-1.5 sm:right-8 md:bottom-[90px] md:right-14"
+          aria-label="Navegação do banner"
+        >
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            aria-label="Slide anterior"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white transition-colors hover:bg-black/70"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          <div className="flex items-center">
+            {slides.map((_, k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setIndex(k)}
+                aria-label={`Ir para o slide ${k + 1}`}
+                aria-current={k === i ? "true" : undefined}
+                className="group flex h-11 items-center px-1.5"
+              >
+                <span
+                  className={`block h-2.5 rounded-full transition-all ${
+                    k === i
+                      ? "w-7 bg-gold"
+                      : "w-2.5 bg-white/40 group-hover:bg-white/70"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => go(1)}
+            aria-label="Próximo slide"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white transition-colors hover:bg-black/70"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )}
     </section>
   );
 }

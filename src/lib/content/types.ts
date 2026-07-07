@@ -36,6 +36,10 @@ export interface HeroSlide {
   subtitle?: string;
   ctaLabel: string;
   ctaUrl: string;
+  /** Show the YouTube control bar (play/pause, fullscreen, share, logo). */
+  videoControls?: boolean;
+  /** Force closed captions on. */
+  videoCaptions?: boolean;
   /** Legacy (old text-only carousel) — read as fallback for migration. */
   text?: string;
   cta?: string;
@@ -73,8 +77,34 @@ export interface AboutSection {
   videoStartMuted?: boolean;
   /** Show a "Clique para começar o vídeo" overlay instead of autoplay. */
   clickToPlay?: boolean;
-  /** CSS aspect-ratio for the media box (e.g. "16/9", "4/3", "1/1"). */
+  /** CSS aspect-ratio for the media box (e.g. "16/9", "4/3", "1/1", "9/16"). */
   aspectRatio?: string;
+  /** Show the YouTube control bar (play/pause, fullscreen, share, logo). */
+  videoControls?: boolean;
+  /** Force closed captions on. */
+  videoCaptions?: boolean;
+}
+
+/**
+ * Event playlist: Spotify and/or YouTube. Plays while the visitor browses the
+ * (single-page) site; the audio bus mutes YouTube / pauses Spotify when a
+ * banner/"A Causa" video has its sound on.
+ */
+export interface PlaylistSection {
+  enabled?: boolean;
+  title?: string;
+  note?: string;
+  /** Which player(s) appear when both links are set. */
+  visible?: "youtube" | "spotify" | "both";
+  youtubeUrl?: string;
+  spotifyUrl?: string;
+}
+
+/** Gallery "buy photos" button shown next to the section title. */
+export interface GalleryConfig {
+  buyEnabled?: boolean;
+  buyLabel?: string;
+  buyUrl?: string;
 }
 
 export interface Percurso {
@@ -213,12 +243,14 @@ export interface SiteContent {
   hero: Hero;
   stats: Stat[];
   about: AboutSection;
+  playlist: PlaylistSection;
   percurso: Percurso;
   inscricao: Inscricao;
   lotes: Lote[];
   albums: Album[];
   galleryTiles: { album: string }[];
   galleryPhotos: GalleryPhoto[];
+  gallery: GalleryConfig;
   cloudinary: Cloudinary;
   sponsors: Sponsor[];
   testimonials: Testimonial[];

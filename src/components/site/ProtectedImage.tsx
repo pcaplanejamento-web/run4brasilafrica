@@ -2,7 +2,7 @@
 
 const WATERMARK = "RUN4BRASILAFRICA";
 const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='170'><text x='8' y='95' transform='rotate(-22 160 85)' fill='white' fill-opacity='0.16' font-size='22' font-family='Arial, sans-serif' font-weight='700'>${WATERMARK}</text></svg>`;
-const WATERMARK_BG = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+export const WATERMARK_BG = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 
 /**
  * Image with copy/save deterrents + a tiled watermark. A transparent top layer

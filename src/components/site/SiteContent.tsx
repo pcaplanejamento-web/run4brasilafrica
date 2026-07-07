@@ -6,7 +6,9 @@ import SiteNav from "./SiteNav";
 import Hero from "./Hero";
 import StatsBar from "./StatsBar";
 import Sobre from "./Sobre";
+import Playlist from "./Playlist";
 import Percurso from "./Percurso";
+import { AudioBusProvider } from "./AudioBus";
 import InscricaoCTA from "./InscricaoCTA";
 import Galeria from "./Galeria";
 import Parceiros from "./Parceiros";
@@ -43,18 +45,25 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   return (
     <>
       <SiteNav logo={c.branding?.logo} />
-      <main>
-        <Hero hero={c.hero} />
-        <StatsBar stats={c.stats} />
-        <Sobre about={c.about} />
-        <Percurso percurso={c.percurso} />
-        <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />
-        <Galeria tiles={c.galleryTiles} photos={c.galleryPhotos ?? []} />
-        <Parceiros sponsors={c.sponsors} />
-        <Depoimentos testimonials={c.testimonials} />
-        <Faq items={c.faq} />
-        <KitAtleta kit={c.kit} />
-      </main>
+      <AudioBusProvider>
+        <main>
+          <Hero hero={c.hero} />
+          <StatsBar stats={c.stats} />
+          <Sobre about={c.about} />
+          <Playlist playlist={c.playlist} />
+          <Percurso percurso={c.percurso} />
+          <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />
+          <Galeria
+            tiles={c.galleryTiles}
+            photos={c.galleryPhotos ?? []}
+            gallery={c.gallery}
+          />
+          <Parceiros sponsors={c.sponsors} />
+          <Depoimentos testimonials={c.testimonials} />
+          <Faq items={c.faq} />
+          <KitAtleta kit={c.kit} />
+        </main>
+      </AudioBusProvider>
       <SiteFooter contact={c.contact} logo={c.branding?.logo} />
     </>
   );
