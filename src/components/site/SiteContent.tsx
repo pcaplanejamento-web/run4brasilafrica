@@ -64,7 +64,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
           <Parceiros sponsors={c.sponsors} />
           <Depoimentos testimonials={c.testimonials} />
           <Faq items={c.faq} />
-          <KitAtleta kit={c.kit} />
+          <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />
         </main>
       </AudioBusProvider>
       <SiteFooter contact={c.contact} logo={c.branding?.logo} />

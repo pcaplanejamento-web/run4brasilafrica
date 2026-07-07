@@ -15,13 +15,26 @@ export default function Depoimentos({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-7">
         {testimonials.map((t, i) => (
           <Reveal
-            key={t.name}
+            key={`${t.name}-${i}`}
             delay={i * 100}
-            className="border-t-[3px] border-gold bg-ink-card p-7"
+            className="flex flex-col border-t-[3px] border-gold bg-ink-card p-7"
           >
-            <p className="mb-4 text-[18px] leading-[1.5]">&ldquo;{t.quote}&rdquo;</p>
-            <div className="text-[14px] font-bold">{t.name}</div>
-            <div className="text-[13px] opacity-65">{t.role}</div>
+            <p className="mb-5 flex-1 text-[18px] leading-[1.5]">&ldquo;{t.quote}&rdquo;</p>
+            <div className="flex items-center gap-3">
+              {t.photo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={t.photo}
+                  alt={t.name}
+                  draggable={false}
+                  className="h-12 w-12 flex-none rounded-full object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                <div className="text-[14px] font-bold">{t.name}</div>
+                <div className="text-[13px] opacity-65">{t.role}</div>
+              </div>
+            </div>
           </Reveal>
         ))}
       </div>

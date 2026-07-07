@@ -261,6 +261,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 5. Se o volume crescer, dá para migrar o D1 para outro banco (ex.: Supabase) — a fronteira
    (`/api/content` + `lib/content`) já isola isso dos componentes.
 
+## Depoimentos, FAQ e Kit do atleta (editáveis no ADM)
+
+- **Depoimentos** ("Quem já correu"): `content.testimonials` (`quote`, `name`, `role`,
+  **`photo?`**). ADM em **/admin/depoimentos** (CRUD, foto via `ImageUpload`, reordenar);
+  público (`Depoimentos`) mostra o avatar quando há foto.
+- **FAQ**: `content.faq` (`q`, `a`). ADM em **/admin/faq** (CRUD, reordenar); público (`Faq`,
+  acordeão).
+- **Kit do atleta** (`content.kit`): **regulamento** por **link de arquivo** ou **texto**
+  (`regulamentoMode`/`regulamentoUrl`/`regulamentoText`); **itens** do kit (`KitItem` com
+  nome + imagem opcional) em modo **único** (`items`) ou **por lote** (`perLote` mapeado por
+  `loteId`, escolhido por `kitMode`). Público (`KitAtleta`, client): botão do regulamento
+  (link ou expande o texto) + **grade de cards** dos itens (ícone `ImageUpload` ou check),
+  com **abas por lote** quando o kit varia. ADM em **/admin/kit** (`ItemsEditor` reutilizável).
+  Novos itens no `ADM_NAV`: Depoimentos, FAQ, Kit do atleta.
+
 ## Padrão de componentes
 
 - **Site** (`components/site`): componentes de apresentação recebem sua fatia de

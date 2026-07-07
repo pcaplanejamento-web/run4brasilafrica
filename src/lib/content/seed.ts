@@ -198,9 +198,22 @@ export const seedContent: SiteContent = {
 
   kit: {
     title: "KIT DO ATLETA",
-    subtitle: "Retirada, categorias e regulamento oficial.",
+    subtitle: "Tudo que você recebe ao se inscrever.",
     regulamentoLabel: "Regulamento",
-    kitLabel: "Kit do atleta",
+    kitLabel: "O que vem no kit",
+    regulamentoMode: "link",
+    regulamentoUrl: "",
+    regulamentoText: "",
+    kitMode: "single",
+    items: [
+      { name: "Camiseta oficial" },
+      { name: "Número de peito" },
+      { name: "Sacochila" },
+      { name: "Boné" },
+      { name: "Garrafinha" },
+      { name: "Medalha de finisher" },
+    ],
+    perLote: [],
   },
 
   contact: {

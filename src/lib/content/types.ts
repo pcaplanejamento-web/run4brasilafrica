@@ -202,6 +202,8 @@ export interface Testimonial {
   quote: string;
   name: string;
   role: string;
+  /** Optional photo of the person (avatar). */
+  photo?: string;
 }
 
 export interface FaqItem {
@@ -209,11 +211,32 @@ export interface FaqItem {
   a: string;
 }
 
+/** One item included in the athlete kit. */
+export interface KitItem {
+  name: string;
+  /** Optional image/icon of the item. */
+  image?: string;
+}
+
+/** Kit contents for a specific lote (when the kit varies per lote). */
+export interface KitPerLote {
+  loteId: string;
+  items: KitItem[];
+}
+
 export interface KitSection {
   title: string;
   subtitle: string;
   regulamentoLabel: string;
   kitLabel: string;
+  /** Regulation: a link to a file, or inline text. */
+  regulamentoMode?: "link" | "text";
+  regulamentoUrl?: string;
+  regulamentoText?: string;
+  /** Kit contents: one shared list, or a different list per lote. */
+  kitMode?: "single" | "perLote";
+  items?: KitItem[];
+  perLote?: KitPerLote[];
 }
 
 export interface ContactLinks {
