@@ -72,8 +72,10 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
 
   return (
     <>
-      <SiteNav logo={c.branding?.logo} lotes={c.lotes ?? []} />
-      <RaceCountdownBar inscricao={c.inscricao} />
+      <div className="sticky top-0 z-30">
+        <SiteNav logo={c.branding?.logo} lotes={c.lotes ?? []} />
+        <RaceCountdownBar inscricao={c.inscricao} />
+      </div>
       <AudioBusProvider>
         <main>
           {layout

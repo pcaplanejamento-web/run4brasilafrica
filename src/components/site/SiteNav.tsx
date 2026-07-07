@@ -49,7 +49,7 @@ export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[]
     : {};
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-ink">
+    <header className="border-b border-line bg-ink">
       <nav className="flex items-center justify-between px-5 py-4 sm:px-8 md:px-14 md:py-[26px]">
         <a href="#top" className="text-[19px] md:text-[22px]" aria-label="Run4BrasilAfrica — início">
           {logo ? (
