@@ -13,11 +13,29 @@ function fmtDate(iso: string | undefined): string {
   return p.length === 3 && p[0] ? `${p[2]}/${p[1]}/${p[0]}` : "";
 }
 
-/** Order lotes by when they open (falling back to their close date). */
+/** Short DD/MM (for compact labels). */
+function fmtShort(iso: string | undefined): string {
+  const p = (iso || "").slice(0, 10).split("-");
+  return p.length === 3 && p[0] ? `${p[2]}/${p[1]}` : "";
+}
+
+/** Number embedded in a lote name ("Lote 2" → 2); missing → Infinity (goes last). */
+function loteNum(l: Lote): number {
+  const m = (l.name || "").match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : Number.POSITIVE_INFINITY;
+}
+
+/**
+ * Order lotes by their number (Lote 1, 2, 3…) so the list always reads 1→N,
+ * regardless of dates or array order; ties fall back to the opening date.
+ */
 export function sortLotes(lotes: Lote[]): Lote[] {
-  return [...(lotes ?? [])].sort((a, b) =>
-    (a.openDate || a.date || "").localeCompare(b.openDate || b.date || ""),
-  );
+  return [...(lotes ?? [])].sort((a, b) => {
+    const na = loteNum(a);
+    const nb = loteNum(b);
+    if (na !== nb) return na - nb;
+    return (a.openDate || a.date || "").localeCompare(b.openDate || b.date || "");
+  });
 }
 
 /** Status of a lote at time `now` (ms). Date-driven; falls back to `open` flag. */
@@ -40,6 +58,26 @@ export function activeLote(lotes: Lote[], now: number): Lote | null {
     sorted[sorted.length - 1] ??
     null
   );
+}
+
+/** Header CTA text + link, adapting to the active/last-available lote's status. */
+export function loteCtaLabel(
+  lotes: Lote[],
+  now: number,
+): { label: string; url: string } {
+  const active = activeLote(lotes ?? [], now);
+  if (!active) return { label: "Inscreva-se", url: "#inscricao" };
+  const st = loteStatus(active, now);
+  if (st === "upcoming" && active.openDate) {
+    return { label: `Abertura em ${fmtShort(active.openDate)}`, url: "#inscricao" };
+  }
+  if (st === "open") {
+    return {
+      label: active.date ? `Inscreva-se até ${fmtShort(active.date)}` : "Inscreva-se",
+      url: active.url || "#inscricao",
+    };
+  }
+  return { label: "Inscrições encerradas", url: "#inscricao" };
 }
 
 /** Countdown target + label for a lote given its status (null → no countdown). */

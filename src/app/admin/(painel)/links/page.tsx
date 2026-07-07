@@ -13,6 +13,7 @@ import {
   PrimaryButton,
   SaveBar,
   SectionLabel,
+  Select,
   TextInput,
 } from "@/components/admin/ui";
 
@@ -249,6 +250,18 @@ function LinksForm({
               />
             </div>
           ))}
+          <div className="mt-1 grid grid-cols-1 items-center gap-2 sm:grid-cols-[130px_1fr]">
+            <FieldLabel>Botão flutuante do WhatsApp</FieldLabel>
+            <Select
+              value={contact.whatsappFloat ? "sim" : "nao"}
+              onChange={(e) =>
+                setContact({ ...contact, whatsappFloat: e.target.value === "sim" })
+              }
+            >
+              <option value="nao">Desativado</option>
+              <option value="sim">Ativado (canto inferior direito)</option>
+            </Select>
+          </div>
         </Card>
 
         <Card>

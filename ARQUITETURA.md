@@ -164,9 +164,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   por vir, ou para o **encerramento** ("Inscrições encerram em") quando aberto. Mostra
   Abertura/Encerramento por lote; a lista traz o status (Aberto/Em breve/Encerrado). Sem
   lotes → inscrição única. (SSR usa `now=0` → sem mismatch de hidratação.)
+- Ordem dos lotes: `sortLotes` ordena pelo **número no nome** (Lote 1, 2, 3…), então a lista
+  lê sempre 1→N independentemente das datas/ordem do array; a faixa em destaque é o lote
+  **ativo** (`activeLote`).
 - **`RaceDay`** (`content.inscricao.raceDate`, client): faixa **"Dia da Corrida"** com a data
   + contagem regressiva para a largada, logo antes de `InscricaoCTA` (Percurso e lotes seguem
   seções próprias).
+- **`RaceCountdownBar`** (client): barra fina **abaixo do header** com data + hora da corrida
+  e contagem regressiva ao vivo (some sem `raceDate`).
+- **CTA do header** (`SiteNav`): o botão adapta o texto ao lote ativo via `loteCtaLabel` —
+  "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou "Inscrições encerradas".
+- **`WhatsAppFloat`** (canto inferior direito): botão flutuante que abre `wa.me/<número>`;
+  ligado/desligado em ADM > Links & inscrição (Redes sociais → `contact.whatsappFloat`).
 - **ADM** (Links & inscrição): campo do **dia da corrida** + **abertura/encerramento** por
   lote, com **validação** que bloqueia o salvar (mensagens): abertura ≤ encerramento; lotes
   não podem se sobrepor (um de cada vez); dia da corrida depois do último encerramento.
@@ -183,7 +192,8 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   de todas as seções (Google Fotos + enviadas), quebra em páginas de **colunas × linhas**
   (config. por breakpoint em `content.gallery` — `slideCols/Rows` e `slideColsMobile/RowsMobile`,
   detecção via `matchMedia`), auto-avança (`slideSeconds`), com setas, bolinhas e **swipe**
-  (touch). **Sem lightbox / sem zoom**: `touch-action: pan-y` bloqueia pinça e duplo-toque;
+  (touch). O paginador não estoura a tela: com muitas páginas (>12) troca as bolinhas por um
+  contador **"X / Y"**; até 12, as bolinhas usam `flex-wrap`. **Sem lightbox / sem zoom**: `touch-action: pan-y` bloqueia pinça e duplo-toque;
   imagens usam `ProtectedImage` (marca d'água, sem arraste/menu) e a seção é **escondida na
   impressão** (`@media print #galeria`). ADM configura o tamanho da grade (desktop/mobile).
 - Cada seção pode ter
@@ -274,7 +284,8 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `loteId`, escolhido por `kitMode`). Público (`KitAtleta`, client): botão do regulamento
   (link ou expande o texto) + **grade de cards** dos itens (ícone `ImageUpload` ou check),
   com **abas por lote** quando o kit varia. ADM em **/admin/kit** (`ItemsEditor` reutilizável).
-  Novos itens no `ADM_NAV`: Depoimentos, FAQ, Kit do atleta.
+  Cada item pode ter um **ícone da biblioteca** (`KitIcons.tsx` — set de SVGs sem emoji, com
+  picker no ADM) ou uma imagem enviada. Novos itens no `ADM_NAV`: Depoimentos, FAQ, Kit.
 
 ## Ordem/ativação das seções da home (Dashboard)
 

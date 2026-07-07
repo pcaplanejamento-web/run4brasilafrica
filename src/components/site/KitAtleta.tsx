@@ -3,30 +3,23 @@
 import { useState } from "react";
 import type { KitItem, KitSection, Lote } from "@/lib/content/types";
 import Reveal from "./Reveal";
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" aria-hidden="true">
-      <path
-        d="M5 13l4 4L19 7"
-        stroke="var(--color-gold)"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+import { KitIcon } from "./KitIcons";
 
 function ItemCard({ item }: { item: KitItem }) {
   return (
     <div className="flex h-full flex-col items-center gap-3 rounded-lg border border-line bg-ink-card p-5 text-center">
       <div className="flex h-20 w-20 flex-none items-center justify-center overflow-hidden rounded-full bg-ink-panel">
-        {item.image ? (
+        {item.icon ? (
+          <span className="text-gold">
+            <KitIcon name={item.icon} size={34} />
+          </span>
+        ) : item.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.image} alt="" draggable={false} className="h-full w-full object-cover" />
         ) : (
-          <CheckIcon />
+          <span className="text-gold">
+            <KitIcon size={30} />
+          </span>
         )}
       </div>
       <span className="text-[14px] font-semibold leading-tight">{item.name}</span>

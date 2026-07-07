@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Lote } from "@/lib/content/types";
+import { loteCtaLabel } from "@/lib/content/lotes";
 
 const LINKS = [
   { href: "#sobre", label: "Sobre" },
@@ -20,8 +22,9 @@ function Wordmark({ className = "" }: { className?: string }) {
   );
 }
 
-export default function SiteNav({ logo }: { logo?: string }) {
+export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[] }) {
   const [open, setOpen] = useState(false);
+  const [now, setNow] = useState(0);
 
   // Lock body scroll while the mobile menu is open.
   useEffect(() => {
@@ -30,6 +33,20 @@ export default function SiteNav({ logo }: { logo?: string }) {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  // The CTA label adapts to the active lote (abertura em / inscreva-se até…).
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const cta = loteCtaLabel(lotes ?? [], now);
+  const ctaExternal = /^https?:\/\//.test(cta.url);
+  const ctaProps = ctaExternal
+    ? { target: "_blank", rel: "noopener noreferrer" }
+    : {};
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-ink">
@@ -52,12 +69,13 @@ export default function SiteNav({ logo }: { logo?: string }) {
           ))}
         </div>
 
-        {/* Desktop CTA */}
+        {/* Desktop CTA (adapts to the active lote) */}
         <a
-          href="#inscricao"
-          className="clip-cta hidden bg-gold px-6 py-3 text-[14px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 lg:inline-block"
+          href={cta.url}
+          {...ctaProps}
+          className="clip-cta hidden whitespace-nowrap bg-gold px-6 py-3 text-[14px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 lg:inline-block"
         >
-          Inscreva-se
+          {cta.label}
         </a>
 
         {/* Mobile menu button */}
@@ -104,11 +122,12 @@ export default function SiteNav({ logo }: { logo?: string }) {
             </a>
           ))}
           <a
-            href="#inscricao"
+            href={cta.url}
+            {...ctaProps}
             onClick={() => setOpen(false)}
             className="clip-cta my-4 bg-gold px-6 py-4 text-center text-[15px] font-bold uppercase text-gold-ink"
           >
-            Inscreva-se
+            {cta.label}
           </a>
         </div>
       </div>

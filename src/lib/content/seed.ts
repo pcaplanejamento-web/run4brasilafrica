@@ -209,12 +209,12 @@ export const seedContent: SiteContent = {
     regulamentoText: "",
     kitMode: "single",
     items: [
-      { name: "Camiseta oficial" },
-      { name: "Número de peito" },
-      { name: "Sacochila" },
-      { name: "Boné" },
-      { name: "Garrafinha" },
-      { name: "Medalha de finisher" },
+      { name: "Camiseta oficial", icon: "shirt" },
+      { name: "Número de peito", icon: "bib" },
+      { name: "Sacochila", icon: "backpack" },
+      { name: "Boné", icon: "cap" },
+      { name: "Garrafinha", icon: "bottle" },
+      { name: "Medalha de finisher", icon: "medal" },
     ],
     perLote: [],
   },
@@ -226,6 +226,7 @@ export const seedContent: SiteContent = {
     email: "contato@run4brasilafrica.com",
     donationsUrl: "doacoes.run4brasilafrica.com",
     copyright: "© 2026",
+    whatsappFloat: false,
   },
 
   /* ---- ADM-managed content ---- */

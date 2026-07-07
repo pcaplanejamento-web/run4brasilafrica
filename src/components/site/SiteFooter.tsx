@@ -23,7 +23,11 @@ export default function SiteFooter({
     <footer className="flex flex-col gap-8 bg-ink-deeper px-5 py-12 text-muted sm:px-8 md:flex-row md:items-center md:justify-between md:px-14 md:py-[60px]">
       {logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logo} alt="Run4BrasilAfrica" className="h-9 w-auto" />
+        <img
+          src={logo}
+          alt="Run4BrasilAfrica"
+          className="h-14 w-auto max-w-[160px] self-start object-contain md:h-11"
+        />
       ) : (
         <div className="font-display text-[18px] uppercase text-white">
           Run4BrasilAfrica

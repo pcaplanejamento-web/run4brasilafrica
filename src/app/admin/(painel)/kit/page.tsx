@@ -16,6 +16,7 @@ import {
   TextInput,
 } from "@/components/admin/ui";
 import ImageUpload from "@/components/admin/ImageUpload";
+import { KIT_ICONS, KitIcon } from "@/components/site/KitIcons";
 
 type Cloud = { cloudName?: string; uploadPreset?: string } | undefined;
 
@@ -43,36 +44,63 @@ function ItemsEditor({
   return (
     <div className="flex flex-col gap-3">
       {items.map((it, i) => (
-        <div
-          key={i}
-          className="flex items-start gap-3 rounded-lg border border-adm-border bg-[#fbfbfa] p-3"
-        >
-          <div className="w-[84px] flex-none">
-            <ImageUpload
-              value={it.image}
-              onChange={(url) => set(i, { image: url })}
-              className="h-16"
-              label="ícone"
-              cloudinary={cloudinary}
-            />
+        <div key={i} className="rounded-lg border border-adm-border bg-[#fbfbfa] p-3">
+          <div className="mb-3 flex items-end gap-3">
+            <div className="flex-1">
+              <FieldLabel>Nome do item</FieldLabel>
+              <TextInput
+                value={it.name}
+                onChange={(e) => set(i, { name: e.target.value })}
+                placeholder="ex.: Mochila, Óculos, Boné, Anorak, Garrafinha…"
+              />
+            </div>
+            <div className="flex gap-1">
+              <GhostButton onClick={() => move(i, -1)} disabled={i === 0}>
+                ↑
+              </GhostButton>
+              <GhostButton onClick={() => move(i, 1)} disabled={i === items.length - 1}>
+                ↓
+              </GhostButton>
+              <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
+            </div>
           </div>
-          <div className="flex-1">
-            <FieldLabel>Nome do item</FieldLabel>
-            <TextInput
-              value={it.name}
-              onChange={(e) => set(i, { name: e.target.value })}
-              placeholder="ex.: Mochila, Óculos, Boné, Anorak, Garrafinha, Barra energética…"
-            />
+
+          <FieldLabel>Ícone (biblioteca)</FieldLabel>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {KIT_ICONS.map((ic) => (
+              <button
+                key={ic.key}
+                type="button"
+                title={ic.label}
+                aria-pressed={it.icon === ic.key}
+                onClick={() =>
+                  set(i, { icon: it.icon === ic.key ? undefined : ic.key, image: undefined })
+                }
+                className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+                  it.icon === ic.key
+                    ? "border-terracotta bg-[#fbeee9] text-terracotta"
+                    : "border-adm-border text-adm-ink hover:border-terracotta"
+                }`}
+              >
+                <KitIcon name={ic.key} size={22} />
+              </button>
+            ))}
           </div>
-          <div className="flex flex-col gap-1">
-            <GhostButton onClick={() => move(i, -1)} disabled={i === 0}>
-              ↑
-            </GhostButton>
-            <GhostButton onClick={() => move(i, 1)} disabled={i === items.length - 1}>
-              ↓
-            </GhostButton>
-            <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
-          </div>
+
+          <details>
+            <summary className="cursor-pointer text-[12px] text-adm-muted">
+              Ou enviar uma imagem própria
+            </summary>
+            <div className="mt-2 w-[120px]">
+              <ImageUpload
+                value={it.image}
+                onChange={(url) => set(i, { image: url, icon: undefined })}
+                className="h-16"
+                label="imagem"
+                cloudinary={cloudinary}
+              />
+            </div>
+          </details>
         </div>
       ))}
       <button

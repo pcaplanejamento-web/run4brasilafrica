@@ -214,7 +214,9 @@ export interface FaqItem {
 /** One item included in the athlete kit. */
 export interface KitItem {
   name: string;
-  /** Optional image/icon of the item. */
+  /** Optional icon key from the built-in library (see KitIcons). */
+  icon?: string;
+  /** Optional uploaded image (used when no icon is chosen). */
   image?: string;
 }
 
@@ -246,6 +248,8 @@ export interface ContactLinks {
   email: string;
   donationsUrl: string;
   copyright: string;
+  /** Show a floating WhatsApp button (uses `whatsapp`). */
+  whatsappFloat?: boolean;
 }
 
 export interface ContentSection {

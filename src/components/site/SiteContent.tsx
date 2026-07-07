@@ -10,6 +10,8 @@ import Sobre from "./Sobre";
 import Playlist from "./Playlist";
 import Percurso from "./Percurso";
 import RaceDay from "./RaceDay";
+import RaceCountdownBar from "./RaceCountdownBar";
+import WhatsAppFloat from "./WhatsAppFloat";
 import { AudioBusProvider } from "./AudioBus";
 import InscricaoCTA from "./InscricaoCTA";
 import Galeria from "./Galeria";
@@ -70,7 +72,8 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
 
   return (
     <>
-      <SiteNav logo={c.branding?.logo} />
+      <SiteNav logo={c.branding?.logo} lotes={c.lotes ?? []} />
+      <RaceCountdownBar inscricao={c.inscricao} />
       <AudioBusProvider>
         <main>
           {layout
@@ -81,6 +84,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         </main>
       </AudioBusProvider>
       <SiteFooter contact={c.contact} logo={c.branding?.logo} />
+      <WhatsAppFloat contact={c.contact} />
     </>
   );
 }
