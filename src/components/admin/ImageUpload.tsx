@@ -8,6 +8,8 @@ interface ImageUploadProps {
   /** Tailwind height/aspect classes for the preview box. */
   className?: string;
   label?: string;
+  /** When true, accepts a video (mp4/webm/mov) and previews it. */
+  video?: boolean;
 }
 
 /**
@@ -20,6 +22,7 @@ export default function ImageUpload({
   onChange,
   className = "h-40",
   label = "Imagem",
+  video = false,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -54,7 +57,7 @@ export default function ImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={video ? "video/mp4,video/webm,video/quicktime" : "image/*"}
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -65,8 +68,18 @@ export default function ImageUpload({
 
       {value ? (
         <div className="relative overflow-hidden rounded-lg border border-adm-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt={label} className={`w-full object-cover ${className}`} />
+          {video ? (
+            <video
+              src={value}
+              className={`w-full bg-black object-cover ${className}`}
+              muted
+              playsInline
+              controls
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt={label} className={`w-full object-cover ${className}`} />
+          )}
           <div className="absolute right-2 top-2 flex gap-2">
             <button
               type="button"

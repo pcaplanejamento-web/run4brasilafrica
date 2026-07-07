@@ -33,7 +33,12 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {content.dashboardKpis.map((k) => (
+        {[
+          { label: `Inscritos (${content.event.editionYear})`, value: content.metrics.registered },
+          { label: "Vagas restantes", value: content.metrics.spotsLeft },
+          { label: "Fotos na galeria", value: String((content.galleryPhotos ?? []).length) },
+          { label: "Patrocinadores", value: String(content.sponsors.length) },
+        ].map((k) => (
           <div
             key={k.label}
             className="rounded-[10px] border border-adm-border bg-adm-card p-5"
@@ -45,6 +50,11 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <p className="mb-8 -mt-4 text-[12px] text-adm-muted">
+        Inscritos e Vagas são editados em <strong>Configurações</strong>. Fotos e
+        Patrocinadores refletem os números reais.
+      </p>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
         <Card>

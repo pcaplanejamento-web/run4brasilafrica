@@ -5,7 +5,7 @@ import { authConfigured, getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ key: string }> },
 ) {
   const kv = getMediaKV();
@@ -13,12 +13,41 @@ export async function GET(
   const { key } = await params;
   const { value, metadata } = await kv.getWithMetadata(key, "arrayBuffer");
   if (!value) return new NextResponse("não encontrado", { status: 404 });
+
   const contentType = (metadata?.contentType as string) ?? "application/octet-stream";
+  const total = value.byteLength;
+  const cache = "public, max-age=31536000, immutable"; // keys are unique per upload
+
+  // Range support (needed for reliable <video> playback/seeking).
+  const range = req.headers.get("range");
+  const m = range?.match(/bytes=(\d*)-(\d*)/);
+  if (m) {
+    const start = m[1] ? parseInt(m[1], 10) : 0;
+    const end = m[2] ? parseInt(m[2], 10) : total - 1;
+    if (start >= total || start > end) {
+      return new NextResponse(null, {
+        status: 416,
+        headers: { "Content-Range": `bytes */${total}`, "Accept-Ranges": "bytes" },
+      });
+    }
+    return new NextResponse(value.slice(start, end + 1), {
+      status: 206,
+      headers: {
+        "Content-Type": contentType,
+        "Content-Range": `bytes ${start}-${end}/${total}`,
+        "Content-Length": String(end - start + 1),
+        "Accept-Ranges": "bytes",
+        "Cache-Control": cache,
+      },
+    });
+  }
+
   return new NextResponse(value, {
     headers: {
       "Content-Type": contentType,
-      // Keys are unique per upload, so cache aggressively.
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Length": String(total),
+      "Accept-Ranges": "bytes",
+      "Cache-Control": cache,
     },
   });
 }

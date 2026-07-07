@@ -36,6 +36,8 @@ export interface Hero {
   reduceMotion: boolean;
   /** Background image URL (replaces the placeholder texture when set). */
   image?: string;
+  /** Background video URL (takes priority over the image when set). */
+  video?: string;
 }
 
 export interface Stat {
@@ -130,9 +132,10 @@ export interface LogEntry {
   user: string;
 }
 
-export interface DashboardKpi {
-  label: string;
-  value: string;
+/** Manually-edited event numbers (the computed ones live in the dashboard). */
+export interface Metrics {
+  registered: string;
+  spotsLeft: string;
 }
 
 export interface SiteContent {
@@ -153,6 +156,6 @@ export interface SiteContent {
   /* ADM-only content */
   contentSections: ContentSection[];
   editions: Edition[];
-  dashboardKpis: DashboardKpi[];
+  metrics: Metrics;
   log: LogEntry[];
 }

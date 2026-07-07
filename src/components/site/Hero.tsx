@@ -10,20 +10,34 @@ export default function Hero({ hero }: { hero: HeroType }) {
   return (
     <section
       id="top"
-      className="clip-hero relative min-h-[540px] md:h-[680px]"
+      className="clip-hero relative min-h-[540px] overflow-hidden md:h-[680px]"
       style={
-        hero.image
-          ? {
-              backgroundImage: `url(${hero.image})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }
-          : {
-              background:
-                "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
-            }
+        hero.video
+          ? { background: "oklch(0.2 0.018 40)" }
+          : hero.image
+            ? {
+                backgroundImage: `url(${hero.image})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : {
+                background:
+                  "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
+              }
       }
     >
+      {hero.video && (
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src={hero.video}
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={hero.image}
+        />
+      )}
+
       {/* Bottom-up darkening for legibility */}
       <div
         className="absolute inset-0"
@@ -33,7 +47,7 @@ export default function Hero({ hero }: { hero: HeroType }) {
         }}
       />
 
-      {!hero.image && (
+      {!hero.image && !hero.video && (
         <div className="absolute left-5 top-5 font-[monospace] text-[11px] text-white/65 sm:left-8 md:left-14 md:text-[12px]">
           [ foto: corredores na largada — alto contraste ]
         </div>

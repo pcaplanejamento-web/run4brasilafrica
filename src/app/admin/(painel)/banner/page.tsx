@@ -60,6 +60,22 @@ function BannerForm({
       </div>
 
       <Card className="mb-7">
+        <SectionLabel>Vídeo de fundo do hero</SectionLabel>
+        <ImageUpload
+          value={hero.video}
+          onChange={(url) => setHero({ ...hero, video: url })}
+          className="h-52"
+          label="vídeo do hero"
+          video
+        />
+        <p className="mt-2 text-[12px] text-adm-muted">
+          Se enviado, o vídeo toca em silêncio, em loop, atrás do título (tem
+          prioridade sobre a imagem). MP4 ou WebM (recomendados) ou MOV, até 25 MB.
+          Use um clipe curto e leve.
+        </p>
+      </Card>
+
+      <Card className="mb-7">
         <SectionLabel>Imagem de fundo do hero</SectionLabel>
         <ImageUpload
           value={hero.image}
@@ -68,8 +84,8 @@ function BannerForm({
           label="imagem do hero"
         />
         <p className="mt-2 text-[12px] text-adm-muted">
-          Aparece atrás do título na página inicial. Use uma foto horizontal de alta
-          qualidade (JPG/PNG/WebP, até 8 MB).
+          Usada quando não há vídeo. Foto horizontal de alta qualidade
+          (JPG/PNG/WebP, até 8 MB).
         </p>
       </Card>
 

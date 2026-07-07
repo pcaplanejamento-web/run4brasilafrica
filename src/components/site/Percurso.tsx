@@ -15,6 +15,9 @@ function stravaRouteId(ref: string | undefined): string | null {
  */
 export default function Percurso({ percurso }: { percurso: PercursoType }) {
   const routeId = stravaRouteId(percurso.stravaRouteRef);
+  // Heading adapts to the distance entered in the ADM: "10 KM" → "10KM DE PURA ...".
+  const compactDistance = (percurso.distance || "").replace(/\s+/g, "");
+  const heading = [compactDistance, percurso.title].filter(Boolean).join(" ");
   const facts = [
     { label: "Distância", value: percurso.distance, big: true },
     { label: "Elevação", value: percurso.elevation, big: true },
@@ -27,7 +30,7 @@ export default function Percurso({ percurso }: { percurso: PercursoType }) {
         {percurso.eyebrow}
       </div>
       <h2 className="mb-10 font-display text-[30px] font-bold uppercase md:mb-11 md:text-[40px]">
-        {percurso.title}
+        {heading}
       </h2>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr] md:gap-12">

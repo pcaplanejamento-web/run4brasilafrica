@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { Backend } from "@/lib/content/store";
-import type { EventInfo, Hero } from "@/lib/content/types";
+import type { EventInfo, Hero, Metrics } from "@/lib/content/types";
 import {
   AdmLoading,
   Card,
@@ -39,13 +39,16 @@ const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }
 function ConfiguracoesForm({
   initialEvent,
   initialHero,
+  initialMetrics,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
+  initialMetrics: Metrics;
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
   const [hero, setHero] = useState(initialHero);
+  const [metrics, setMetrics] = useState(initialMetrics);
 
   const b = BACKEND_LABEL[backend];
 
@@ -63,6 +66,7 @@ function ConfiguracoesForm({
     await reset();
     setEvent(initialEvent);
     setHero(initialHero);
+    setMetrics(initialMetrics);
   }
 
   return (
@@ -153,6 +157,31 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
+        {/* Números do evento (manuais) */}
+        <Card>
+          <SectionLabel>Números do evento</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Inscritos ({event.editionYear})</FieldLabel>
+              <TextInput
+                value={metrics.registered}
+                onChange={(e) => setMetrics({ ...metrics, registered: e.target.value })}
+              />
+            </div>
+            <div>
+              <FieldLabel>Vagas restantes</FieldLabel>
+              <TextInput
+                value={metrics.spotsLeft}
+                onChange={(e) => setMetrics({ ...metrics, spotsLeft: e.target.value })}
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-[12px] text-adm-muted">
+            No painel, &ldquo;Fotos na galeria&rdquo; e &ldquo;Patrocinadores&rdquo; são
+            contados automaticamente.
+          </p>
+        </Card>
+
         {/* Change my password */}
         <ChangePassword />
 
@@ -174,7 +203,7 @@ function ConfiguracoesForm({
       <div className="max-w-[760px]">
         <SaveBar
           onSave={() =>
-            save({ event, hero }, "Atualizou configurações do evento")
+            save({ event, hero, metrics }, "Atualizou configurações do evento")
           }
         />
       </div>
@@ -186,6 +215,10 @@ export default function ConfiguracoesPage() {
   const { hydrated, content } = useContent();
   if (!hydrated) return <AdmLoading />;
   return (
-    <ConfiguracoesForm initialEvent={content.event} initialHero={content.hero} />
+    <ConfiguracoesForm
+      initialEvent={content.event}
+      initialHero={content.hero}
+      initialMetrics={content.metrics}
+    />
   );
 }

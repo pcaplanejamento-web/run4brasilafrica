@@ -76,17 +76,26 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - Guardas: não é possível remover/rebaixar o **último administrador** (evita lockout).
 - Em `next dev` (sem D1) a auth fica desligada (painel aberto), para desenvolvimento.
 
-## Imagens (mídia)
+## Imagens e vídeo (mídia)
 
 - Storage = **Cloudflare KV** (binding `MEDIA_KV`) guardando o binário + o
   `contentType` nos metadados. (R2 seria o ideal, mas não estava habilitado na conta.)
-- **Upload**: `POST /api/media` (multipart, admin) valida tipo/tamanho (≤ 8 MB),
-  gera uma chave única e devolve `{ url: "/api/media/<key>" }`.
-- **Servir**: `GET /api/media/[key]` transmite a imagem com cache imutável (chaves
-  são únicas por upload). `DELETE` remove (admin).
-- Componente `components/admin/ImageUpload.tsx` faz o upload e reporta a URL.
-- Campos no conteúdo: `hero.image`, `sponsors[].logo`, `galleryPhotos[]`. O público
-  (`Hero`, `Parceiros`, `Galeria`) mostra a imagem quando existe; senão, o placeholder.
+- **Upload**: `POST /api/media` (multipart, admin). Imagens (JPG/PNG/WebP/GIF/SVG,
+  ≤ 8 MB) e **vídeo** (MP4/WebM/MOV, ≤ 25 MB — limite do KV). Devolve `{ url }`.
+- **Servir**: `GET /api/media/[key]` com cache imutável e **suporte a Range**
+  (206) para tocar/seek de vídeo. `DELETE` remove (admin).
+- Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload.
+- Campos no conteúdo: `hero.image`, `hero.video`, `sponsors[].logo`, `galleryPhotos[]`.
+  O público mostra o vídeo do hero (autoplay/mudo/loop; prioridade sobre a imagem),
+  logos e fotos reais quando existem; senão, o placeholder.
+
+## Números do dashboard e texto do percurso
+
+- Dashboard: **Inscritos** e **Vagas restantes** são manuais (`content.metrics`,
+  editados em Configurações); **Fotos na galeria** = `galleryPhotos.length` e
+  **Patrocinadores** = `sponsors.length` (contagens reais, automáticas).
+- Percurso: o título adapta-se à **distância** inserida no ADM — o público monta
+  `"<distância compacta> " + percurso.title` (ex.: `10 KM` → `10KM DE PURA ADRENALINA.`).
 
 ### Resiliência (sem backend / offline)
 

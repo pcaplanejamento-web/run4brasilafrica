@@ -43,7 +43,7 @@ export const seedContent: SiteContent = {
 
   percurso: {
     eyebrow: "O PERCURSO",
-    title: "10KM DE PURA ADRENALINA.",
+    title: "DE PURA ADRENALINA.",
     distance: "10 KM",
     elevation: "+84 M",
     startFinish: "COPACABANA",
@@ -171,12 +171,10 @@ export const seedContent: SiteContent = {
     { year: "2024", date: "9 set 2024", participants: "2.480", status: "Encerrada" },
   ],
 
-  dashboardKpis: [
-    { label: "Inscritos (2026)", value: "1.840" },
-    { label: "Vagas restantes", value: "660" },
-    { label: "Fotos na galeria", value: "212" },
-    { label: "Patrocinadores", value: "9" },
-  ],
+  metrics: {
+    registered: "1.840",
+    spotsLeft: "660",
+  },
 
   log: [
     { time: "06/07 14:32", action: 'Atualizou texto da seção "Sobre a causa"', user: "Fernanda S." },
