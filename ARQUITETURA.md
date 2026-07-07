@@ -89,6 +89,39 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   O público mostra o vídeo do hero (autoplay/mudo/loop; prioridade sobre a imagem),
   logos e fotos reais quando existem; senão, o placeholder.
 
+## Hero: carrossel + vídeo do YouTube
+
+- `Hero` (client) cicla os `hero.slides` (badge + CTA), com indicadores clicáveis;
+  respeita `slideDurationSeconds` e reduce-motion. Fundo: `hero.youtubeUrl` (embed
+  cover, mudo/loop) > `hero.video` (legado) > `hero.image` > textura.
+
+## Lotes de inscrição
+
+- `content.lotes: Lote[]` (nome, texto, `ctaLabel`, url, `date`, `colorBg`,
+  `colorText`, `open`). ADM em Links & inscrição: CRUD, ordena por data, abrir/fechar
+  (força **1 aberto**), cores por lote. Público (`InscricaoCTA`): o lote aberto vira a
+  faixa principal com suas cores + `Countdown` (cliente) até a data + CTA; lotes
+  fechados em cinza e sem link. Sem lotes → cai na inscrição única.
+
+## Tema (cores) e marca
+
+- `content.theme` mapeia para variáveis CSS (`--color-ink`, `--color-gold`, ...) via
+  `SiteChrome` (client, no layout) — que também aplica o favicon. Editável em
+  Configurações (seletores de cor). Vazio = padrão.
+
+## Galeria via Cloudinary (opcional)
+
+- `content.cloudinary { cloudName, uploadPreset }` (Configurações). Quando preenchido,
+  `ImageUpload` envia **direto do navegador** ao Cloudinary (unsigned) e guarda a
+  `secure_url`; senão usa `/api/media`. O público carrega da URL salva.
+
+## Proteção de imagens
+
+- `ImageProtection` (global) bloqueia menu de contexto e arraste em imagens;
+  `ProtectedImage` (galeria) adiciona **marca d'água** + camada que intercepta salvar;
+  CSS esconde `.protected-media` na impressão. Limite honesto: screenshots do SO não são
+  bloqueáveis — a marca d'água cobre esse caso.
+
 ## Marca (logo + favicon)
 
 - `content.branding = { logo?, favicon? }`, editados em Configurações (uploads).
