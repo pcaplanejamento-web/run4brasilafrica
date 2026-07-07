@@ -86,6 +86,14 @@ function StravaForm({ initial }: { initial: Percurso }) {
               placeholder="ex.: connect.garmin.com/modern/course/123456789"
             />
           </div>
+          {/\/event\//i.test(p.garminRouteRef ?? "") && (
+            <p className="mb-1.5 rounded bg-[#fdecea] px-3 py-2 text-[12px] font-semibold text-[#c0392b]">
+              Este é um link de <strong>evento</strong> — o Garmin não gera mapa para
+              eventos, então ele não vai aparecer no site. Abra o evento no Garmin, clique
+              no <strong>percurso/course</strong> da prova e cole o link dele (fica como{" "}
+              <code>connect.garmin.com/modern/course/…</code>).
+            </p>
+          )}
           <p className="text-[12px] text-adm-muted">
             Use o link de um <strong>percurso (course)</strong>, atividade ou rota{" "}
             <strong>público</strong> do Garmin Connect — ex.:{" "}

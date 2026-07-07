@@ -134,12 +134,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **`Playlist`** (client, entre A Causa e Percurso) — só aparece com `playlist.enabled` e ≥1
   link. `playlist.visible` (`youtube`|`spotify`|`both`) decide o que mostra; com os dois, um
   seletor (abas) troca a plataforma.
-- **YouTube**: tenta o **feed público** (`/api/yt-playlist?list=…`, Atom `videos.xml`, sem
-  chave, ~15 vídeos). Se vier lista → **player principal** (por `videoId`) + **lista custom**
-  com o vídeo **tocando em 1º** ("Tocando agora"); clicar faz `loadVideoById`. Se o feed
-  falhar/404 (o YouTube às vezes bloqueia o feed) → **fallback** para o player nativo da
-  playlist (`listType:"playlist"`), que já mostra **todos os vídeos** na fila do YouTube. Ou
-  seja, a seção nunca quebra. **Spotify**: embed via **Spotify IFrame API** (`createController`),
+- **YouTube**: `/api/yt-playlist?list=…` **lê a página da playlist** e extrai os vídeos dos
+  `lockupViewModel` (id + título, até ~100, sem chave). Se vier lista → **player principal**
+  (por `videoId`) + **lista custom** com o vídeo **tocando em 1º** ("Tocando agora"); clicar
+  faz `loadVideoById`. Se a extração falhar → **fallback** para o player nativo da playlist
+  (`listType:"playlist"`), que já mostra **todos os vídeos** na fila do YouTube — a seção nunca
+  quebra. **Spotify**: embed via **Spotify IFrame API** (`createController`),
   controlável só por play/pause (sem mutar nem autoplay); a própria lista do Spotify aparece.
 - **Minimiza flutuante**: um `IntersectionObserver` na seção detecta quando ela sai da tela;
   se já houve play, o player vira **fixo no canto inferior direito** (mesmo elemento, só muda o
