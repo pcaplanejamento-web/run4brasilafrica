@@ -13,9 +13,18 @@ export default function Parceiros({ sponsors }: { sponsors: Sponsor[] }) {
           <Reveal
             key={sp.name}
             delay={(i % 5) * 60}
-            className="flex h-[90px] flex-col items-center justify-center gap-1 border border-line-soft bg-ink-panel"
+            className="flex h-[90px] flex-col items-center justify-center gap-1 border border-line-soft bg-ink-panel p-2"
           >
-            <span className="font-[monospace] text-[11px] text-muted">[ logo ]</span>
+            {sp.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={sp.logo}
+                alt={sp.name}
+                className="max-h-[44px] max-w-[80%] object-contain"
+              />
+            ) : (
+              <span className="font-[monospace] text-[11px] text-muted">[ logo ]</span>
+            )}
             <span className="text-[11px] uppercase tracking-[0.06em] text-gold">
               {sp.tier}
             </span>

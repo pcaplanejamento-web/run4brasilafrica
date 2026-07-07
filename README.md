@@ -120,6 +120,9 @@ src/
     page.tsx              # home pública (SSR do seed; conteúdo ao vivo no client)
     globals.css          # design tokens (paleta oklch, fontes, animações)
     api/content/route.ts  # backend: lê/grava o conteúdo no Cloudflare D1
+    api/auth/…             # login, logout, me (sessão)
+    api/users/…            # CRUD de usuários (Administrador geral)
+    api/media/…            # upload/serve/delete de imagens (Cloudflare KV)
     admin/
       page.tsx            # redireciona para /admin/login
       login/page.tsx      # login (porta de entrada)

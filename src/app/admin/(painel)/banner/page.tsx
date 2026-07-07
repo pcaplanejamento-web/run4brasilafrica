@@ -15,6 +15,7 @@ import {
   Select,
   TextInput,
 } from "@/components/admin/ui";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 function BannerForm({
   initial,
@@ -57,6 +58,20 @@ function BannerForm({
         <PageTitle>Gestão do Banner / Hero</PageTitle>
         <span className="text-[13px] text-[#777]">Edição: {editionLabel}</span>
       </div>
+
+      <Card className="mb-7">
+        <SectionLabel>Imagem de fundo do hero</SectionLabel>
+        <ImageUpload
+          value={hero.image}
+          onChange={(url) => setHero({ ...hero, image: url })}
+          className="h-52"
+          label="imagem do hero"
+        />
+        <p className="mt-2 text-[12px] text-adm-muted">
+          Aparece atrás do título na página inicial. Use uma foto horizontal de alta
+          qualidade (JPG/PNG/WebP, até 8 MB).
+        </p>
+      </Card>
 
       <Card dashed className="mb-7">
         <SectionLabel>

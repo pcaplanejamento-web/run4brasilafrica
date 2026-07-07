@@ -66,6 +66,8 @@ export const seedContent: SiteContent = {
     { name: "Comunidade", count: 27 },
   ],
 
+  galleryPhotos: [],
+
   galleryTiles: [
     { album: "LARGADA" },
     { album: "PERCURSO" },

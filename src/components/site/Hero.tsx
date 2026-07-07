@@ -11,10 +11,18 @@ export default function Hero({ hero }: { hero: HeroType }) {
     <section
       id="top"
       className="clip-hero relative min-h-[540px] md:h-[680px]"
-      style={{
-        background:
-          "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
-      }}
+      style={
+        hero.image
+          ? {
+              backgroundImage: `url(${hero.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }
+          : {
+              background:
+                "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
+            }
+      }
     >
       {/* Bottom-up darkening for legibility */}
       <div
@@ -25,9 +33,11 @@ export default function Hero({ hero }: { hero: HeroType }) {
         }}
       />
 
-      <div className="absolute left-5 top-5 font-[monospace] text-[11px] text-white/65 sm:left-8 md:left-14 md:text-[12px]">
-        [ foto: corredores na largada — alto contraste ]
-      </div>
+      {!hero.image && (
+        <div className="absolute left-5 top-5 font-[monospace] text-[11px] text-white/65 sm:left-8 md:left-14 md:text-[12px]">
+          [ foto: corredores na largada — alto contraste ]
+        </div>
+      )}
 
       <div className="absolute inset-x-5 bottom-12 sm:inset-x-8 md:inset-x-14 md:bottom-[90px]">
         <div className="mb-5 inline-block bg-gold px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-gold-ink md:mb-[22px] md:text-[13px]">

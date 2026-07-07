@@ -34,6 +34,8 @@ export interface Hero {
   transition: string;
   slideDurationSeconds: number;
   reduceMotion: boolean;
+  /** Background image URL (replaces the placeholder texture when set). */
+  image?: string;
 }
 
 export interface Stat {
@@ -75,6 +77,12 @@ export interface Sponsor {
   name: string;
   tier: SponsorTier;
   link: string;
+  logo?: string;
+}
+
+export interface GalleryPhoto {
+  url: string;
+  album: string;
 }
 
 export interface Testimonial {
@@ -136,6 +144,7 @@ export interface SiteContent {
   inscricao: Inscricao;
   albums: Album[];
   galleryTiles: { album: string }[];
+  galleryPhotos: GalleryPhoto[];
   sponsors: Sponsor[];
   testimonials: Testimonial[];
   faq: FaqItem[];

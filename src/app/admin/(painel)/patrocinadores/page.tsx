@@ -7,13 +7,13 @@ import { sponsorTierColors } from "@/lib/content/theme";
 import {
   AdmLoading,
   GhostButton,
-  ImagePlaceholder,
   PageHeader,
   PrimaryButton,
   SaveBar,
   Select,
   TextInput,
 } from "@/components/admin/ui";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 const TIERS: SponsorTier[] = ["Ouro", "Prata", "Bronze"];
 
@@ -55,9 +55,14 @@ function PatrocinadoresForm({ initial }: { initial: Sponsor[] }) {
           return (
             <div
               key={i}
-              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[60px_1.4fr_1fr_1fr_120px] md:items-center md:gap-3"
+              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[96px_1.4fr_1fr_1fr_120px] md:items-center md:gap-3"
             >
-              <ImagePlaceholder className="h-9 w-9 rounded" size={6} />
+              <ImageUpload
+                value={sp.logo}
+                onChange={(url) => set(i, { logo: url })}
+                className="h-16"
+                label="logo"
+              />
               <TextInput
                 value={sp.name}
                 onChange={(e) => set(i, { name: e.target.value })}

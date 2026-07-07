@@ -49,7 +49,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         <Sobre about={c.about} />
         <Percurso percurso={c.percurso} />
         <InscricaoCTA inscricao={c.inscricao} />
-        <Galeria tiles={c.galleryTiles} />
+        <Galeria tiles={c.galleryTiles} photos={c.galleryPhotos ?? []} />
         <Parceiros sponsors={c.sponsors} />
         <Depoimentos testimonials={c.testimonials} />
         <Faq items={c.faq} />

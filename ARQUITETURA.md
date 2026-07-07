@@ -76,10 +76,22 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - Guardas: não é possível remover/rebaixar o **último administrador** (evita lockout).
 - Em `next dev` (sem D1) a auth fica desligada (painel aberto), para desenvolvimento.
 
+## Imagens (mídia)
+
+- Storage = **Cloudflare KV** (binding `MEDIA_KV`) guardando o binário + o
+  `contentType` nos metadados. (R2 seria o ideal, mas não estava habilitado na conta.)
+- **Upload**: `POST /api/media` (multipart, admin) valida tipo/tamanho (≤ 8 MB),
+  gera uma chave única e devolve `{ url: "/api/media/<key>" }`.
+- **Servir**: `GET /api/media/[key]` transmite a imagem com cache imutável (chaves
+  são únicas por upload). `DELETE` remove (admin).
+- Componente `components/admin/ImageUpload.tsx` faz o upload e reporta a URL.
+- Campos no conteúdo: `hero.image`, `sponsors[].logo`, `galleryPhotos[]`. O público
+  (`Hero`, `Parceiros`, `Galeria`) mostra a imagem quando existe; senão, o placeholder.
+
 ### Resiliência (sem backend / offline)
 
-- Sem o binding D1 (ex.: `next dev`), o site usa o seed e o ADM salva **só no
-  `localStorage`** (a tela Configurações mostra o estado). Nada quebra.
+- Sem os bindings (ex.: `next dev`), o site usa o seed, o ADM salva **só no
+  `localStorage`** e o upload avisa que só funciona publicado. Nada quebra.
 - O `store` só sobrescreve o conteúdo local quando o backend é a fonte real
   (`source === "backend"`); um seed devolvido como placeholder nunca apaga edições
   locais.

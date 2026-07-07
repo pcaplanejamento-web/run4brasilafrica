@@ -26,3 +26,28 @@ export function getDB(): D1Like | null {
     return null;
   }
 }
+
+/** Minimal KV typings for the media store (binary values + metadata). */
+export interface MediaKV {
+  put(
+    key: string,
+    value: ArrayBuffer | ArrayBufferView | string,
+    options?: { metadata?: Record<string, unknown> },
+  ): Promise<void>;
+  getWithMetadata(
+    key: string,
+    type: "arrayBuffer",
+  ): Promise<{ value: ArrayBuffer | null; metadata: Record<string, unknown> | null }>;
+  delete(key: string): Promise<void>;
+}
+
+/** The media KV binding (MEDIA_KV), or null when unavailable (local dev). */
+export function getMediaKV(): MediaKV | null {
+  try {
+    const { env } = getCloudflareContext();
+    const kv = (env as Record<string, unknown>).MEDIA_KV;
+    return (kv as MediaKV) ?? null;
+  } catch {
+    return null;
+  }
+}
