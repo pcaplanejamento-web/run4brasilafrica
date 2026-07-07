@@ -21,24 +21,37 @@ export interface EventInfo {
   tagline: string; // hero headline
 }
 
+export type MediaType = "image" | "video";
+
 export interface HeroSlide {
-  text: string;
-  cta: string;
+  id: string;
+  mediaType: MediaType;
+  /** Uploaded image URL (when mediaType === "image"). */
+  image?: string;
+  /** YouTube link (when mediaType === "video"). */
+  videoUrl?: string;
+  /** Whether the video should start with sound (on first interaction). */
+  videoStartMuted: boolean;
+  title: string;
+  subtitle?: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  /** Legacy (old text-only carousel) — read as fallback for migration. */
+  text?: string;
+  cta?: string;
 }
 
 export interface Hero {
-  badge: string;
-  title: string;
-  ctaLabel: string;
   slides: HeroSlide[];
-  transition: string;
   slideDurationSeconds: number;
   reduceMotion: boolean;
-  /** Background image URL (replaces the placeholder texture when set). */
+  /** Legacy fields — kept optional, no longer used (no global hero background). */
+  badge?: string;
+  title?: string;
+  ctaLabel?: string;
+  transition?: string;
   image?: string;
-  /** Background video URL (takes priority over the image when set). */
   video?: string;
-  /** YouTube link for a background video (takes priority over image/video). */
   youtubeUrl?: string;
 }
 
@@ -52,6 +65,16 @@ export interface AboutSection {
   title: string;
   body: string;
   linkLabel: string;
+  /** Button destination (falls back to the #parceiros anchor when empty). */
+  linkUrl?: string;
+  mediaType?: MediaType;
+  image?: string;
+  videoUrl?: string;
+  videoStartMuted?: boolean;
+  /** Show a "Clique para começar o vídeo" overlay instead of autoplay. */
+  clickToPlay?: boolean;
+  /** CSS aspect-ratio for the media box (e.g. "16/9", "4/3", "1/1"). */
+  aspectRatio?: string;
 }
 
 export interface Percurso {

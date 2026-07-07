@@ -85,15 +85,36 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Servir**: `GET /api/media/[key]` com cache imutável e **suporte a Range**
   (206) para tocar/seek de vídeo. `DELETE` remove (admin).
 - Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload.
-- Campos no conteúdo: `hero.image`, `hero.video`, `sponsors[].logo`, `galleryPhotos[]`.
-  O público mostra o vídeo do hero (autoplay/mudo/loop; prioridade sobre a imagem),
-  logos e fotos reais quando existem; senão, o placeholder.
+- Campos no conteúdo: mídia por slide (`hero.slides[].image`), mídia da seção A Causa
+  (`about.image`), `sponsors[].logo`, `galleryPhotos[]`. O público mostra as fotos reais
+  quando existem; senão, o placeholder.
 
-## Hero: carrossel + vídeo do YouTube
+## Hero: carrossel com mídia por slide + seção "A Causa"
 
-- `Hero` (client) cicla os `hero.slides` (badge + CTA), com indicadores clicáveis;
-  respeita `slideDurationSeconds` e reduce-motion. Fundo: `hero.youtubeUrl` (embed
-  cover, mudo/loop) > `hero.video` (legado) > `hero.image` > textura.
+- **`YouTubePlayer`** (`components/site/YouTubePlayer.tsx`, client) — player reutilizável
+  via **YouTube IFrame API**. Autoplay sempre mudo (regra do navegador); botão de som
+  (mute/unMute) por ser gesto do usuário; `startMuted=false` liga o som na 1ª interação
+  da página; `clickToPlay` mostra o overlay "Clique para começar o vídeo". `ResizeObserver`
+  dimensiona o iframe para **cobrir** (cover) qualquer proporção do pai; iframe com
+  `pointer-events:none` (controles por cima clicáveis). Helper `youtubeId(url)` extrai o ID.
+- **`Hero`** (client) é um carrossel de verdade sobre `hero.slides` — **só slides criados
+  aparecem** (0 → não renderiza nada); **sem imagem de fundo global**. Renderiza só o slide
+  ativo (1 player por vez, destruído na troca). Cada slide tem sua mídia: `mediaType:"image"`
+  → `background-image` cover; `mediaType:"video"` → `YouTubePlayer` (cover) com o
+  `videoStartMuted` do slide. Sobre a mídia: selo (`subtitle`), título (`title`) e botão
+  (`ctaLabel`→`ctaUrl`, `_blank` se for URL externa). Indicadores clicáveis; auto-advance
+  (`slideDurationSeconds`, reinicia ao escolher um slide) respeitando reduce-motion.
+  Fallback de slides legados: `title||text`, `ctaLabel||cta`.
+- **`Sobre`** ("A Causa", client) — caixa de mídia com a proporção escolhida
+  (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, 21/9): imagem `object-cover`, ou
+  `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Textos
+  (`eyebrow`, `title`, `body`) e botão (`linkLabel`→`linkUrl`, fallback `#parceiros`)
+  totalmente editáveis.
+- **ADM** (`/admin/banner`): editor de slides (tipo Foto|Vídeo, upload ou link do YouTube +
+  "iniciar com som", selo/título/botão/destino, reordenar/remover/adicionar; normaliza
+  slides legados no load), configurações gerais (duração, reduce-motion) e o grupo
+  **"Seção A Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som,
+  proporção). Salva `{ hero, about }`.
 
 ## Lotes de inscrição
 

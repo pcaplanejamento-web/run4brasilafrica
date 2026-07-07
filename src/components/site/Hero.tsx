@@ -1,34 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { Hero as HeroType } from "@/lib/content/types";
+import { useEffect, useState } from "react";
+import type { Hero as HeroType, HeroSlide } from "@/lib/content/types";
+import YouTubePlayer, { youtubeId } from "./YouTubePlayer";
 
-/** Extract a YouTube video ID from watch/youtu.be/embed links. */
-function youtubeId(url: string | undefined): string | null {
-  if (!url) return null;
-  const m = url.match(
-    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
-  );
-  if (m) return m[1];
-  const bare = url.match(/^[\w-]{11}$/);
-  return bare ? bare[0] : null;
-}
+const title = (s: HeroSlide) => s.title || s.text || "";
+const ctaLabel = (s: HeroSlide) => s.ctaLabel || s.cta || "Inscreva-se";
+const ctaUrl = (s: HeroSlide) => s.ctaUrl || "#inscricao";
 
 /**
- * Hero / banner with a working carousel of slides (badge + CTA) and an optional
- * background: YouTube video (link) > uploaded video > image > texture. The big
- * title stays constant; the carousel cycles the highlight text and CTA, respects
- * reduced-motion, and lets the visitor jump between slides.
+ * Hero carousel. Only created slides appear (0 → nothing). Each slide brings its
+ * own media (uploaded image OR YouTube video), highlight, title and button.
+ * Renders one slide at a time (single player), auto-advances (respecting
+ * reduced-motion) and lets the visitor jump between slides.
  */
 export default function Hero({ hero }: { hero: HeroType }) {
   const slides = hero.slides ?? [];
-  const hasCarousel = slides.length > 1;
   const [index, setIndex] = useState(0);
   const [reduced, setReduced] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    // Client-only (matchMedia) → resolve after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setReduced(
       hero.reduceMotion &&
@@ -36,116 +27,100 @@ export default function Hero({ hero }: { hero: HeroType }) {
     );
   }, [hero.reduceMotion]);
 
+  // Auto-advance. Depends on `index` so a manual pick (indicator) restarts the
+  // countdown from that slide instead of being overridden mid-interval.
   useEffect(() => {
-    if (!hasCarousel || reduced) return;
+    if (slides.length <= 1 || reduced) return;
     const ms = Math.max(2, hero.slideDurationSeconds || 6) * 1000;
-    timer.current = setInterval(
-      () => setIndex((i) => (i + 1) % slides.length),
-      ms,
-    );
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [hasCarousel, reduced, hero.slideDurationSeconds, slides.length]);
+    const id = setTimeout(() => setIndex((i) => (i + 1) % slides.length), ms);
+    return () => clearTimeout(id);
+  }, [slides.length, reduced, hero.slideDurationSeconds, index]);
 
-  // Current slide drives the highlight badge + CTA; fall back to hero fields.
-  const slide = slides[index] ?? { text: hero.badge, cta: hero.ctaLabel };
-  const badge = slide.text || hero.badge;
-  const ctaLabel = slide.cta || hero.ctaLabel;
-
-  const ytId = youtubeId(hero.youtubeUrl);
-
-  const bgStyle = ytId
-    ? { background: "oklch(0.2 0.018 40)" }
-    : hero.video
-      ? { background: "oklch(0.2 0.018 40)" }
-      : hero.image
-        ? {
-            backgroundImage: `url(${hero.image})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }
-        : {
-            background:
-              "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
-          };
+  if (slides.length === 0) return null;
+  const i = Math.min(index, slides.length - 1);
+  const slide = slides[i];
+  const ytId = slide.mediaType === "video" ? youtubeId(slide.videoUrl) : null;
+  const url = ctaUrl(slide);
+  const external = /^https?:\/\//.test(url);
+  const fade = reduced ? "" : "r4ba-fade";
 
   return (
     <section
       id="top"
       className="clip-hero relative min-h-[540px] overflow-hidden md:h-[680px]"
-      style={bgStyle}
+      style={{ background: "var(--color-ink)" }}
     >
-      {ytId ? (
-        <div className="yt-cover" aria-hidden="true">
-          <iframe
-            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&playsinline=1&modestbranding=1&rel=0&showinfo=0&disablekb=1&fs=0&iv_load_policy=3`}
-            title="Vídeo de fundo"
-            allow="autoplay; encrypted-media"
-          />
-        </div>
-      ) : hero.video ? (
-        <video
-          className="absolute inset-0 h-full w-full object-cover"
-          src={hero.video}
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={hero.image}
+      {/* Media (one at a time) */}
+      {slide.mediaType === "image" && slide.image ? (
+        <div
+          key={`img-${slide.id}`}
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${slide.image})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
         />
-      ) : null}
-
-      {/* Bottom-up darkening for legibility */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "linear-gradient(0deg, rgba(10,8,6,.85), transparent 55%)",
-        }}
-      />
-
-      {!hero.image && !hero.video && !ytId && (
-        <div className="absolute left-5 top-5 font-[monospace] text-[11px] text-white/65 sm:left-8 md:left-14 md:text-[12px]">
-          [ foto: corredores na largada — alto contraste ]
-        </div>
+      ) : ytId ? (
+        <YouTubePlayer
+          key={`yt-${slide.id}-${ytId}`}
+          videoId={ytId}
+          startMuted={slide.videoStartMuted !== false}
+        />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
+          }}
+        />
       )}
 
-      <div className="absolute inset-x-5 bottom-12 sm:inset-x-8 md:inset-x-14 md:bottom-[90px]">
-        <div
-          key={`badge-${index}`}
-          className={`mb-5 inline-block bg-gold px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-gold-ink md:mb-[22px] md:text-[13px] ${
-            reduced ? "" : "r4ba-fade"
-          }`}
-        >
-          {badge}
-        </div>
+      {/* Legibility overlay */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "linear-gradient(0deg, rgba(10,8,6,.85), transparent 55%)" }}
+      />
 
-        <h1 className="max-w-[960px] font-display text-[44px] font-bold uppercase leading-[0.98] sm:text-[60px] md:text-[88px]">
-          {hero.title}
+      <div className="absolute inset-x-5 bottom-12 sm:inset-x-8 md:inset-x-14 md:bottom-[90px]">
+        {slide.subtitle && (
+          <div
+            key={`sub-${i}`}
+            className={`mb-5 inline-block bg-gold px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-gold-ink md:mb-[22px] md:text-[13px] ${fade}`}
+          >
+            {slide.subtitle}
+          </div>
+        )}
+
+        <h1
+          key={`title-${i}`}
+          className={`max-w-[960px] font-display text-[44px] font-bold uppercase leading-[0.98] sm:text-[60px] md:text-[88px] ${fade}`}
+        >
+          {title(slide)}
         </h1>
 
         <div className="mt-7 flex items-center gap-5 md:mt-8">
           <a
-            key={`cta-${index}`}
-            href="#inscricao"
-            className={`clip-cta-lg bg-gold px-7 py-4 text-[15px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 md:px-[34px] md:py-[17px] md:text-[16px] ${
-              reduced ? "" : "r4ba-fade"
-            }`}
+            key={`cta-${i}`}
+            href={url}
+            {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            className={`clip-cta-lg bg-gold px-7 py-4 text-[15px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 md:px-[34px] md:py-[17px] md:text-[16px] ${fade}`}
           >
-            {ctaLabel}
+            {ctaLabel(slide)}
           </a>
 
-          {hasCarousel && (
+          {slides.length > 1 && (
             <div className="flex gap-2" aria-label="Slides do banner">
-              {slides.map((_, i) => (
+              {slides.map((_, k) => (
                 <button
-                  key={i}
+                  key={k}
                   type="button"
-                  onClick={() => setIndex(i)}
-                  aria-label={`Ir para o slide ${i + 1}`}
-                  aria-current={i === index ? "true" : undefined}
+                  onClick={() => setIndex(k)}
+                  aria-label={`Ir para o slide ${k + 1}`}
+                  aria-current={k === i ? "true" : undefined}
                   className={`h-1 transition-all ${
-                    i === index ? "w-[26px] bg-gold" : "w-2.5 bg-white/35"
+                    k === i ? "w-[26px] bg-gold" : "w-2.5 bg-white/35"
                   }`}
                 />
               ))}

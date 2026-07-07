@@ -19,15 +19,26 @@ export const seedContent: SiteContent = {
   theme: {},
 
   hero: {
-    badge: "14 SET 2026 · RIO DE JANEIRO",
-    title: "CORRA POR ALGO MAIOR.",
-    ctaLabel: "Garantir vaga",
     slides: [
-      { text: "14 de setembro · Rio de Janeiro", cta: "Garantir minha vaga" },
-      { text: "Inscrições do Lote 2 abertas", cta: "Inscreva-se" },
-      { text: "Reviva a edição de 2025", cta: "Ver galeria" },
+      {
+        id: "slide-1",
+        mediaType: "image",
+        videoStartMuted: true,
+        subtitle: "14 SET 2026 · RIO DE JANEIRO",
+        title: "CORRA POR ALGO MAIOR.",
+        ctaLabel: "Garantir vaga",
+        ctaUrl: "#inscricao",
+      },
+      {
+        id: "slide-2",
+        mediaType: "image",
+        videoStartMuted: true,
+        subtitle: "INSCRIÇÕES ABERTAS",
+        title: "DUAS TERRAS. UMA LARGADA.",
+        ctaLabel: "Inscreva-se",
+        ctaUrl: "#inscricao",
+      },
     ],
-    transition: "Fade suave",
     slideDurationSeconds: 6,
     reduceMotion: true,
   },
@@ -43,6 +54,11 @@ export const seedContent: SiteContent = {
     title: "DUAS TERRAS. UMA LARGADA.",
     body: "Cada passo do Run4BrasilAfrica financia projetos sociais que conectam comunidades no Brasil e na África. Energia de pista, impacto real.",
     linkLabel: "Ver instituições apoiadas",
+    linkUrl: "#parceiros",
+    mediaType: "image",
+    videoStartMuted: true,
+    clickToPlay: false,
+    aspectRatio: "4/3",
   },
 
   percurso: {

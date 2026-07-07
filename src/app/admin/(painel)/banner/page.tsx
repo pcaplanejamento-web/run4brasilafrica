@@ -2,30 +2,61 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
-import type { Hero, HeroSlide } from "@/lib/content/types";
+import type { AboutSection, Hero, HeroSlide, MediaType } from "@/lib/content/types";
 import {
   AdmLoading,
   Card,
   FieldLabel,
   GhostButton,
-  ImagePlaceholder,
   PageTitle,
   SaveBar,
   SectionLabel,
   Select,
+  TextArea,
   TextInput,
 } from "@/components/admin/ui";
 import ImageUpload from "@/components/admin/ImageUpload";
 
+/** Bring a slide (possibly from the old text-only carousel) to the new shape. */
+function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
+  return {
+    id: s.id ?? `slide-${i + 1}`,
+    mediaType: s.mediaType ?? "image",
+    image: s.image,
+    videoUrl: s.videoUrl,
+    videoStartMuted: s.videoStartMuted ?? true,
+    title: s.title || s.text || "",
+    subtitle: s.subtitle ?? "",
+    ctaLabel: s.ctaLabel || s.cta || "Inscreva-se",
+    ctaUrl: s.ctaUrl || "#inscricao",
+  };
+}
+
+const ASPECT_OPTIONS = [
+  { value: "4/3", label: "4:3 (paisagem)" },
+  { value: "16/9", label: "16:9 (widescreen)" },
+  { value: "1/1", label: "1:1 (quadrado)" },
+  { value: "3/4", label: "3:4 (retrato)" },
+  { value: "21/9", label: "21:9 (cinema)" },
+];
+
 function BannerForm({
-  initial,
+  initialHero,
+  initialAbout,
   editionLabel,
+  cloudinary,
 }: {
-  initial: Hero;
+  initialHero: Hero;
+  initialAbout: AboutSection;
   editionLabel: string;
+  cloudinary?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save } = useContent();
-  const [hero, setHero] = useState(initial);
+  const [hero, setHero] = useState<Hero>({
+    ...initialHero,
+    slides: (initialHero.slides ?? []).map(normalizeSlide),
+  });
+  const [about, setAbout] = useState<AboutSection>(initialAbout);
 
   function setSlide(i: number, patch: Partial<HeroSlide>) {
     setHero((h) => ({
@@ -48,7 +79,18 @@ function BannerForm({
   function add() {
     setHero((h) => ({
       ...h,
-      slides: [...h.slides, { text: "Novo slide", cta: "Saiba mais" }],
+      slides: [
+        ...h.slides,
+        {
+          id: `slide-${Date.now()}`,
+          mediaType: "image",
+          videoStartMuted: true,
+          title: "Novo slide",
+          subtitle: "",
+          ctaLabel: "Inscreva-se",
+          ctaUrl: "#inscricao",
+        },
+      ],
     }));
   }
 
@@ -59,87 +101,135 @@ function BannerForm({
         <span className="text-[13px] text-[#777]">Edição: {editionLabel}</span>
       </div>
 
-      <Card className="mb-7">
-        <SectionLabel>Vídeo de fundo do hero (YouTube)</SectionLabel>
-        <FieldLabel>Link do vídeo no YouTube</FieldLabel>
-        <TextInput
-          value={hero.youtubeUrl ?? ""}
-          onChange={(e) => setHero({ ...hero, youtubeUrl: e.target.value })}
-          placeholder="ex.: https://www.youtube.com/watch?v=XXXXXXXXXXX"
-        />
-        <p className="mt-2 text-[12px] text-adm-muted">
-          Cole o link de um vídeo público do YouTube. Ele toca em silêncio, em loop,
-          atrás do título (tem prioridade sobre a imagem). Use um vídeo horizontal.
-        </p>
-      </Card>
-
-      <Card className="mb-7">
-        <SectionLabel>Imagem de fundo do hero</SectionLabel>
-        <ImageUpload
-          value={hero.image}
-          onChange={(url) => setHero({ ...hero, image: url })}
-          className="h-52"
-          label="imagem do hero"
-        />
-        <p className="mt-2 text-[12px] text-adm-muted">
-          Usada quando não há vídeo. Foto horizontal de alta qualidade
-          (JPG/PNG/WebP, até 8 MB).
-        </p>
-      </Card>
-
       <Card dashed className="mb-7">
-        <SectionLabel>
-          Slides do carrossel (use as setas para reordenar)
-        </SectionLabel>
-        <div className="flex flex-col">
+        <SectionLabel>Slides do carrossel (use as setas para reordenar)</SectionLabel>
+        <p className="-mt-2 mb-4 text-[12px] text-adm-muted">
+          Só os slides criados aqui aparecem no site. Cada slide tem sua própria
+          mídia (foto ou vídeo do YouTube), textos e botão. Sem slides, o banner
+          não é exibido.
+        </p>
+
+        <div className="flex flex-col gap-4">
           {hero.slides.map((sl, i) => (
             <div
-              key={i}
-              className="flex flex-col gap-3 border-b border-[#eee] py-3 last:border-0 md:flex-row md:items-center md:gap-4"
+              key={sl.id}
+              className="rounded-lg border border-[#e2e2dc] bg-[#fbfbfa] p-4"
             >
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => move(i, -1)}
-                    aria-label="Mover para cima"
-                    className="px-1 text-[#aaa] hover:text-terracotta disabled:opacity-30"
-                    disabled={i === 0}
-                  >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[12px] font-bold uppercase text-adm-muted">
+                  Slide {i + 1}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <GhostButton onClick={() => move(i, -1)} disabled={i === 0}>
                     ↑
-                  </button>
-                  <button
-                    type="button"
+                  </GhostButton>
+                  <GhostButton
                     onClick={() => move(i, 1)}
-                    aria-label="Mover para baixo"
-                    className="px-1 text-[#aaa] hover:text-terracotta disabled:opacity-30"
                     disabled={i === hero.slides.length - 1}
                   >
                     ↓
-                  </button>
+                  </GhostButton>
+                  <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
                 </div>
-                <ImagePlaceholder className="h-14 w-24 flex-none rounded" />
               </div>
-              <div className="flex-1">
-                <FieldLabel>Texto de destaque</FieldLabel>
-                <TextInput
-                  value={sl.text}
-                  onChange={(e) => setSlide(i, { text: e.target.value })}
-                />
-              </div>
-              <div className="flex-1">
-                <FieldLabel>Botão (CTA)</FieldLabel>
-                <TextInput
-                  value={sl.cta}
-                  onChange={(e) => setSlide(i, { cta: e.target.value })}
-                />
-              </div>
-              <div className="flex gap-2">
-                <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* Media column */}
+                <div>
+                  <FieldLabel>Tipo de mídia</FieldLabel>
+                  <Select
+                    value={sl.mediaType}
+                    onChange={(e) =>
+                      setSlide(i, { mediaType: e.target.value as MediaType })
+                    }
+                  >
+                    <option value="image">Foto</option>
+                    <option value="video">Vídeo (YouTube)</option>
+                  </Select>
+
+                  {sl.mediaType === "image" ? (
+                    <div className="mt-3">
+                      <ImageUpload
+                        value={sl.image}
+                        onChange={(url) => setSlide(i, { image: url })}
+                        className="h-40"
+                        label="foto do slide"
+                        cloudinary={cloudinary}
+                      />
+                      <p className="mt-1.5 text-[12px] text-adm-muted">
+                        Foto horizontal de alta qualidade (JPG/PNG/WebP).
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-3">
+                      <FieldLabel>Link do vídeo no YouTube</FieldLabel>
+                      <TextInput
+                        value={sl.videoUrl ?? ""}
+                        onChange={(e) => setSlide(i, { videoUrl: e.target.value })}
+                        placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"
+                      />
+                      <div className="mt-3">
+                        <FieldLabel>Iniciar com som?</FieldLabel>
+                        <Select
+                          value={sl.videoStartMuted ? "nao" : "sim"}
+                          onChange={(e) =>
+                            setSlide(i, {
+                              videoStartMuted: e.target.value !== "sim",
+                            })
+                          }
+                        >
+                          <option value="nao">Não — começa mudo (recomendado)</option>
+                          <option value="sim">Sim — som na 1ª interação</option>
+                        </Select>
+                        <p className="mt-1.5 text-[12px] text-adm-muted">
+                          Navegadores só permitem som após um clique. Há sempre um
+                          botão de som sobre o vídeo.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Text column */}
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <FieldLabel>Selo (linha superior)</FieldLabel>
+                    <TextInput
+                      value={sl.subtitle ?? ""}
+                      onChange={(e) => setSlide(i, { subtitle: e.target.value })}
+                      placeholder="14 SET 2026 · RIO DE JANEIRO"
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Título de destaque</FieldLabel>
+                    <TextInput
+                      value={sl.title}
+                      onChange={(e) => setSlide(i, { title: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <FieldLabel>Texto do botão</FieldLabel>
+                      <TextInput
+                        value={sl.ctaLabel}
+                        onChange={(e) => setSlide(i, { ctaLabel: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Destino do botão</FieldLabel>
+                      <TextInput
+                        value={sl.ctaUrl}
+                        onChange={(e) => setSlide(i, { ctaUrl: e.target.value })}
+                        placeholder="#inscricao"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
+
         <button
           type="button"
           onClick={add}
@@ -149,20 +239,9 @@ function BannerForm({
         </button>
       </Card>
 
-      <Card dashed>
+      <Card dashed className="mb-7">
         <SectionLabel>Configurações gerais do carrossel</SectionLabel>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <div>
-            <FieldLabel>Transição</FieldLabel>
-            <Select
-              value={hero.transition}
-              onChange={(e) => setHero({ ...hero, transition: e.target.value })}
-            >
-              <option>Fade suave</option>
-              <option>Deslizar</option>
-              <option>Zoom sutil</option>
-            </Select>
-          </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
             <FieldLabel>Duração por slide (segundos)</FieldLabel>
             <TextInput
@@ -193,7 +272,154 @@ function BannerForm({
         </div>
       </Card>
 
-      <SaveBar onSave={() => save({ hero }, "Atualizou o banner / hero")} />
+      {/* ---- A Causa (Sobre) ---- */}
+      <Card dashed>
+        <SectionLabel>Seção &quot;A Causa&quot;</SectionLabel>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Text column */}
+          <div className="flex flex-col gap-3">
+            <div>
+              <FieldLabel>Linha superior (selo)</FieldLabel>
+              <TextInput
+                value={about.eyebrow}
+                onChange={(e) => setAbout({ ...about, eyebrow: e.target.value })}
+              />
+            </div>
+            <div>
+              <FieldLabel>Título</FieldLabel>
+              <TextInput
+                value={about.title}
+                onChange={(e) => setAbout({ ...about, title: e.target.value })}
+              />
+            </div>
+            <div>
+              <FieldLabel>Texto</FieldLabel>
+              <TextArea
+                rows={4}
+                value={about.body}
+                onChange={(e) => setAbout({ ...about, body: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <FieldLabel>Texto do botão</FieldLabel>
+                <TextInput
+                  value={about.linkLabel}
+                  onChange={(e) =>
+                    setAbout({ ...about, linkLabel: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <FieldLabel>Destino do botão</FieldLabel>
+                <TextInput
+                  value={about.linkUrl ?? ""}
+                  onChange={(e) => setAbout({ ...about, linkUrl: e.target.value })}
+                  placeholder="#parceiros"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Media column */}
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <FieldLabel>Tipo de mídia</FieldLabel>
+                <Select
+                  value={about.mediaType ?? "image"}
+                  onChange={(e) =>
+                    setAbout({ ...about, mediaType: e.target.value as MediaType })
+                  }
+                >
+                  <option value="image">Foto</option>
+                  <option value="video">Vídeo (YouTube)</option>
+                </Select>
+              </div>
+              <div>
+                <FieldLabel>Proporção</FieldLabel>
+                <Select
+                  value={about.aspectRatio ?? "4/3"}
+                  onChange={(e) =>
+                    setAbout({ ...about, aspectRatio: e.target.value })
+                  }
+                >
+                  {ASPECT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+
+            {about.mediaType === "video" ? (
+              <>
+                <div>
+                  <FieldLabel>Link do vídeo no YouTube</FieldLabel>
+                  <TextInput
+                    value={about.videoUrl ?? ""}
+                    onChange={(e) =>
+                      setAbout({ ...about, videoUrl: e.target.value })
+                    }
+                    placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel>Exibição</FieldLabel>
+                    <Select
+                      value={about.clickToPlay ? "click" : "auto"}
+                      onChange={(e) =>
+                        setAbout({
+                          ...about,
+                          clickToPlay: e.target.value === "click",
+                        })
+                      }
+                    >
+                      <option value="auto">Tocar automático (mudo)</option>
+                      <option value="click">Clique para começar</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <FieldLabel>Iniciar com som?</FieldLabel>
+                    <Select
+                      value={about.videoStartMuted === false ? "sim" : "nao"}
+                      onChange={(e) =>
+                        setAbout({
+                          ...about,
+                          videoStartMuted: e.target.value !== "sim",
+                        })
+                      }
+                    >
+                      <option value="nao">Não — começa mudo</option>
+                      <option value="sim">Sim — som ao interagir</option>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <FieldLabel>Foto</FieldLabel>
+                <ImageUpload
+                  value={about.image}
+                  onChange={(url) => setAbout({ ...about, image: url })}
+                  className="h-44"
+                  label="foto da causa"
+                  cloudinary={cloudinary}
+                />
+                <p className="mt-1.5 text-[12px] text-adm-muted">
+                  A imagem se adapta à proporção escolhida (preenche cobrindo).
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <SaveBar
+        onSave={() => save({ hero, about }, "Atualizou o banner / hero e a seção A Causa")}
+      />
     </>
   );
 }
@@ -203,8 +429,10 @@ export default function BannerPage() {
   if (!hydrated) return <AdmLoading />;
   return (
     <BannerForm
-      initial={content.hero}
+      initialHero={content.hero}
+      initialAbout={content.about}
       editionLabel={`${content.event.brandName} ${content.event.editionYear}`}
+      cloudinary={content.cloudinary}
     />
   );
 }
