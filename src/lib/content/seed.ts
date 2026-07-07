@@ -85,6 +85,7 @@ export const seedContent: SiteContent = {
     ctaLabel: "Inscreva-se",
     platform: "Ticket Sports (parceiro)",
     url: "https://ticketsports.com.br/run4brasilafrica-2026",
+    raceDate: "2026-09-14T07:00",
   },
 
   lotes: [
@@ -94,6 +95,7 @@ export const seedContent: SiteContent = {
       text: "A partir de R$ 129 · 5KM e 10KM · kit incluído",
       ctaLabel: "Inscreva-se",
       url: "https://ticketsports.com.br/run4brasilafrica-2026",
+      openDate: "2026-07-01T00:00",
       date: "2026-08-01T23:59",
       colorBg: "#c8ce2e",
       colorText: "#1a1400",
@@ -105,6 +107,7 @@ export const seedContent: SiteContent = {
       text: "A partir de R$ 149 · últimas vagas",
       ctaLabel: "Inscreva-se",
       url: "https://ticketsports.com.br/run4brasilafrica-2026",
+      openDate: "2026-08-01T23:59",
       date: "2026-09-01T23:59",
       colorBg: "#c8ce2e",
       colorText: "#1a1400",
@@ -124,6 +127,11 @@ export const seedContent: SiteContent = {
   gallery: {
     buyEnabled: false,
     buyLabel: "Comprar fotos",
+    slideCols: 3,
+    slideRows: 2,
+    slideColsMobile: 2,
+    slideRowsMobile: 3,
+    slideSeconds: 5,
   },
 
   cloudinary: {},

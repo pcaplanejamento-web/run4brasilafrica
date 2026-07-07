@@ -88,6 +88,19 @@ img {
   .protected-media img {
     visibility: hidden !important;
   }
+  /* Anti-print: hide the whole gallery on print. */
+  #galeria {
+    display: none !important;
+  }
+}
+
+/* Gallery sliding grid: allow vertical scroll + swipe, block pinch/double-tap zoom. */
+.gallery-slider {
+  touch-action: pan-y;
+}
+.gallery-slider img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 }
 
 /* Route embeds (Strava / Garmin): force the injected iframe to fill the section */

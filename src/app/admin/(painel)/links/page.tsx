@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { ContactLinks, Inscricao, Lote } from "@/lib/content/types";
+import { validateLotes } from "@/lib/content/lotes";
 import {
   AdmLoading,
   Card,
@@ -48,6 +49,7 @@ function LinksForm({
         text: "",
         ctaLabel: "Inscreva-se",
         url: inscricao.url,
+        openDate: "",
         date: "",
         colorBg: "#c8ce2e",
         colorText: "#1a1400",
@@ -56,10 +58,14 @@ function LinksForm({
     ]);
   }
 
-  // Display in date order (the public site orders the same way).
+  // Display in opening-date order (the public site orders the same way).
   const ordered = lotes
     .map((l, i) => ({ l, i }))
-    .sort((a, b) => (a.l.date || "").localeCompare(b.l.date || ""));
+    .sort((a, b) =>
+      (a.l.openDate || a.l.date || "").localeCompare(b.l.openDate || b.l.date || ""),
+    );
+
+  const errors = validateLotes(lotes, inscricao.raceDate);
 
   return (
     <>
@@ -78,10 +84,22 @@ function LinksForm({
             />
           </div>
           <FieldLabel>URL de inscrição padrão</FieldLabel>
+          <div className="mb-3.5">
+            <TextInput
+              value={inscricao.url}
+              onChange={(e) => setInscricao({ ...inscricao, url: e.target.value })}
+            />
+          </div>
+          <FieldLabel>Dia da corrida</FieldLabel>
           <TextInput
-            value={inscricao.url}
-            onChange={(e) => setInscricao({ ...inscricao, url: e.target.value })}
+            type="datetime-local"
+            value={inscricao.raceDate ?? ""}
+            onChange={(e) => setInscricao({ ...inscricao, raceDate: e.target.value })}
           />
+          <p className="mt-2 text-[12px] text-adm-muted">
+            Aparece na tela inicial como a faixa &ldquo;Dia da Corrida&rdquo; com contagem
+            regressiva. Deve ser depois do encerramento do último lote.
+          </p>
         </Card>
 
         {/* Lotes */}
@@ -93,10 +111,23 @@ function LinksForm({
             </PrimaryButton>
           </div>
           <p className="mb-4 text-[12px] text-adm-muted">
-            Os lotes aparecem no site em ordem de data. Apenas <strong>1 lote aberto</strong>{" "}
-            por vez; os demais ficam em cinza e sem link. O lote aberto mostra um cronômetro
-            até a data.
+            Cada lote tem <strong>abertura</strong> e <strong>encerramento</strong>. O site
+            decide sozinho qual está aberto pelas datas e mostra a contagem regressiva{" "}
+            <strong>para a abertura</strong> (se ainda não abriu) ou{" "}
+            <strong>para o encerramento</strong> (se já abriu). Os períodos não podem se
+            sobrepor — um lote de cada vez.
           </p>
+
+          {errors.length > 0 && (
+            <div className="mb-4 rounded-lg bg-[#fdecea] px-4 py-3 text-[12px] text-[#c0392b]">
+              <strong>Corrija antes de salvar:</strong>
+              <ul className="mt-1 list-disc pl-5">
+                {errors.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="flex flex-col gap-4">
             {ordered.map(({ l, i }) => (
@@ -129,8 +160,17 @@ function LinksForm({
                     <FieldLabel>Nome</FieldLabel>
                     <TextInput value={l.name} onChange={(e) => setLote(i, { name: e.target.value })} />
                   </div>
+                  <div className="hidden sm:block" />
                   <div>
-                    <FieldLabel>Data limite/virada</FieldLabel>
+                    <FieldLabel>Abertura das inscrições</FieldLabel>
+                    <TextInput
+                      type="datetime-local"
+                      value={l.openDate ?? ""}
+                      onChange={(e) => setLote(i, { openDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>Encerramento das inscrições</FieldLabel>
                     <TextInput
                       type="datetime-local"
                       value={l.date}
@@ -221,11 +261,20 @@ function LinksForm({
       </div>
 
       <div className="max-w-[820px]">
-        <SaveBar
-          onSave={() =>
-            save({ inscricao, contact, lotes }, "Atualizou links, lotes & inscrição")
-          }
-        />
+        {errors.length > 0 ? (
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <span className="text-[13px] font-semibold text-[#c0392b]">
+              Corrija as datas dos lotes / dia da corrida para salvar.
+            </span>
+            <PrimaryButton disabled>Salvar alterações</PrimaryButton>
+          </div>
+        ) : (
+          <SaveBar
+            onSave={() =>
+              save({ inscricao, contact, lotes }, "Atualizou links, lotes & inscrição")
+            }
+          />
+        )}
       </div>
     </>
   );

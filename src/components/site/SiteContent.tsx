@@ -8,6 +8,7 @@ import StatsBar from "./StatsBar";
 import Sobre from "./Sobre";
 import Playlist from "./Playlist";
 import Percurso from "./Percurso";
+import RaceDay from "./RaceDay";
 import { AudioBusProvider } from "./AudioBus";
 import InscricaoCTA from "./InscricaoCTA";
 import Galeria from "./Galeria";
@@ -52,6 +53,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
           <Sobre about={c.about} />
           <Playlist playlist={c.playlist} />
           <Percurso percurso={c.percurso} />
+          <RaceDay inscricao={c.inscricao} />
           <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />
           <Galeria
             albums={c.albums ?? []}

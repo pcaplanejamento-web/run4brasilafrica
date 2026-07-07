@@ -100,11 +100,17 @@ export interface PlaylistSection {
   spotifyUrl?: string;
 }
 
-/** Gallery "buy photos" button shown next to the section title. */
+/** Gallery config: "buy photos" button + sliding-grid dimensions per breakpoint. */
 export interface GalleryConfig {
   buyEnabled?: boolean;
   buyLabel?: string;
   buyUrl?: string;
+  /** Sliding grid: columns/rows per page on desktop and mobile, and autoplay. */
+  slideCols?: number;
+  slideRows?: number;
+  slideColsMobile?: number;
+  slideRowsMobile?: number;
+  slideSeconds?: number;
 }
 
 export interface Percurso {
@@ -146,19 +152,24 @@ export interface Inscricao {
   ctaLabel: string;
   platform: string;
   url: string;
+  /** Race day (datetime-local / ISO) — powers the "Dia da Corrida" countdown. */
+  raceDate?: string;
 }
 
-/** A registration batch ("lote"). Only one should be open at a time. */
+/** A registration batch ("lote"). Periods must not overlap (one at a time). */
 export interface Lote {
   id: string;
   name: string;
   text: string;
   ctaLabel: string;
   url: string;
-  /** Deadline/turnover date (datetime-local / ISO) — used to order + count down. */
+  /** When registrations OPEN (datetime-local / ISO). */
+  openDate?: string;
+  /** When registrations CLOSE (deadline/turnover). Used to order + count down. */
   date: string;
   colorBg: string;
   colorText: string;
+  /** Legacy manual override — used only when a lote has no `openDate`. */
   open: boolean;
 }
 

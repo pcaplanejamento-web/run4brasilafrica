@@ -153,13 +153,23 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **ADM** (`/admin/playlist`, novo item no `ADM_NAV`): exibir seção, título, nota, o que fica
   visível, links do YouTube e do Spotify. Salva `{ playlist }`.
 
-## Lotes de inscrição
+## Lotes de inscrição + Dia da Corrida
 
-- `content.lotes: Lote[]` (nome, texto, `ctaLabel`, url, `date`, `colorBg`,
-  `colorText`, `open`). ADM em Links & inscrição: CRUD, ordena por data, abrir/fechar
-  (força **1 aberto**), cores por lote. Público (`InscricaoCTA`): o lote aberto vira a
-  faixa principal com suas cores + `Countdown` (cliente) até a data + CTA; lotes
-  fechados em cinza e sem link. Sem lotes → cai na inscrição única.
+- `content.lotes: Lote[]` (nome, texto, `ctaLabel`, url, **`openDate` abertura**, `date`
+  encerramento, cores, `open` legado). A lógica fica em **`lib/content/lotes.ts`**:
+  `loteStatus` (upcoming/open/closed por datas, com fallback ao flag `open`), `activeLote`
+  (o aberto, senão o próximo), `loteCountdown` (alvo+rótulo) e `validateLotes` (regras).
+- **`InscricaoCTA`** (client, tempo real): a faixa principal é o lote ativo com suas cores;
+  a contagem (`Countdown`) aponta para a **abertura** ("Inscrições abrem em") enquanto está
+  por vir, ou para o **encerramento** ("Inscrições encerram em") quando aberto. Mostra
+  Abertura/Encerramento por lote; a lista traz o status (Aberto/Em breve/Encerrado). Sem
+  lotes → inscrição única. (SSR usa `now=0` → sem mismatch de hidratação.)
+- **`RaceDay`** (`content.inscricao.raceDate`, client): faixa **"Dia da Corrida"** com a data
+  + contagem regressiva para a largada, logo antes de `InscricaoCTA` (Percurso e lotes seguem
+  seções próprias).
+- **ADM** (Links & inscrição): campo do **dia da corrida** + **abertura/encerramento** por
+  lote, com **validação** que bloqueia o salvar (mensagens): abertura ≤ encerramento; lotes
+  não podem se sobrepor (um de cada vez); dia da corrida depois do último encerramento.
 
 ## Tema (cores) e marca
 
@@ -167,9 +177,16 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `SiteChrome` (client, no layout) — que também aplica o favicon. Editável em
   Configurações (seletores de cor). Vazio = padrão.
 
-## Galeria (seções + Google Fotos + lightbox + comprar)
+## Galeria (grade deslizante + Google Fotos + comprar)
 
-- **`Galeria`** (client) mostra **seções** (`albums`), cada uma com título. Cada seção pode ter
+- **`Galeria`** (client) mostra as fotos numa **grade que desliza** (paginada): junta as fotos
+  de todas as seções (Google Fotos + enviadas), quebra em páginas de **colunas × linhas**
+  (config. por breakpoint em `content.gallery` — `slideCols/Rows` e `slideColsMobile/RowsMobile`,
+  detecção via `matchMedia`), auto-avança (`slideSeconds`), com setas, bolinhas e **swipe**
+  (touch). **Sem lightbox / sem zoom**: `touch-action: pan-y` bloqueia pinça e duplo-toque;
+  imagens usam `ProtectedImage` (marca d'água, sem arraste/menu) e a seção é **escondida na
+  impressão** (`@media print #galeria`). ADM configura o tamanho da grade (desktop/mobile).
+- Cada seção pode ter
   um **link de álbum público do Google Fotos** (`album.sourceUrl`): o público busca as fotos em
   `/api/gphotos?url=…` (rota que **lê a página do álbum** e extrai as URLs `lh3.googleusercontent`
   — **não-oficial**, pode quebrar se o Google mudar; degrada para vazio). Sem `sourceUrl`, usa
