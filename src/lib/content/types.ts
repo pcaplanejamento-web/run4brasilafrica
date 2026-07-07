@@ -272,10 +272,18 @@ export interface Metrics {
   spotsLeft: string;
 }
 
+/** One homepage section in the ADM-controlled order + on/off state. */
+export interface LayoutItem {
+  key: string;
+  enabled: boolean;
+}
+
 export interface SiteContent {
   event: EventInfo;
   branding: Branding;
   theme: ThemeColors;
+  /** Homepage section order + on/off (ADM dashboard). */
+  layout: LayoutItem[];
   hero: Hero;
   stats: Stat[];
   about: AboutSection;

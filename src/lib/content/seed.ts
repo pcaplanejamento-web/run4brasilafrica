@@ -1,4 +1,5 @@
 import type { SiteContent } from "./types";
+import { DEFAULT_LAYOUT } from "./sections";
 
 /**
  * Default seed content — values ported verbatim from the Claude Design handoff
@@ -17,6 +18,8 @@ export const seedContent: SiteContent = {
   branding: {},
 
   theme: {},
+
+  layout: DEFAULT_LAYOUT,
 
   hero: {
     slides: [

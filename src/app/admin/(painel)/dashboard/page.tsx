@@ -1,19 +1,117 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useContent } from "@/lib/content/store";
-import { AdmLoading, Card, PageTitle } from "@/components/admin/ui";
+import type { LayoutItem } from "@/lib/content/types";
+import { resolveLayout, sectionMeta } from "@/lib/content/sections";
+import { AdmLoading, Card, PageTitle, PrimaryButton } from "@/components/admin/ui";
 
-const QUICK_LINKS = [
-  { label: "Editar banner", href: "/admin/banner" },
-  { label: "Gerenciar galeria", href: "/admin/galeria" },
-  { label: "Editar textos", href: "/admin/conteudo" },
-  { label: "Config. Strava", href: "/admin/strava" },
-  { label: "Patrocinadores", href: "/admin/patrocinadores" },
-  { label: "Links & inscrição", href: "/admin/links" },
-  { label: "Usuários", href: "/admin/usuarios" },
-  { label: "Nova edição", href: "/admin/edicoes" },
-];
+function ArrowBtn({
+  dir,
+  onClick,
+  disabled,
+}: {
+  dir: "up" | "down";
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "up" ? "Mover para cima" : "Mover para baixo"}
+      className="flex h-9 w-9 items-center justify-center rounded-md border border-adm-border text-adm-ink transition-colors hover:border-terracotta disabled:opacity-30"
+    >
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+        <path
+          d={dir === "up" ? "M6 15l6-6 6 6" : "M6 9l6 6 6-6"}
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
+
+/** Reorder / enable-disable homepage sections; each label links to its config page. */
+function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
+  const { save, status } = useContent();
+  const [layout, setLayout] = useState<LayoutItem[]>(initial);
+
+  const move = (i: number, dir: -1 | 1) =>
+    setLayout((l) => {
+      const j = i + dir;
+      if (j < 0 || j >= l.length) return l;
+      const next = [...l];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  const toggle = (i: number) =>
+    setLayout((l) => l.map((x, idx) => (idx === i ? { ...x, enabled: !x.enabled } : x)));
+
+  return (
+    <Card>
+      <div className="mb-1 text-[14px] font-bold">Componentes da tela inicial</div>
+      <p className="mb-4 text-[12px] text-adm-muted">
+        Ordene (setas), ative/desative e clique no nome para configurar cada seção.
+      </p>
+
+      <div className="flex flex-col gap-2">
+        {layout.map((li, i) => {
+          const meta = sectionMeta(li.key);
+          if (!meta) return null;
+          return (
+            <div
+              key={li.key}
+              className="flex items-center gap-2 rounded-lg border border-adm-border p-2.5"
+              style={{ opacity: li.enabled ? 1 : 0.6 }}
+            >
+              <div className="flex gap-1">
+                <ArrowBtn dir="up" onClick={() => move(i, -1)} disabled={i === 0} />
+                <ArrowBtn
+                  dir="down"
+                  onClick={() => move(i, 1)}
+                  disabled={i === layout.length - 1}
+                />
+              </div>
+              <Link
+                href={meta.href}
+                className="min-w-0 flex-1 truncate text-[13px] font-semibold text-adm-ink transition-colors hover:text-terracotta"
+              >
+                {meta.label}
+              </Link>
+              <button
+                type="button"
+                onClick={() => toggle(i)}
+                aria-pressed={li.enabled}
+                className="min-h-9 rounded-full px-4 text-[12px] font-bold uppercase tracking-[0.04em] transition-colors"
+                style={{
+                  background: li.enabled ? "#e7f5eb" : "#f0f0ee",
+                  color: li.enabled ? "#2f7a45" : "#999",
+                }}
+              >
+                {li.enabled ? "Ativo" : "Oculto"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <PrimaryButton
+          onClick={() => save({ layout }, "Reordenou/ativou componentes da tela inicial")}
+          disabled={status === "saving"}
+        >
+          {status === "saving" ? "Salvando..." : "Salvar ordem"}
+        </PrimaryButton>
+      </div>
+    </Card>
+  );
+}
 
 export default function DashboardPage() {
   const { content, hydrated } = useContent();
@@ -51,27 +149,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <p className="mb-8 -mt-4 text-[12px] text-adm-muted">
-        Inscritos e Vagas são editados em <strong>Configurações</strong>. Fotos e
-        Patrocinadores refletem os números reais.
-      </p>
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
-        <Card>
-          <div className="mb-4 text-[14px] font-bold">Acesso rápido</div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {QUICK_LINKS.map((q) => (
-              <Link
-                key={q.href}
-                href={q.href}
-                className="flex items-center gap-2.5 rounded-lg border border-adm-border p-4 text-[13px] font-semibold text-adm-ink transition-colors hover:border-terracotta"
-              >
-                <span className="h-3.5 w-3.5 flex-none rounded-[3px] bg-terracotta" />
-                {q.label}
-              </Link>
-            ))}
-          </div>
-        </Card>
+        <HomeLayoutCard initial={resolveLayout(content.layout)} />
 
         <Card>
           <div className="mb-4 text-[14px] font-bold">Últimas alterações</div>

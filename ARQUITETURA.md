@@ -276,6 +276,19 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   com **abas por lote** quando o kit varia. ADM em **/admin/kit** (`ItemsEditor` reutilizável).
   Novos itens no `ADM_NAV`: Depoimentos, FAQ, Kit do atleta.
 
+## Ordem/ativação das seções da home (Dashboard)
+
+- `content.layout: LayoutItem[]` (`{ key, enabled }`) define a **ordem** e o **on/off** das
+  seções da tela inicial. O registro fica em **`lib/content/sections.ts`** (`SECTIONS`:
+  `key`→`label`+`href` da página de config; `DEFAULT_LAYOUT`; `resolveLayout` que mescla o
+  salvo com o registro, mantendo a ordem e **anexando seções novas** habilitadas).
+- **`SiteContent`** monta o `<main>` a partir de um mapa `key → JSX` renderizado na ordem de
+  `resolveLayout(c.layout)`, pulando as desativadas. Seções sem dado (ex.: `playlist`,
+  `raceday`) continuam se auto-ocultando.
+- **Dashboard** (`/admin/dashboard`): card **"Componentes da tela inicial"** (substitui o
+  "Acesso rápido") — lista reordenável (setas ↑/↓, alvos ~36px), toggle **Ativo/Oculto** e o
+  nome **linka para a página de configuração** da seção. Salva `{ layout }`.
+
 ## Padrão de componentes
 
 - **Site** (`components/site`): componentes de apresentação recebem sua fatia de

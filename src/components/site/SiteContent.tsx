@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import type { SiteContent as SiteContentType } from "@/lib/content/types";
+import { resolveLayout } from "@/lib/content/sections";
 import SiteNav from "./SiteNav";
 import Hero from "./Hero";
 import StatsBar from "./StatsBar";
@@ -43,28 +44,40 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     };
   }, []);
 
+  // Each homepage section keyed so the ADM dashboard can reorder / toggle them.
+  const rendered: Record<string, ReactNode> = {
+    hero: <Hero hero={c.hero} />,
+    stats: <StatsBar stats={c.stats} />,
+    about: <Sobre about={c.about} />,
+    playlist: <Playlist playlist={c.playlist} />,
+    percurso: <Percurso percurso={c.percurso} />,
+    raceday: <RaceDay inscricao={c.inscricao} />,
+    inscricao: <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />,
+    galeria: (
+      <Galeria
+        albums={c.albums ?? []}
+        tiles={c.galleryTiles}
+        photos={c.galleryPhotos ?? []}
+        gallery={c.gallery}
+      />
+    ),
+    parceiros: <Parceiros sponsors={c.sponsors} />,
+    depoimentos: <Depoimentos testimonials={c.testimonials} />,
+    faq: <Faq items={c.faq} />,
+    kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,
+  };
+  const layout = resolveLayout(c.layout);
+
   return (
     <>
       <SiteNav logo={c.branding?.logo} />
       <AudioBusProvider>
         <main>
-          <Hero hero={c.hero} />
-          <StatsBar stats={c.stats} />
-          <Sobre about={c.about} />
-          <Playlist playlist={c.playlist} />
-          <Percurso percurso={c.percurso} />
-          <RaceDay inscricao={c.inscricao} />
-          <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />
-          <Galeria
-            albums={c.albums ?? []}
-            tiles={c.galleryTiles}
-            photos={c.galleryPhotos ?? []}
-            gallery={c.gallery}
-          />
-          <Parceiros sponsors={c.sponsors} />
-          <Depoimentos testimonials={c.testimonials} />
-          <Faq items={c.faq} />
-          <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />
+          {layout
+            .filter((li) => li.enabled && rendered[li.key])
+            .map((li) => (
+              <Fragment key={li.key}>{rendered[li.key]}</Fragment>
+            ))}
         </main>
       </AudioBusProvider>
       <SiteFooter contact={c.contact} logo={c.branding?.logo} />
