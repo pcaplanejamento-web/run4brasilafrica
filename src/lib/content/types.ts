@@ -292,9 +292,12 @@ export interface PodiumPlace {
   prize: string;
 }
 
-/** Awards section: a podium with the prize per position + optional results link. */
+/**
+ * Awards section: a podium with the prize per position + optional results link.
+ * Visibility (show/hide) is controlled by the home layout in the Dashboard, not
+ * a field here.
+ */
 export interface PremiacaoSection {
-  enabled?: boolean;
   eyebrow?: string;
   title?: string;
   note?: string;

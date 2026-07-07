@@ -343,15 +343,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   link para resultados externos vive dentro da Premiação (`resultsUrl`).
 - `content.premiacao` (`PremiacaoSection`): **pódio** com a premiação por posição. Cada
   posição (`PodiumPlace`) tem `place` (rótulo, ex.: &ldquo;1º lugar&rdquo;) e `prize`
-  (premiação). Some quando `enabled` é falso ou sem dados.
+  (premiação). O componente renderiza quando há dados (posições ou link).
+- **Exibir/ocultar é só no Dashboard** — a Premiação **não** tem toggle próprio de exibição; a
+  visibilidade vem do `content.layout` («Componentes da tela inicial», ativar/ocultar +
+  ordenar), como qualquer seção da home. (Fonte única de verdade; evita duas chaves conflitantes.)
 - Público (`components/site/Premiacao.tsx`, client): **pódio animado** — ao entrar na tela
-  (IntersectionObserver) as barras **crescem da base** (o 1º sobe por último, com stagger) e os
-  cartões de premiação fazem fade-in mostrando os valores cadastrados. No desktop o 1º fica ao
-  **centro e mais alto** (2º à esquerda, 3º à direita, via `sm:order-*`); no mobile empilham
-  1 → 2 → 3. Cores por rank (ouro, prata, bronze). Posições 4ª+ listam abaixo; botão opcional
-  para **resultados completos** (`resultsUrl`, nova aba). Respeita `prefers-reduced-motion`.
-- É uma seção reordenável da home (registrada em `sections.ts` como `premiacao`), editável em
-  ADM > **Premiação** (`/admin/premiacao`).
+  (IntersectionObserver, mesma config do `Reveal`, com fallback quando já está visível no
+  mount) as barras **crescem da base** (o 1º sobe por último, com stagger) e os cartões fazem
+  fade-in mostrando os valores cadastrados. No desktop o 1º fica ao **centro e mais alto** (2º
+  à esquerda, 3º à direita, via `sm:order-*`); no mobile empilham 1 → 2 → 3. Cores por rank
+  (ouro, prata, bronze). Posições 4ª+ listam abaixo; botão opcional para **resultados
+  completos** (`resultsUrl`, nova aba). Respeita `prefers-reduced-motion`.
+- **Importante**: o efeito de scroll só é montado quando a seção é renderizada; por isso o
+  componente não se auto-oculta por um `enabled` interno (senão o observer nunca prendia no
+  elemento e o pódio ficava em branco). Registrada em `sections.ts` como `premiacao`, editável
+  em ADM > **Premiação** (`/admin/premiacao`).
 
 ## Componentes compartilhados, ordem de lotes e navegação do ADM
 

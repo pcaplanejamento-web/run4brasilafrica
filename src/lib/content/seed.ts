@@ -142,7 +142,6 @@ export const seedContent: SiteContent = {
   analytics: {},
 
   premiacao: {
-    enabled: false,
     eyebrow: "PREMIAÇÃO",
     title: "PÓDIO",
     note: "",

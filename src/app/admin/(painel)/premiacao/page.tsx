@@ -12,7 +12,6 @@ import {
   PrimaryButton,
   SaveBar,
   SectionLabel,
-  Select,
   TextArea,
   TextInput,
 } from "@/components/admin/ui";
@@ -57,18 +56,13 @@ function PremiacaoForm({ initial }: { initial: PremiacaoSection }) {
 
       <div className="flex max-w-[860px] flex-col gap-5">
         <Card>
-          <SectionLabel>Exibição</SectionLabel>
+          <SectionLabel>Seção</SectionLabel>
+          <p className="mb-4 text-[12px] text-adm-muted">
+            Para <strong>mostrar ou ocultar</strong> a Premiação no site, use o{" "}
+            <strong>Dashboard</strong> &rarr; &ldquo;Componentes da tela inicial&rdquo;
+            (ativar/ocultar e ordenar). Aqui você configura o conteúdo.
+          </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel>Mostrar a seção no site?</FieldLabel>
-              <Select
-                value={p.enabled ? "sim" : "nao"}
-                onChange={(e) => setP({ ...p, enabled: e.target.value === "sim" })}
-              >
-                <option value="nao">Não</option>
-                <option value="sim">Sim</option>
-              </Select>
-            </div>
             <div>
               <FieldLabel>Chapéu (eyebrow)</FieldLabel>
               <TextInput
@@ -77,14 +71,14 @@ function PremiacaoForm({ initial }: { initial: PremiacaoSection }) {
                 placeholder="PREMIAÇÃO"
               />
             </div>
-          </div>
-          <div className="mt-4">
-            <FieldLabel>Título da seção</FieldLabel>
-            <TextInput
-              value={p.title ?? ""}
-              onChange={(e) => setP({ ...p, title: e.target.value })}
-              placeholder="Pódio"
-            />
+            <div>
+              <FieldLabel>Título da seção</FieldLabel>
+              <TextInput
+                value={p.title ?? ""}
+                onChange={(e) => setP({ ...p, title: e.target.value })}
+                placeholder="Pódio"
+              />
+            </div>
           </div>
           <div className="mt-4">
             <FieldLabel>Texto de apoio (opcional)</FieldLabel>
@@ -184,7 +178,6 @@ function PremiacaoForm({ initial }: { initial: PremiacaoSection }) {
 }
 
 const DEFAULT_PREMIACAO: PremiacaoSection = {
-  enabled: false,
   eyebrow: "PREMIAÇÃO",
   title: "Pódio",
   note: "",

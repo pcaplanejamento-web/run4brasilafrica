@@ -17,14 +17,21 @@ const SM_ORDER = ["sm:order-2", "sm:order-1", "sm:order-3"];
  * the bars grow up from the base (1st rising last for drama) and each prize
  * card fades in, showing the registered award per position. On desktop the 1st
  * place is centered and tallest; on mobile the columns stack 1 → 2 → 3. Extra
- * positions (4th+) list below, plus an optional link to full results. Respects
- * reduced-motion and stays hidden until enabled.
+ * positions (4th+) list below, plus an optional link to full results.
+ *
+ * Whether the section appears at all is controlled by the Dashboard (home
+ * components on/off), NOT here — this component just renders when it has data.
+ * Respects reduced-motion.
  */
 export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const [inView, setInView] = useState(false);
 
+  const places = (premiacao?.places ?? []).filter((p) => p.place || p.prize);
+  const show = places.length > 0 || !!premiacao?.resultsUrl;
+
   useEffect(() => {
+    if (!show) return;
     const el = ref.current;
     if (!el) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -45,14 +52,18 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
       { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
     );
     io.observe(el);
+    // Fallback: if the section is already within the viewport at mount, reveal
+    // right away (the observer only covers later scroll-ins).
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) {
+      setInView(true);
+    }
     return () => io.disconnect();
-  }, []);
+  }, [show]);
 
-  if (!premiacao?.enabled) return null;
-  const places = (premiacao.places ?? []).filter((p) => p.place || p.prize);
-  if (places.length === 0 && !premiacao.resultsUrl) return null;
+  if (!show) return null;
 
-  const title = premiacao.title || "Pódio";
+  const title = premiacao?.title || "Pódio";
   const podium = places.slice(0, 3);
   const extra = places.slice(3);
   const cols = podium.map((place, rank) => ({ place, rank }));
@@ -60,10 +71,10 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
   return (
     <section id="premiacao" ref={ref} className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <div className="mb-2 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
-        {premiacao.eyebrow || "Premiação"}
+        {premiacao?.eyebrow || "Premiação"}
       </div>
       <h2 className="mb-3 font-display text-[30px] font-bold uppercase md:text-[40px]">{title}</h2>
-      {premiacao.note && (
+      {premiacao?.note && (
         <p className="mb-8 max-w-[640px] text-[15px] text-muted-strong">{premiacao.note}</p>
       )}
 
@@ -144,7 +155,7 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
         </div>
       )}
 
-      {premiacao.resultsUrl && (
+      {premiacao?.resultsUrl && (
         <div className="mt-9 flex justify-center">
           <a
             href={premiacao.resultsUrl}
