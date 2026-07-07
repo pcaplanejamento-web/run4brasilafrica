@@ -4,16 +4,55 @@ export const dynamic = "force-dynamic";
 
 /**
  * Lists the videos of a PUBLIC YouTube playlist by reading the playlist page
- * (no API key). Parses the modern `lockupViewModel` entries in the initial HTML
- * (up to ~100 videos). Unofficial — degrades gracefully (`ok:false`) if YouTube
- * changes the markup; the caller then falls back to the native playlist player.
+ * (no API key). YouTube serves two markups depending on the variant:
+ *   - new: `lockupViewModel` (contentId + lockupMetadataViewModel title)
+ *   - old: `playlistVideoRenderer` (videoId + title runs/simpleText)
+ * We support both (up to ~100 videos). Unofficial — degrades gracefully
+ * (`ok:false` / empty) if YouTube changes it; the caller then falls back to the
+ * native playlist player.
  */
-function decodeJsonStr(raw: string): string {
+function dec(raw: string): string {
   try {
     return JSON.parse(`"${raw}"`);
   } catch {
     return raw;
   }
+}
+
+function extract(html: string): { id: string; title: string }[] {
+  const seen = new Set<string>();
+  const videos: { id: string; title: string }[] = [];
+  const push = (id: string, title: string) => {
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      videos.push({ id, title: (title || "").trim() });
+    }
+  };
+
+  // New markup: contentIds and lockup titles are both in playlist order → zip.
+  const ids = [
+    ...html.matchAll(/"contentId":"([\w-]{11})","contentType":"LOCKUP_CONTENT_TYPE_VIDEO"/g),
+  ].map((m) => m[1]);
+  if (ids.length) {
+    const titles = [
+      ...html.matchAll(/"lockupMetadataViewModel":\{"title":\{"content":"((?:[^"\\]|\\.)*?)"/g),
+    ].map((m) => dec(m[1]));
+    ids.forEach((id, i) => push(id, titles[i] ?? ""));
+    return videos;
+  }
+
+  // Old markup: one playlistVideoRenderer per video; title is the first in the chunk.
+  const parts = html.split('"playlistVideoRenderer":');
+  for (let i = 1; i < parts.length; i++) {
+    const chunk = parts[i].slice(0, 5000);
+    const idm = chunk.match(/^\{"videoId":"([\w-]{11})"/);
+    if (!idm) continue;
+    const tm =
+      chunk.match(/"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)*?)"/) ||
+      chunk.match(/"title":\{"simpleText":"((?:[^"\\]|\\.)*?)"/);
+    push(idm[1], tm ? dec(tm[1]) : "");
+  }
+  return videos;
 }
 
 export async function GET(req: Request) {
@@ -37,31 +76,7 @@ export async function GET(req: Request) {
     if (!res.ok) {
       return NextResponse.json({ ok: false, error: "playlist não encontrada" }, { status: 502 });
     }
-    const html = await res.text();
-
-    // Each playlist item is a lockupViewModel: title (in metadata) then contentId.
-    const re =
-      /"lockupMetadataViewModel":\{"title":\{"content":"((?:[^"\\]|\\.)*?)"[\s\S]*?"contentId":"([\w-]{11})","contentType":"LOCKUP_CONTENT_TYPE_VIDEO"/g;
-    const seen = new Set<string>();
-    const videos: { id: string; title: string }[] = [];
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(html)) !== null) {
-      const id = m[2];
-      if (seen.has(id)) continue;
-      seen.add(id);
-      videos.push({ id, title: decodeJsonStr(m[1]).trim() });
-    }
-
-    // Fallback: ids only (title extraction failed for some reason).
-    if (!videos.length) {
-      const idRe = /"contentId":"([\w-]{11})","contentType":"LOCKUP_CONTENT_TYPE_VIDEO"/g;
-      while ((m = idRe.exec(html)) !== null) {
-        if (!seen.has(m[1])) {
-          seen.add(m[1]);
-          videos.push({ id: m[1], title: "" });
-        }
-      }
-    }
+    const videos = extract(await res.text());
 
     return NextResponse.json(
       { ok: true, count: videos.length, videos },
