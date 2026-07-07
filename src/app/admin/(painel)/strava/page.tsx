@@ -30,6 +30,16 @@ function StravaForm({ initial }: { initial: Percurso }) {
 
       <div className="flex max-w-[760px] flex-col gap-5">
         <Card>
+          <SectionLabel>Título da seção</SectionLabel>
+          <FieldLabel>Aparece como título grande do percurso no site</FieldLabel>
+          <TextInput
+            value={p.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="ex.: PURA ADRENALINA."
+          />
+        </Card>
+
+        <Card>
           <FieldLabel>ID ou link da rota no Strava</FieldLabel>
           <div className="mb-1.5">
             <TextInput

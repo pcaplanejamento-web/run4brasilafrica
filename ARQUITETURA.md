@@ -98,12 +98,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ## Percurso: Strava e/ou Garmin
 
-- Campos `percurso.stravaRouteRef` e `percurso.garminRouteRef` (ADM > Percurso).
-- `RouteViewer` (client): se os dois existem, mostra um **toggle** e o visitante escolhe;
-  senão mostra o que estiver configurado. `StravaRoute` (embed.js) e `GarminRoute`
-  (iframe `connect.garmin.com/.../embed/<id>`). Ambos usam rota/atividade **pública**
-  (sem credenciais). O wrapper `.route-embed` + CSS global forçam o iframe a **preencher
-  a largura** da seção (corrige o corte).
+- Campos `percurso.title` (editável no ADM), `percurso.stravaRouteRef` e
+  `percurso.garminRouteRef` (ADM > Percurso). O título é mostrado **exatamente** como
+  digitado (sem prefixar o km).
+- `RouteViewer`: quando os **dois** estão configurados, mostra **ambos** os mapas
+  (rotulados, empilhados); senão, o que estiver configurado. `StravaRoute` (embed.js)
+  e `GarminRoute` (iframe `connect.garmin.com/.../embed/<id>`). Rota/atividade
+  **pública** (sem credenciais). O wrapper `.route-embed` + CSS global **e** um
+  `MutationObserver` no `StravaRoute` forçam o iframe a **preencher a largura** da seção.
 
 ## Números do dashboard e texto do percurso
 

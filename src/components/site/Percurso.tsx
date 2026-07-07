@@ -19,16 +19,13 @@ function garminEmbedUrl(ref: string | undefined): string | null {
 }
 
 /**
- * Course section. Shows the Strava and/or Garmin map (public embeds) configured
- * in ADM > Percurso; the visitor picks the provider when both exist. Facts come
- * from the ADM. Heading adapts to the entered distance.
+ * Course section. Shows the Strava and/or Garmin maps (public embeds) configured
+ * in ADM > Percurso; when both exist, both are shown. Title and facts come from
+ * the ADM (title is edited freely there).
  */
 export default function Percurso({ percurso }: { percurso: PercursoType }) {
   const stravaId = stravaRouteId(percurso.stravaRouteRef);
   const garminUrl = garminEmbedUrl(percurso.garminRouteRef);
-  // Heading adapts to the distance entered in the ADM: "10 KM" → "10KM DE PURA ...".
-  const compactDistance = (percurso.distance || "").replace(/\s+/g, "");
-  const heading = [compactDistance, percurso.title].filter(Boolean).join(" ");
   const facts = [
     { label: "Distância", value: percurso.distance, big: true },
     { label: "Elevação", value: percurso.elevation, big: true },
@@ -41,7 +38,7 @@ export default function Percurso({ percurso }: { percurso: PercursoType }) {
         {percurso.eyebrow}
       </div>
       <h2 className="mb-10 font-display text-[30px] font-bold uppercase md:mb-11 md:text-[40px]">
-        {heading}
+        {percurso.title}
       </h2>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr] md:gap-12">

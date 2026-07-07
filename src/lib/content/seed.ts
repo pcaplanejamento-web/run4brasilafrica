@@ -45,7 +45,7 @@ export const seedContent: SiteContent = {
 
   percurso: {
     eyebrow: "O PERCURSO",
-    title: "DE PURA ADRENALINA.",
+    title: "PURA ADRENALINA.",
     distance: "10 KM",
     elevation: "+84 M",
     startFinish: "COPACABANA",

@@ -1,13 +1,18 @@
-"use client";
-
-import { useState } from "react";
 import StravaRoute from "./StravaRoute";
 import GarminRoute from "./GarminRoute";
 
+function ProviderLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="border-b border-line-soft bg-ink-panel px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.06em] text-gold">
+      {children}
+    </div>
+  );
+}
+
 /**
- * Shows the course map. When both Strava and Garmin are configured, the visitor
- * picks the provider with a toggle; otherwise shows whichever is set (or a
- * placeholder). Embeds fill the section width.
+ * Shows the course map(s). When both Strava and Garmin are configured, BOTH are
+ * shown (each labelled, stacked); otherwise shows whichever is set, or a
+ * placeholder. Embeds fill the section width.
  */
 export default function RouteViewer({
   stravaId,
@@ -19,9 +24,6 @@ export default function RouteViewer({
   const hasStrava = !!stravaId;
   const hasGarmin = !!garminUrl;
   const both = hasStrava && hasGarmin;
-  const [provider, setProvider] = useState<"strava" | "garmin">(
-    hasStrava ? "strava" : "garmin",
-  );
 
   if (!hasStrava && !hasGarmin) {
     return (
@@ -33,38 +35,19 @@ export default function RouteViewer({
     );
   }
 
-  const show = both ? provider : hasStrava ? "strava" : "garmin";
-
   return (
-    <div className="w-full">
-      {both && (
-        <div className="flex gap-1 border-b border-line-soft bg-ink-panel p-1.5">
-          {(
-            [
-              ["strava", "Strava"],
-              ["garmin", "Garmin"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setProvider(key)}
-              aria-pressed={show === key}
-              className={`px-4 py-1.5 text-[13px] font-bold uppercase tracking-[0.04em] transition-colors ${
-                show === key
-                  ? "bg-gold text-gold-ink"
-                  : "text-muted hover:text-cream"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+    <div className="flex w-full flex-col">
+      {hasStrava && (
+        <div>
+          {both && <ProviderLabel>Strava</ProviderLabel>}
+          <StravaRoute routeId={stravaId as string} />
         </div>
       )}
-      {show === "strava" ? (
-        <StravaRoute routeId={stravaId as string} />
-      ) : (
-        <GarminRoute url={garminUrl as string} />
+      {hasGarmin && (
+        <div className={both ? "border-t border-line-soft" : ""}>
+          {both && <ProviderLabel>Garmin</ProviderLabel>}
+          <GarminRoute url={garminUrl as string} />
+        </div>
       )}
     </div>
   );
