@@ -73,6 +73,20 @@ export interface Branding {
   favicon?: string;
 }
 
+/**
+ * Site color overrides (theme). Each maps to CSS custom properties applied at
+ * runtime; unset keys keep the default palette. Values are any CSS color (hex).
+ */
+export interface ThemeColors {
+  background?: string;
+  accent?: string;
+  accentText?: string;
+  text?: string;
+  sections?: string;
+  cards?: string;
+  heroRed?: string;
+}
+
 export interface Inscricao {
   title: string;
   subtitle: string;
@@ -166,6 +180,7 @@ export interface Metrics {
 export interface SiteContent {
   event: EventInfo;
   branding: Branding;
+  theme: ThemeColors;
   hero: Hero;
   stats: Stat[];
   about: AboutSection;

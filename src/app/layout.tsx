@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
-import FaviconManager from "@/components/site/FaviconManager";
+import SiteChrome from "@/components/site/SiteChrome";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -52,7 +52,7 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} h-full`}
     >
       <body className="min-h-full">
-        <FaviconManager />
+        <SiteChrome />
         {/* Without JS the scroll-reveal observer never runs — force content
             visible so no-JS users and crawlers still see everything. */}
         <noscript>

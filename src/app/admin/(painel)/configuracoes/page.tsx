@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { Backend } from "@/lib/content/store";
-import type { Branding, EventInfo, Hero, Metrics } from "@/lib/content/types";
+import type {
+  Branding,
+  EventInfo,
+  Hero,
+  Metrics,
+  ThemeColors,
+} from "@/lib/content/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import {
   AdmLoading,
@@ -42,17 +48,20 @@ function ConfiguracoesForm({
   initialHero,
   initialMetrics,
   initialBranding,
+  initialTheme,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
   initialMetrics: Metrics;
   initialBranding: Branding;
+  initialTheme: ThemeColors;
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
   const [hero, setHero] = useState(initialHero);
   const [metrics, setMetrics] = useState(initialMetrics);
   const [branding, setBranding] = useState(initialBranding);
+  const [theme, setTheme] = useState<ThemeColors>(initialTheme);
 
   const b = BACKEND_LABEL[backend];
 
@@ -72,7 +81,18 @@ function ConfiguracoesForm({
     setHero(initialHero);
     setMetrics(initialMetrics);
     setBranding(initialBranding);
+    setTheme(initialTheme);
   }
+
+  const THEME_FIELDS: { key: keyof ThemeColors; label: string; def: string }[] = [
+    { key: "background", label: "Fundo do site", def: "#2b2119" },
+    { key: "accent", label: "Cor de destaque", def: "#c8ce2e" },
+    { key: "accentText", label: "Texto sobre o destaque", def: "#211a08" },
+    { key: "text", label: "Cor do texto", def: "#f2ede4" },
+    { key: "sections", label: "Seções escuras", def: "#221a12" },
+    { key: "cards", label: "Cartões", def: "#332619" },
+    { key: "heroRed", label: "Vermelho do hero", def: "#c05a3a" },
+  ];
 
   return (
     <>
@@ -194,6 +214,40 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
+        {/* Cores do site (tema) */}
+        <Card>
+          <SectionLabel>Cores do site</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Personalize as cores de todo o site. Campo vazio = cor padrão.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {THEME_FIELDS.map((f) => (
+              <div key={f.key}>
+                <FieldLabel>{f.label}</FieldLabel>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={theme[f.key] || f.def}
+                    onChange={(e) => setTheme({ ...theme, [f.key]: e.target.value })}
+                    className="h-9 w-12 flex-none rounded border border-[#ccc]"
+                    aria-label={f.label}
+                  />
+                  <TextInput
+                    value={theme[f.key] ?? ""}
+                    placeholder={f.def}
+                    onChange={(e) => setTheme({ ...theme, [f.key]: e.target.value })}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3">
+            <GhostButton onClick={() => setTheme({})}>
+              Restaurar cores padrão
+            </GhostButton>
+          </div>
+        </Card>
+
         {/* Números do evento (manuais) */}
         <Card>
           <SectionLabel>Números do evento</SectionLabel>
@@ -241,7 +295,7 @@ function ConfiguracoesForm({
         <SaveBar
           onSave={() =>
             save(
-              { event, hero, metrics, branding },
+              { event, hero, metrics, branding, theme },
               "Atualizou configurações do evento",
             )
           }
@@ -260,6 +314,7 @@ export default function ConfiguracoesPage() {
       initialHero={content.hero}
       initialMetrics={content.metrics}
       initialBranding={content.branding ?? {}}
+      initialTheme={content.theme ?? {}}
     />
   );
 }

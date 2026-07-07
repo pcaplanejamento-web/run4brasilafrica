@@ -16,6 +16,8 @@ export const seedContent: SiteContent = {
 
   branding: {},
 
+  theme: {},
+
   hero: {
     badge: "14 SET 2026 · RIO DE JANEIRO",
     title: "CORRA POR ALGO MAIOR.",
