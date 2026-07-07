@@ -133,9 +133,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 - **`Playlist`** (client, entre A Causa e Percurso) — só aparece com `playlist.enabled` e ≥1
   link. `playlist.visible` (`youtube`|`spotify`|`both`) decide o que mostra; com os dois, um
-  seletor (abas) troca a plataforma. **YouTube**: player da playlist via IFrame API
-  (`listType/list`), controlável. **Spotify**: embed via **Spotify IFrame API**
-  (`createController`), controlável só por play/pause (sem mutar nem autoplay).
+  seletor (abas) troca a plataforma.
+- **YouTube**: tenta o **feed público** (`/api/yt-playlist?list=…`, Atom `videos.xml`, sem
+  chave, ~15 vídeos). Se vier lista → **player principal** (por `videoId`) + **lista custom**
+  com o vídeo **tocando em 1º** ("Tocando agora"); clicar faz `loadVideoById`. Se o feed
+  falhar/404 (o YouTube às vezes bloqueia o feed) → **fallback** para o player nativo da
+  playlist (`listType:"playlist"`), que já mostra **todos os vídeos** na fila do YouTube. Ou
+  seja, a seção nunca quebra. **Spotify**: embed via **Spotify IFrame API** (`createController`),
+  controlável só por play/pause (sem mutar nem autoplay); a própria lista do Spotify aparece.
+- **Minimiza flutuante**: um `IntersectionObserver` na seção detecta quando ela sai da tela;
+  se já houve play, o player vira **fixo no canto inferior direito** (mesmo elemento, só muda o
+  CSS → sem recarregar/parar), com barra de título + fechar. Volta ao normal quando a seção
+  reaparece. (Os players ficam **fora** de `Reveal` para o `position:fixed` valer na viewport.)
 - **`AudioBus`** (client Context, envolve o `<main>` em `SiteContent`) — os players de vídeo
   do banner/A Causa (`YouTubePlayer`) registram se o som está ligado (`setVideoSound`, com
   `useId`; um poll de 800ms cobre também o unmute pelos controles nativos). A `Playlist` lê
@@ -158,12 +167,16 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `SiteChrome` (client, no layout) — que também aplica o favicon. Editável em
   Configurações (seletores de cor). Vazio = padrão.
 
-## Galeria (seções + lightbox + comprar)
+## Galeria (seções + Google Fotos + lightbox + comprar)
 
-- **`Galeria`** (client) agrupa `galleryPhotos` em **seções** (por `album`, na ordem de
-  aparição), cada uma com um título; a grade continua 2→4 colunas. Fotos ficam **só no site**
-  (upload via Cloudinary/`/api/media`), sem import externo (Google Fotos/iCloud não têm API
-  estável para isso). Sem fotos → tiles de placeholder.
+- **`Galeria`** (client) mostra **seções** (`albums`), cada uma com título. Cada seção pode ter
+  um **link de álbum público do Google Fotos** (`album.sourceUrl`): o público busca as fotos em
+  `/api/gphotos?url=…` (rota que **lê a página do álbum** e extrai as URLs `lh3.googleusercontent`
+  — **não-oficial**, pode quebrar se o Google mudar; degrada para vazio). Sem `sourceUrl`, usa
+  fotos enviadas no site (`galleryPhotos`). Sem nada → tiles de placeholder.
+- **ADM** (`/admin/galeria`): **criar/renomear/excluir seções**, colar o link do Google Fotos e
+  **testar** (mostra quantas fotos foram encontradas). A rota `/api/gphotos` só aceita hosts do
+  Google Fotos (evita virar proxy aberto).
 - **Lightbox** (`Lightbox`, client): clicar numa foto abre o visualizador em tela cheia com a
   **mesma proteção** (`ProtectedImage`/marca d'água, sem arraste/menu, escondido na
   impressão), com fechar, ←/→ e navegação por teclado sobre **todas** as fotos.
@@ -195,7 +208,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   digitado (sem prefixar o km).
 - `RouteViewer` (client): quando os **dois** estão configurados, um **seletor** (Strava |
   Garmin, alvos ≥44px, default Strava) deixa o visitante escolher qual mapa ver; com só um,
-  mostra ele direto; nenhum → placeholder. `StravaRoute` (embed.js) e `GarminRoute` (iframe
+  mostra ele direto; nenhum → placeholder.
+- Garmin (`garminEmbedUrl`) aceita links de **course/activity/route** com id numérico **ou
+  UUID**; links de **event** (`/modern/event/<uuid>`) não têm mapa incorporável → ignorados
+  (use um link de course/percurso). `StravaRoute` (embed.js) e `GarminRoute` (iframe
   `connect.garmin.com/.../embed/<id>`). Rota/atividade **pública** (sem credenciais). O
   wrapper `.route-embed` + CSS global **e** um `MutationObserver` no `StravaRoute` forçam o
   iframe a **preencher a largura** da seção.

@@ -165,6 +165,8 @@ export interface Lote {
 export interface Album {
   name: string;
   count: number;
+  /** Public Google Photos album link — its photos are pulled into this section. */
+  sourceUrl?: string;
 }
 
 export interface Sponsor {

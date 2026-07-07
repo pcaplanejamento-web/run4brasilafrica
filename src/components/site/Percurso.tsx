@@ -9,13 +9,20 @@ function stravaRouteId(ref: string | undefined): string | null {
   return m ? m[1] : null;
 }
 
-/** Build a Garmin Connect embed URL from an ID or a connect.garmin.com link. */
+/**
+ * Build a Garmin Connect embed URL from a course/activity/route link (numeric OR
+ * UUID id). Garmin **event** pages (`/modern/event/<uuid>`) have no embeddable
+ * map, so those return null — the visitor should use a course link.
+ */
 function garminEmbedUrl(ref: string | undefined): string | null {
   if (!ref) return null;
-  const m = ref.match(/(\d{5,})/);
-  if (!m) return null;
-  const kind = /course/i.test(ref) ? "course" : "activity";
-  return `https://connect.garmin.com/modern/${kind}/embed/${m[1]}`;
+  const m = ref.match(/\/(course|activity|route)\/(?:embed\/)?([A-Za-z0-9_-]+)/i);
+  if (m) {
+    return `https://connect.garmin.com/modern/${m[1].toLowerCase()}/embed/${m[2]}`;
+  }
+  // Bare numeric id → assume a course.
+  const n = ref.match(/^\s*(\d{4,})\s*$/);
+  return n ? `https://connect.garmin.com/modern/course/embed/${n[1]}` : null;
 }
 
 /**

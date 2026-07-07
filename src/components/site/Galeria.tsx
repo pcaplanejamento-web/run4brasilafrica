@@ -1,44 +1,91 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { GalleryConfig, GalleryPhoto } from "@/lib/content/types";
+import { useEffect, useMemo, useState } from "react";
+import type { Album, GalleryConfig, GalleryPhoto } from "@/lib/content/types";
 import Reveal from "./Reveal";
 import ProtectedImage from "./ProtectedImage";
 import Lightbox from "./Lightbox";
 
+interface GalleryItem {
+  thumb: string;
+  full: string;
+  album: string;
+}
+
 /**
- * Photo gallery. Groups the ADM photos into sections (by album) with a heading
- * each; every photo opens a protected full-screen lightbox so all photos can be
- * viewed. Falls back to labelled placeholder tiles when there are no photos.
- * An optional "buy photos" button appears next to the title.
+ * Photo gallery. Each section (album) either pulls its photos from a public
+ * Google Photos album link (`album.sourceUrl`, fetched via /api/gphotos) or uses
+ * photos uploaded on the site. Every photo opens a protected full-screen lightbox
+ * so all can be viewed. Falls back to placeholder tiles when there are none. An
+ * optional "buy photos" button appears next to the title.
  */
 export default function Galeria({
+  albums,
   tiles,
   photos,
   gallery,
 }: {
+  albums: Album[];
   tiles: { album: string }[];
   photos: GalleryPhoto[];
   gallery?: GalleryConfig;
 }) {
-  const hasPhotos = photos.length > 0;
   const [open, setOpen] = useState<number | null>(null);
+  const [fetched, setFetched] = useState<
+    Record<string, { thumb: string; full: string }[]>
+  >({});
 
-  // Group photos into sections by album, preserving first-appearance order.
+  // Fetch Google Photos albums (client-side). Degrades to empty on any failure.
+  const sourceKey = albums.map((a) => a.sourceUrl ?? "").join("|");
+  useEffect(() => {
+    let alive = true;
+    albums
+      .filter((a) => a.sourceUrl)
+      .forEach(async (a) => {
+        try {
+          const r = await fetch(`/api/gphotos?url=${encodeURIComponent(a.sourceUrl!)}`);
+          const d = (await r.json()) as {
+            ok: boolean;
+            images?: { thumb: string; full: string }[];
+          };
+          if (alive && d.ok && d.images) {
+            setFetched((prev) => ({ ...prev, [a.name]: d.images! }));
+          }
+        } catch {
+          /* keep section empty */
+        }
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceKey]);
+
   const sections = useMemo(() => {
-    const order: string[] = [];
-    const map = new Map<string, { photo: GalleryPhoto; index: number }[]>();
-    photos.forEach((photo, index) => {
-      const key = photo.album || "Fotos";
-      if (!map.has(key)) {
-        map.set(key, []);
-        order.push(key);
-      }
-      map.get(key)!.push({ photo, index });
-    });
-    return order.map((name) => ({ name, items: map.get(name)! }));
-  }, [photos]);
+    return (albums ?? [])
+      .map((a) => {
+        const items: GalleryItem[] = a.sourceUrl
+          ? (fetched[a.name] ?? []).map((im) => ({ ...im, album: a.name }))
+          : photos
+              .filter((p) => p.album === a.name)
+              .map((p) => ({ thumb: p.url, full: p.url, album: a.name }));
+        return { name: a.name, items };
+      })
+      .filter((s) => s.items.length > 0);
+  }, [albums, fetched, photos]);
 
+  // Flat list (for the lightbox) + per-section start offset (for grid indices).
+  const withStart = sections.map((s, si) => ({
+    ...s,
+    start: sections.slice(0, si).reduce((n, x) => n + x.items.length, 0),
+  }));
+  const flat = sections.flatMap((s) => s.items);
+  const lightboxPhotos: GalleryPhoto[] = flat.map((it) => ({
+    url: it.full,
+    album: it.album,
+  }));
+
+  const hasPhotos = flat.length > 0;
   const buyOn = !!gallery?.buyEnabled && !!gallery?.buyUrl;
 
   return (
@@ -61,28 +108,28 @@ export default function Galeria({
 
       {hasPhotos ? (
         <div className="flex flex-col gap-10 md:gap-12">
-          {sections.map((section) => (
+          {withStart.map((section) => (
             <div key={section.name}>
               <h3 className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
                 {section.name}
               </h3>
               <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-                {section.items.map(({ photo, index }, i) => (
+                {section.items.map((item, i) => (
                   <Reveal
-                    key={photo.url}
+                    key={item.thumb}
                     delay={(i % 4) * 70}
                     className="relative h-[130px] overflow-hidden md:h-[190px]"
                   >
                     <button
                       type="button"
-                      onClick={() => setOpen(index)}
+                      onClick={() => setOpen(section.start + i)}
                       aria-label={`Ampliar foto ${i + 1} de ${section.name}`}
                       className="absolute inset-0 h-full w-full cursor-zoom-in"
                     >
-                      <ProtectedImage src={photo.url} alt={photo.album} className="object-cover" />
+                      <ProtectedImage src={item.thumb} alt={section.name} className="object-cover" />
                     </button>
                     <span className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 rounded bg-black/45 px-1.5 py-0.5 font-[monospace] text-[11px] uppercase text-white/90">
-                      {photo.album}
+                      {section.name}
                     </span>
                   </Reveal>
                 ))}
@@ -112,7 +159,7 @@ export default function Galeria({
 
       {open !== null && (
         <Lightbox
-          photos={photos}
+          photos={lightboxPhotos}
           index={open}
           onClose={() => setOpen(null)}
           onIndex={setOpen}

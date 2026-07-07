@@ -87,8 +87,11 @@ function StravaForm({ initial }: { initial: Percurso }) {
             />
           </div>
           <p className="text-[12px] text-adm-muted">
-            Use uma atividade ou percurso <strong>público</strong> do Garmin Connect.
-            Se você preencher Strava e Garmin, o visitante escolhe qual ver.
+            Use o link de um <strong>percurso (course)</strong>, atividade ou rota{" "}
+            <strong>público</strong> do Garmin Connect — ex.:{" "}
+            <code>connect.garmin.com/modern/course/123456789</code>. Links de{" "}
+            <strong>evento</strong> (<code>/modern/event/…</code>) não têm mapa para
+            incorporar. Se você preencher Strava e Garmin, o visitante escolhe qual ver.
           </p>
         </Card>
 

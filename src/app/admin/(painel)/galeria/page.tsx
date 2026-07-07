@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
-import type { GalleryConfig } from "@/lib/content/types";
+import type { Album, GalleryConfig } from "@/lib/content/types";
 import {
   AdmLoading,
   Card,
@@ -14,7 +14,6 @@ import {
   Select,
   TextInput,
 } from "@/components/admin/ui";
-import ImageUpload from "@/components/admin/ImageUpload";
 
 function BuyButtonCard({ initial }: { initial: GalleryConfig }) {
   const { save, status } = useContent();
@@ -62,123 +61,119 @@ function BuyButtonCard({ initial }: { initial: GalleryConfig }) {
   );
 }
 
-export default function GaleriaPage() {
-  const { content, hydrated, save } = useContent();
-  const [active, setActive] = useState(0);
+function SectionsEditor({ initial }: { initial: Album[] }) {
+  const { save, status } = useContent();
+  const [albums, setAlbums] = useState<Album[]>(initial);
+  const [test, setTest] = useState<Record<number, string>>({});
 
-  const albums = content.albums;
-  const activeAlbum = albums[active] ?? albums[0];
-  const albumName = activeAlbum?.name ?? "";
-  const photos = (content.galleryPhotos ?? []).filter((p) => p.album === albumName);
-
-  if (!hydrated) return <AdmLoading />;
-
-  function withCounts(nextPhotos: typeof content.galleryPhotos) {
-    // Keep each album's count in sync with the real photos it has.
-    return albums.map((a) => ({
-      ...a,
-      count: nextPhotos.filter((p) => p.album === a.name).length || a.count,
-    }));
+  function setAlbum(i: number, patch: Partial<Album>) {
+    setAlbums((a) => a.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   }
-
-  function addPhoto(url: string) {
+  function add() {
+    setAlbums((a) => [...a, { name: `Seção ${a.length + 1}`, count: 0 }]);
+  }
+  function remove(i: number) {
+    setAlbums((a) => a.filter((_, idx) => idx !== i));
+  }
+  async function testLink(i: number, url?: string) {
     if (!url) return;
-    const next = [...(content.galleryPhotos ?? []), { url, album: albumName }];
-    save(
-      { galleryPhotos: next, albums: withCounts(next) },
-      `Adicionou foto ao álbum "${albumName}"`,
-    );
-  }
-
-  function removePhoto(url: string) {
-    const next = (content.galleryPhotos ?? []).filter((p) => p.url !== url);
-    save(
-      { galleryPhotos: next, albums: withCounts(next) },
-      `Removeu foto do álbum "${albumName}"`,
-    );
-    // Best-effort cleanup of the stored file.
-    const key = url.split("/api/media/")[1];
-    if (key) fetch(`/api/media/${key}`, { method: "DELETE" }).catch(() => {});
-  }
-
-  function addAlbum() {
-    const name = `Álbum ${albums.length + 1}`;
-    save({ albums: [...albums, { name, count: 0 }] }, `Criou o álbum "${name}"`);
-    setActive(albums.length);
+    setTest((t) => ({ ...t, [i]: "Testando…" }));
+    try {
+      const r = await fetch(`/api/gphotos?url=${encodeURIComponent(url)}`);
+      const d = (await r.json()) as { ok: boolean; count?: number; error?: string };
+      setTest((t) => ({
+        ...t,
+        [i]: d.ok
+          ? d.count
+            ? `${d.count} foto(s) encontradas`
+            : "Nenhuma foto encontrada — confira se o álbum é público"
+          : d.error ?? "Falhou",
+      }));
+    } catch {
+      setTest((t) => ({ ...t, [i]: "Falha de conexão" }));
+    }
   }
 
   return (
     <>
-      <PageHeader
-        title="Gestão da Galeria"
-        aside={<PrimaryButton onClick={addAlbum}>+ Novo álbum</PrimaryButton>}
-      />
+      {albums.map((a, i) => (
+        <Card key={i} className="mb-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <FieldLabel>Nome da seção</FieldLabel>
+              <TextInput
+                value={a.name}
+                onChange={(e) => setAlbum(i, { name: e.target.value })}
+              />
+            </div>
+            <div>
+              <FieldLabel>Link do álbum público do Google Fotos</FieldLabel>
+              <TextInput
+                value={a.sourceUrl ?? ""}
+                onChange={(e) => setAlbum(i, { sourceUrl: e.target.value })}
+                placeholder="https://photos.app.goo.gl/..."
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <GhostButton onClick={() => testLink(i, a.sourceUrl)}>
+              Testar link
+            </GhostButton>
+            {test[i] && (
+              <span className="text-[12px] text-adm-muted">{test[i]}</span>
+            )}
+            <div className="ml-auto">
+              <GhostButton onClick={() => remove(i)}>Excluir seção</GhostButton>
+            </div>
+          </div>
+        </Card>
+      ))}
+
+      <button
+        type="button"
+        onClick={add}
+        className="mb-6 inline-block rounded border border-dashed border-[#999] px-4 py-2.5 text-[13px] text-[#666] hover:border-terracotta hover:text-terracotta"
+      >
+        + Nova seção
+      </button>
+
+      <div className="flex items-center justify-end gap-3">
+        {status === "saved" && (
+          <span className="text-[13px] font-semibold text-[#4a9d5f]">
+            Seções salvas
+          </span>
+        )}
+        <PrimaryButton
+          onClick={() => save({ albums }, "Atualizou as seções da galeria")}
+          disabled={status === "saving"}
+        >
+          Salvar seções
+        </PrimaryButton>
+      </div>
+    </>
+  );
+}
+
+export default function GaleriaPage() {
+  const { content, hydrated } = useContent();
+  if (!hydrated) return <AdmLoading />;
+
+  return (
+    <>
+      <PageHeader title="Gestão da Galeria" />
 
       <BuyButtonCard initial={content.gallery ?? {}} />
 
-      <div className="mb-2 text-[13px] font-bold uppercase text-adm-muted">
-        Seções (álbuns)
+      <div className="mb-3 text-[13px] font-bold uppercase text-adm-muted">
+        Seções (cada uma puxa as fotos de um álbum do Google Fotos)
       </div>
-      <div className="mb-6 flex flex-wrap gap-2.5">
-        {albums.map((a, i) => {
-          const on = i === active;
-          const n = (content.galleryPhotos ?? []).filter((p) => p.album === a.name).length;
-          return (
-            <button
-              key={a.name}
-              type="button"
-              onClick={() => setActive(i)}
-              className="rounded-full border border-[#ddd] px-4 py-2 text-[13px] font-semibold transition-colors"
-              style={{ background: on ? "#2b2b2b" : "#fff", color: on ? "#fff" : "#555" }}
-            >
-              {a.name} · {n}
-            </button>
-          );
-        })}
-      </div>
+      <p className="mb-4 text-[12px] text-adm-muted">
+        Cole o link de um álbum <strong>público</strong> do Google Fotos em cada seção —
+        as fotos aparecem na galeria do site (com marca d&apos;água e proteção). O álbum
+        precisa estar compartilhado como &ldquo;qualquer pessoa com o link&rdquo;.
+      </p>
 
-      <div className="mb-6 rounded-lg border border-dashed border-[#b8b8b0] bg-adm-card p-5">
-        <div className="mb-2.5 text-[13px] text-adm-muted">
-          ADICIONAR FOTO — ÁLBUM &ldquo;{albumName.toUpperCase()}&rdquo;
-        </div>
-        <ImageUpload
-          value=""
-          onChange={addPhoto}
-          className="h-32"
-          label="foto"
-          cloudinary={content.cloudinary}
-        />
-        <p className="mt-2 text-[12px] text-adm-muted">
-          Cada envio adiciona uma foto ao álbum selecionado. JPG/PNG/WebP, até 8 MB.
-        </p>
-      </div>
-
-      {photos.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          {photos.map((p) => (
-            <div key={p.url} className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.url}
-                alt=""
-                className="h-[90px] w-full rounded-md object-cover md:h-[100px]"
-              />
-              <button
-                type="button"
-                onClick={() => removePhoto(p.url)}
-                className="absolute right-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white hover:bg-black/80"
-                aria-label="Remover foto"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-lg border border-adm-border bg-adm-card px-5 py-6 text-[13px] text-adm-muted">
-          Nenhuma foto neste álbum ainda. Envie a primeira acima.
-        </div>
-      )}
+      <SectionsEditor initial={content.albums ?? []} />
     </>
   );
 }

@@ -54,6 +54,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
           <Percurso percurso={c.percurso} />
           <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />
           <Galeria
+            albums={c.albums ?? []}
             tiles={c.galleryTiles}
             photos={c.galleryPhotos ?? []}
             gallery={c.gallery}
