@@ -12,6 +12,11 @@ export function youtubeId(url: string | undefined): string | null {
   return /^[\w-]{11}$/.test(url) ? url : null;
 }
 
+/** True for YouTube Shorts links — those videos are vertical (9:16). */
+export function isVerticalYouTube(url: string | undefined): boolean {
+  return !!url && /\/shorts\//.test(url);
+}
+
 interface YTPlayer {
   mute(): void;
   unMute(): void;
@@ -50,12 +55,11 @@ function loadYT(): Promise<void> {
   return ytPromise;
 }
 
-/** Size the iframe to COVER the container for a 16:9 video (centered). */
-function coverIframe(container: HTMLElement, iframe: HTMLIFrameElement) {
+/** Size the iframe to COVER the container for a video of the given ratio (centered). */
+function coverIframe(container: HTMLElement, iframe: HTMLIFrameElement, ar: number) {
   const cw = container.clientWidth;
   const ch = container.clientHeight;
   if (!cw || !ch) return;
-  const ar = 16 / 9;
   let w = cw;
   let h = cw / ar;
   if (h < ch) {
@@ -103,12 +107,16 @@ export default function YouTubePlayer({
   startMuted = true,
   clickToPlay = false,
   showSoundToggle = true,
+  vertical = false,
 }: {
   videoId: string;
   startMuted?: boolean;
   clickToPlay?: boolean;
   showSoundToggle?: boolean;
+  /** Cover using a 9:16 (portrait, e.g. YouTube Shorts) ratio instead of 16:9. */
+  vertical?: boolean;
 }) {
+  const videoAr = vertical ? 9 / 16 : 16 / 9;
   const containerRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
@@ -146,8 +154,8 @@ export default function YouTubePlayer({
             const iframe = e.target.getIframe();
             const cont = containerRef.current;
             if (cont && iframe) {
-              coverIframe(cont, iframe);
-              ro = new ResizeObserver(() => coverIframe(cont, iframe));
+              coverIframe(cont, iframe, videoAr);
+              ro = new ResizeObserver(() => coverIframe(cont, iframe, videoAr));
               ro.observe(cont);
             }
             if (!clickToPlay) {
@@ -170,7 +178,7 @@ export default function YouTubePlayer({
       }
       playerRef.current = null;
     };
-  }, [videoId, clickToPlay]);
+  }, [videoId, clickToPlay, videoAr]);
 
   // Autoplay mode: honor "start with sound" on the first page interaction.
   useEffect(() => {

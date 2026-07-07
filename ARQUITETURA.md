@@ -95,7 +95,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   via **YouTube IFrame API**. Autoplay sempre mudo (regra do navegador); botão de som
   (mute/unMute) por ser gesto do usuário; `startMuted=false` liga o som na 1ª interação
   da página; `clickToPlay` mostra o overlay "Clique para começar o vídeo". `ResizeObserver`
-  dimensiona o iframe para **cobrir** (cover) qualquer proporção do pai; iframe com
+  dimensiona o iframe para **cobrir** (cover) qualquer proporção do pai, usando a proporção
+  do vídeo — 16:9, ou **9:16 quando é um Short** (detectado por `/shorts/` na URL via
+  `isVerticalYouTube`), para preencher a caixa sem tarjas pretas; iframe com
   `pointer-events:none` (controles por cima clicáveis). Helper `youtubeId(url)` extrai o ID.
 - **`Hero`** (client) é um carrossel de verdade sobre `hero.slides` — **só slides criados
   aparecem** (0 → não renderiza nada); **sem imagem de fundo global**. Renderiza só o slide

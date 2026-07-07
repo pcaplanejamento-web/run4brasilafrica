@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Hero as HeroType, HeroSlide } from "@/lib/content/types";
-import YouTubePlayer, { youtubeId } from "./YouTubePlayer";
+import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
 
 const title = (s: HeroSlide) => s.title || s.text || "";
 const ctaLabel = (s: HeroSlide) => s.ctaLabel || s.cta || "Inscreva-se";
@@ -66,6 +66,7 @@ export default function Hero({ hero }: { hero: HeroType }) {
           key={`yt-${slide.id}-${ytId}`}
           videoId={ytId}
           startMuted={slide.videoStartMuted !== false}
+          vertical={isVerticalYouTube(slide.videoUrl)}
         />
       ) : (
         <div

@@ -2,7 +2,7 @@
 
 import type { AboutSection } from "@/lib/content/types";
 import Reveal from "./Reveal";
-import YouTubePlayer, { youtubeId } from "./YouTubePlayer";
+import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
 
 /**
  * "A causa" — social mission. Media (image OR YouTube video) in a box with the
@@ -37,6 +37,7 @@ export default function Sobre({ about }: { about: AboutSection }) {
               videoId={ytId}
               startMuted={about.videoStartMuted !== false}
               clickToPlay={!!about.clickToPlay}
+              vertical={isVerticalYouTube(about.videoUrl)}
             />
           ) : (
             <div
