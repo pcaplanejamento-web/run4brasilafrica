@@ -37,7 +37,8 @@ export async function POST(req: Request) {
       .prepare("INSERT OR IGNORE INTO subscribers (email, created_at) VALUES (?1, ?2)")
       .bind(email, new Date().toISOString())
       .run();
-  } catch {
+  } catch (err) {
+    console.error("[api/subscribe] insert failed:", err);
     return NextResponse.json({ ok: false, error: "falha ao registrar" }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

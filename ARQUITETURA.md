@@ -434,6 +434,19 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   formulários (`SejaParceiro`, `NotifyForm`) têm o input honeypot escondido (fora da tela,
   `aria-hidden`, `tabIndex=-1`).
 
+## Cabeçalhos de segurança e performance
+
+- **`next.config.ts` → `headers()`**: aplica em toda resposta `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Strict-Transport-Security` (HSTS 1 ano), `Permissions-Policy` (bloqueia câmera/mic/geo/topics)
+  e `X-DNS-Prefetch-Control: on`. **CSP** ficou de fora por ora (os iframes de YouTube/Spotify e o
+  `<style>` de tema inline exigem afinar as fontes — tarefa à parte).
+- **Preconnect/dns-prefetch** no `<head>` (layout) para YouTube/Spotify/Cloudinary/Google Fotos,
+  acelerando o carregamento quando esses recursos são usados. Imagens da galeria já usam
+  `loading="lazy"` + `decoding="async"` dentro de contêineres com proporção fixa (sem CLS).
+- **Logs de erro**: as rotas de API registram falhas com contexto (`console.error("[api/...]")`),
+  visíveis no `wrangler tail` / painel Cloudflare, para diagnóstico.
+
 ## Integração contínua (CI)
 
 - `.github/workflows/ci.yml`: a cada push/PR roda `npm ci` → **lint** → **tsc --noEmit** →

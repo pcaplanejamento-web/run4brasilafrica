@@ -97,6 +97,14 @@ export default async function RootLayout({
     >
       <head>
         {theme && <style id="r4ba-theme" dangerouslySetInnerHTML={{ __html: theme }} />}
+        {/* Warm up connections to the third-parties the page may embed (video,
+            playlist, gallery images), so they load faster when needed. */}
+        <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+        <link rel="preconnect" href="https://www.youtube.com" />
+        <link rel="preconnect" href="https://i.ytimg.com" />
+        <link rel="preconnect" href="https://open.spotify.com" />
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
         {heroImg && <link rel="preload" as="image" href={heroImg} fetchPriority="high" />}
         {logo && <link rel="preload" as="image" href={logo} />}
       </head>

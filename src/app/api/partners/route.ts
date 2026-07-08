@@ -85,7 +85,8 @@ export async function POST(req: Request) {
       )
       .bind(name, email, phone, message, kind, hasWhatsapp, new Date().toISOString())
       .run();
-  } catch {
+  } catch (err) {
+    console.error("[api/partners] insert failed:", err);
     return NextResponse.json({ ok: false, error: "falha ao registrar" }, { status: 500 });
   }
 
@@ -110,8 +111,8 @@ export async function POST(req: Request) {
           `O que pode ajudar:\n${message}`,
       });
     }
-  } catch {
-    /* notification is optional */
+  } catch (err) {
+    console.error("[api/partners] notification failed (non-fatal):", err);
   }
 
   return NextResponse.json({ ok: true });
