@@ -17,6 +17,13 @@ export async function GET(
   const contentType = (metadata?.contentType as string) ?? "application/octet-stream";
   const total = value.byteLength;
   const cache = "public, max-age=31536000, immutable"; // keys are unique per upload
+  // Never let the browser sniff a different type, and block script execution for
+  // SVGs served on our own origin (an uploaded SVG could otherwise run script if
+  // opened directly). Renders fine inside <img>.
+  const secHeaders: Record<string, string> = { "X-Content-Type-Options": "nosniff" };
+  if (/svg/i.test(contentType)) {
+    secHeaders["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+  }
 
   // Range support (needed for reliable <video> playback/seeking).
   const range = req.headers.get("range");
@@ -38,6 +45,7 @@ export async function GET(
         "Content-Length": String(end - start + 1),
         "Accept-Ranges": "bytes",
         "Cache-Control": cache,
+        ...secHeaders,
       },
     });
   }
@@ -48,6 +56,7 @@ export async function GET(
       "Content-Length": String(total),
       "Accept-Ranges": "bytes",
       "Cache-Control": cache,
+      ...secHeaders,
     },
   });
 }

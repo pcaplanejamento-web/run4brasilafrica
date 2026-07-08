@@ -85,13 +85,10 @@ function ConfiguracoesForm({
     )
       return;
     await reset();
-    setEvent(initialEvent);
-    setHero(initialHero);
-    setMetrics(initialMetrics);
-    setBranding(initialBranding);
-    setTheme(initialTheme);
-    setCloudinary(initialCloudinary);
-    setAnalytics(initialAnalytics);
+    // Reload so every ADM form re-hydrates from the now-reset (seed) content —
+    // otherwise the forms still hold the OLD values and the next save would
+    // silently write them back over the reset.
+    window.location.reload();
   }
 
   const THEME_FIELDS: { key: keyof ThemeColors; label: string; def: string }[] = [

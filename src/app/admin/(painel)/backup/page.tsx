@@ -31,8 +31,23 @@ export default function BackupPage() {
       setMsg("Arquivo inválido — não é um JSON.");
       return;
     }
-    if (!parsed || typeof parsed !== "object" || !("event" in parsed)) {
+    if (!parsed || typeof parsed !== "object") {
       setMsg("Arquivo inválido — não parece um backup do site.");
+      return;
+    }
+    // Validate the shape so a malformed backup can't crash the public site
+    // (it does .map/.length on these). Arrays must be arrays; objects objects.
+    const p = parsed as Record<string, unknown>;
+    const arrays = ["stats", "lotes", "sponsors", "testimonials", "faq", "editions", "galleryPhotos"];
+    const objects = ["event", "hero", "about", "contact", "inscricao"];
+    const badArr = arrays.find((k) => k in p && !Array.isArray(p[k]));
+    const badObj = objects.find(
+      (k) => k in p && (typeof p[k] !== "object" || p[k] === null || Array.isArray(p[k])),
+    );
+    if (!("event" in p) || badArr || badObj) {
+      setMsg(
+        `Backup inválido${badArr ? ` — "${badArr}" deveria ser uma lista` : badObj ? ` — "${badObj}" está corrompido` : ""}.`,
+      );
       return;
     }
     const ok = window.confirm(

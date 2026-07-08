@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ContactLinks } from "@/lib/content/types";
 
-function ext(url: string) {
+function ext(url?: string) {
+  if (!url) return "#";
   return url.startsWith("http") ? url : `https://${url}`;
 }
 
@@ -15,7 +16,7 @@ export default function SiteFooter({
 }) {
   const socials = [
     { label: "Instagram", href: ext(contact.instagram) },
-    { label: "WhatsApp", href: `https://wa.me/${contact.whatsapp.replace(/\D/g, "")}` },
+    { label: "WhatsApp", href: `https://wa.me/${(contact.whatsapp || "").replace(/\D/g, "")}` },
     { label: "YouTube", href: ext(contact.youtube) },
   ];
 

@@ -48,6 +48,7 @@ export async function PUT(req: Request) {
       ? NextResponse.json({ ok: true })
       : NextResponse.json({ ok: false, code: "not_configured" });
   } catch (err) {
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 502 });
+    console.error("content PUT failed:", err); // logged server-side, not leaked
+    return NextResponse.json({ ok: false, error: "erro ao gravar" }, { status: 502 });
   }
 }

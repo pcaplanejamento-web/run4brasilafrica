@@ -37,7 +37,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   // Each homepage section keyed so the ADM dashboard can reorder / toggle them.
   const rendered: Record<string, ReactNode> = {
     hero: <Hero hero={c.hero} />,
-    stats: <StatsBar stats={c.stats} />,
+    stats: <StatsBar stats={c.stats ?? []} />,
     about: <Sobre about={c.about} />,
     playlist: <Playlist playlist={c.playlist} />,
     percurso: <Percurso percurso={c.percurso} />,
@@ -46,14 +46,14 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     galeria: (
       <Galeria
         albums={c.albums ?? []}
-        tiles={c.galleryTiles}
+        tiles={c.galleryTiles ?? []}
         photos={c.galleryPhotos ?? []}
         gallery={c.gallery}
       />
     ),
-    parceiros: <Parceiros sponsors={c.sponsors} />,
-    depoimentos: <Depoimentos testimonials={c.testimonials} />,
-    faq: <Faq items={c.faq} />,
+    parceiros: <Parceiros sponsors={c.sponsors ?? []} />,
+    depoimentos: <Depoimentos testimonials={c.testimonials ?? []} />,
+    faq: <Faq items={c.faq ?? []} />,
     kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,
     premiacao: <Premiacao premiacao={c.premiacao} />,
   };

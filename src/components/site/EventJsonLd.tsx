@@ -51,7 +51,10 @@ export default function EventJsonLd({ c }: { c: SiteContent }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{
+        // Escape "<" so a value containing "</script>" can't break out of the tag.
+        __html: JSON.stringify(data).replace(/</g, "\\u003c"),
+      }}
     />
   );
 }

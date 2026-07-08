@@ -10,7 +10,9 @@ export const dynamic = "force-dynamic";
  * unofficial and may break if Google changes the page — callers must degrade
  * gracefully (show nothing) when `ok` is false or `images` is empty.
  */
-const ALLOWED_HOSTS = ["photos.app.goo.gl", "photos.google.com", "goo.gl"];
+// Only Google Photos share hosts — NOT the generic "goo.gl" shortener, which
+// (with redirect:follow) would let a link redirect the server to any host (SSRF).
+const ALLOWED_HOSTS = ["photos.app.goo.gl", "photos.google.com"];
 
 function hostAllowed(host: string): boolean {
   return ALLOWED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));

@@ -77,7 +77,7 @@ export const seedContent: SiteContent = {
     distance: "10 KM",
     elevation: "+84 M",
     startFinish: "COPACABANA",
-    stravaRouteRef: "strava.com/routes/•••••••",
+    stravaRouteRef: "",
     garminRouteRef: "",
     connected: true,
   },

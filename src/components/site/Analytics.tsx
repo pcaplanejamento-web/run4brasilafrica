@@ -10,7 +10,10 @@ import type { Analytics as AnalyticsConfig } from "@/lib/content/types";
  */
 export default function Analytics({ analytics }: { analytics?: AnalyticsConfig }) {
   const cf = analytics?.cfBeaconToken?.trim();
-  const ga = analytics?.gaId?.trim();
+  const gaRaw = analytics?.gaId?.trim();
+  // Only accept a well-formed GA id (e.g. G-XXXX / UA-XXXX) — never interpolate
+  // arbitrary text into the inline gtag script.
+  const ga = gaRaw && /^[A-Za-z0-9-]+$/.test(gaRaw) ? gaRaw : "";
 
   useEffect(() => {
     if (cf && !document.querySelector('script[src*="cloudflareinsights.com"]')) {
