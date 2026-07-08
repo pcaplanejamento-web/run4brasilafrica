@@ -69,3 +69,14 @@ export function getMediaKV(): MediaKV | null {
     return null;
   }
 }
+
+/** A string env var / Worker secret (e.g. RESEND_API_KEY), or undefined. */
+export function getEnvVar(name: string): string | undefined {
+  try {
+    const { env } = getCloudflareContext();
+    const v = (env as Record<string, unknown>)[name];
+    return typeof v === "string" ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}

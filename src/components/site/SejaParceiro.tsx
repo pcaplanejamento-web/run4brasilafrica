@@ -24,6 +24,7 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
   const [message, setMessage] = useState("");
   const [kind, setKind] = useState<PartnerKind>("fisica");
   const [hasWhatsapp, setHasWhatsapp] = useState(true);
+  const [hp, setHp] = useState(""); // honeypot — stays empty for real users
   const [state, setState] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
   async function submit(e: React.FormEvent) {
@@ -34,7 +35,7 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
       const r = await fetch("/api/partners", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, phone, message, kind, hasWhatsapp }),
+        body: JSON.stringify({ name, email, phone, message, kind, hasWhatsapp, website: hp }),
       });
       const d = (await r.json()) as { ok: boolean };
       setState(d.ok ? "ok" : "error");
@@ -64,6 +65,17 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
       </div>
     ) : (
       <form onSubmit={submit}>
+        {/* Honeypot: hidden from users; bots that fill it are dropped server-side. */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          value={hp}
+          onChange={(e) => setHp(e.target.value)}
+          aria-hidden="true"
+          className="absolute left-[-9999px] h-0 w-0 opacity-0"
+        />
           <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-semibold text-cream/80">Nome</span>

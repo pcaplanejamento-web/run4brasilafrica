@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDB } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
+import { allowRequest, clientIp, isHoneypotTripped } from "@/lib/antispam";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +12,21 @@ export async function POST(req: Request) {
   const db = getDB();
   if (!db) return NextResponse.json({ ok: false, code: "not_configured" });
 
-  let body: { email?: string };
+  let body: { email?: string; website?: string };
   try {
-    body = (await req.json()) as { email?: string };
+    body = (await req.json()) as { email?: string; website?: string };
   } catch {
     return NextResponse.json({ ok: false, error: "corpo inválido" }, { status: 400 });
   }
+
+  if (isHoneypotTripped(body)) return NextResponse.json({ ok: true });
+  if (!(await allowRequest("subscribe", clientIp(req), 5, 600))) {
+    return NextResponse.json(
+      { ok: false, error: "Muitos envios. Tente novamente em alguns minutos." },
+      { status: 429 },
+    );
+  }
+
   const email = (body.email ?? "").trim().toLowerCase();
   if (!EMAIL_RE.test(email) || email.length > 200) {
     return NextResponse.json({ ok: false, error: "e-mail inválido" }, { status: 400 });

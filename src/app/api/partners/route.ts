@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDB } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
+import { allowRequest, clientIp, isHoneypotTripped } from "@/lib/antispam";
+import { sendNotification } from "@/lib/email";
 import type { PartnerLead, PartnerKind } from "@/lib/content/types";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +16,8 @@ interface PartnerBody {
   message?: string;
   kind?: string;
   hasWhatsapp?: boolean;
+  /** Honeypot — must stay empty (bots fill it). */
+  website?: string;
 }
 
 interface PartnerRow {
@@ -41,6 +45,17 @@ export async function POST(req: Request) {
     body = (await req.json()) as PartnerBody;
   } catch {
     return NextResponse.json({ ok: false, error: "corpo inválido" }, { status: 400 });
+  }
+
+  // Silently accept (but drop) honeypot hits so bots don't learn they failed.
+  if (isHoneypotTripped(body)) return NextResponse.json({ ok: true });
+
+  // Per-IP rate limit: at most 5 cadastros / 10 min.
+  if (!(await allowRequest("partners", clientIp(req), 5, 600))) {
+    return NextResponse.json(
+      { ok: false, error: "Muitos envios. Tente novamente em alguns minutos." },
+      { status: 429 },
+    );
   }
 
   const name = (body.name ?? "").trim();
@@ -73,6 +88,32 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "falha ao registrar" }, { status: 500 });
   }
+
+  // Notify the organisation (best-effort — never blocks or fails the submission).
+  try {
+    const row = await db
+      .prepare("SELECT json FROM content WHERE id = 1")
+      .first<{ json: string }>();
+    const to = row
+      ? (JSON.parse(row.json) as { sejaParceiro?: { notifyEmail?: string } }).sejaParceiro
+          ?.notifyEmail?.trim()
+      : undefined;
+    if (to) {
+      const tipo = kind === "juridica" ? "Pessoa jurídica" : "Pessoa física";
+      await sendNotification({
+        to,
+        subject: `Novo parceiro: ${name}`,
+        text:
+          `Novo cadastro em "Seja um Parceiro":\n\n` +
+          `Nome: ${name}\nTipo: ${tipo}\nE-mail: ${email}\n` +
+          `Telefone: ${phone}${hasWhatsapp ? " (tem WhatsApp)" : ""}\n\n` +
+          `O que pode ajudar:\n${message}`,
+      });
+    }
+  } catch {
+    /* notification is optional */
+  }
+
   return NextResponse.json({ ok: true });
 }
 

@@ -108,7 +108,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   não há sessão — mas a proteção real está nas rotas de escrita.
 - Guardas: não é possível remover/rebaixar o **último administrador** (evita lockout).
 - **Proteção contra força bruta** no login: após **5 tentativas** erradas por e-mail, bloqueia
-  por **15 min** (contador em KV com TTL); acerto zera o contador.
+  por **15 min** (contador em KV com TTL); acerto zera o contador. Além disso, **limite por IP**
+  (30 tentativas / 15 min via `lib/antispam.ts`) barra _credential-stuffing_ com muitos e-mails
+  do mesmo IP.
 - **Backup** (`/admin/backup`): exportar/importar todo o `SiteContent` em JSON; além disso o
   D1 tem **Time Travel** (restauração de qualquer ponto dos últimos 30 dias).
 - Em `next dev` (sem D1) a auth fica desligada (painel aberto), para desenvolvimento.
@@ -420,6 +422,22 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (SiteNav + barra de contagem, ~112px), para o título da seção-alvo parar **logo abaixo** dele
   em vez de ficar escondido atrás.
 
+## Segurança dos formulários públicos (anti-spam)
+
+- **`src/lib/antispam.ts`**: `clientIp()` (lê `CF-Connecting-IP`), `allowRequest(bucket, id,
+  limit, windowSec)` (rate-limit de janela fixa em KV, com TTL — no-op em dev sem KV) e
+  `isHoneypotTripped()` (campo oculto `website`).
+- Os `POST` públicos (`/api/partners`, `/api/subscribe`) fazem **honeypot** (bot que preenche o
+  campo oculto recebe `ok:true` mas é **descartado**) + **limite por IP** (5 envios / 10 min). Os
+  formulários (`SejaParceiro`, `NotifyForm`) têm o input honeypot escondido (fora da tela,
+  `aria-hidden`, `tabIndex=-1`).
+
+## Integração contínua (CI)
+
+- `.github/workflows/ci.yml`: a cada push/PR roda `npm ci` → **lint** → **tsc --noEmit** →
+  **next build**. Pega erros de tipo e os arquivos duplicados que o iCloud às vezes cria, antes
+  de virarem deploy quebrado. O ESLint ignora `.next.*/**` e `.open-next.*/**` (dirs temporários).
+
 ## Captura de e-mails (avisos)
 
 - **Avisos por e-mail** (guardado no próprio sistema, sem serviço externo):
@@ -436,7 +454,13 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   - Tabela D1 `partners` (`id`, `name`, `email`, `phone`, `message`, `kind` = `fisica|juridica`,
     `has_whatsapp` 0/1, `created_at`) — `migrations/0004_partners.sql`.
   - **`src/app/api/partners/route.ts`**: `POST` público valida e insere; `GET` (com filtro
-    opcional `?kind=`) e `DELETE` são só do ADM (exigem sessão).
+    opcional `?kind=`) e `DELETE` são só do ADM (exigem sessão). Protegido por **anti-spam**
+    (honeypot + limite por IP — ver seção Segurança).
+  - **Aviso por e-mail (opcional)**: se `content.sejaParceiro.notifyEmail` estiver preenchido
+    **e** o secret `RESEND_API_KEY` existir, cada novo cadastro dispara um e-mail à organização
+    via `lib/email.ts` (Resend). Best-effort: nunca bloqueia nem falha o cadastro se o e-mail
+    não sair. Sem a key, só não envia. Config em ADM + secrets `RESEND_API_KEY`/`NOTIFY_FROM`
+    (ver README).
   - **`SejaParceiro`** (client, seção da home, `key: "sejaParceiro"` em `sections.ts`):
     formulário com Nome, E-mail, Telefone (com a marcação **"Este número tem WhatsApp"** logo
     abaixo), tipo (**Pessoa física/jurídica**) e **"O que posso ajudar"** (texto livre).

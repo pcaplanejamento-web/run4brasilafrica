@@ -319,6 +319,9 @@ export interface PremiacaoSection {
 export interface SejaParceiroSection {
   title?: string;
   subtitle?: string;
+  /** E-mail that receives a notification when a new lead is submitted (optional;
+   * requires the RESEND_API_KEY secret to actually send). */
+  notifyEmail?: string;
   /** Optional promotional YouTube video (same rules/config as "A Causa"). */
   videoEnabled?: boolean;
   videoUrl?: string;

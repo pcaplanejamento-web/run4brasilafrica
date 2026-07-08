@@ -8,6 +8,7 @@ import { useState } from "react";
  */
 export default function NotifyForm() {
   const [email, setEmail] = useState("");
+  const [hp, setHp] = useState(""); // honeypot
   const [state, setState] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
   async function submit(e: React.FormEvent) {
@@ -18,7 +19,7 @@ export default function NotifyForm() {
       const r = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, website: hp }),
       });
       const d = (await r.json()) as { ok: boolean };
       setState(d.ok ? "ok" : "error");
@@ -38,6 +39,16 @@ export default function NotifyForm() {
 
   return (
     <form onSubmit={submit} className="mt-4">
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        value={hp}
+        onChange={(e) => setHp(e.target.value)}
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 opacity-0"
+      />
       <div className="mb-1.5 text-[13px] font-semibold">
         Quer ser avisado quando abrir? Deixe seu e-mail:
       </div>

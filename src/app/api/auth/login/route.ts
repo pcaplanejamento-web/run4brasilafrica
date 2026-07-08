@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDB, getMediaKV } from "@/lib/cf";
+import { allowRequest, clientIp } from "@/lib/antispam";
 import {
   createSession,
   verifyPassword,
@@ -9,12 +10,21 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const MAX_FAILS = 5; // failures before a temporary lock
+const MAX_FAILS = 5; // failures before a temporary lock (per e-mail)
 const LOCK_SECONDS = 15 * 60; // 15 min
 
 export async function POST(req: Request) {
   const db = getDB();
   if (!db) return NextResponse.json({ ok: false, code: "not_configured" });
+
+  // Per-IP cap: blocks credential-stuffing across many e-mails from one source
+  // (the per-e-mail lock below can't). 30 attempts / 15 min is ample for a human.
+  if (!(await allowRequest("login-ip", clientIp(req), 30, LOCK_SECONDS))) {
+    return NextResponse.json(
+      { ok: false, error: "Muitas tentativas deste dispositivo. Tente mais tarde." },
+      { status: 429 },
+    );
+  }
 
   let body: { email?: string; password?: string };
   try {

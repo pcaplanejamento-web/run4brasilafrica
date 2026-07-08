@@ -9,6 +9,9 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Stray temp build dirs left by interrupted OpenNext builds (e.g. `.next.gc12345`).
+    ".next.*/**",
+    ".open-next.*/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

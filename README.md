@@ -93,6 +93,22 @@ Na Cloudflare o app roda em **Workers** através do adaptador **OpenNext**
 > aplique **todas** as migrações em ordem (`migrations/0001_content.sql` … `0004_partners.sql`),
 > ex.: `npx wrangler d1 execute run4brasilafrica-content --remote --file migrations/0001_content.sql`.
 
+### E-mail de aviso de novos cadastros (opcional)
+
+O ADM (**Seja um Parceiro**) tem um campo "Notificar novos cadastros em (e-mail)".
+Para os avisos serem enviados de fato, configure o provedor de e-mail (Resend) como
+**secrets** do Worker — o site funciona normalmente sem eles (só não envia o aviso):
+
+```bash
+# 1) Crie uma conta em resend.com e verifique o domínio run4brasilafrica.com.br
+# 2) Guarde os secrets no Worker:
+npx wrangler secret put RESEND_API_KEY   # cole a API key da Resend
+npx wrangler secret put NOTIFY_FROM      # ex.: Run4BrasilAfrica <avisos@run4brasilafrica.com.br>
+```
+
+Depois, no ADM, preencha o e-mail de destino e salve. Sem `RESEND_API_KEY`, o cadastro
+continua sendo salvo normalmente (só não dispara o e-mail).
+
 ### Opção B — Linha de comando (mais direto)
 
 ```bash

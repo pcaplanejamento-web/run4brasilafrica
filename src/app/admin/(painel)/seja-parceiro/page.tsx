@@ -126,6 +126,19 @@ function SejaParceiroPanel({ initial }: { initial: SejaParceiroSection }) {
               rows={2}
             />
           </div>
+          <div>
+            <FieldLabel>Notificar novos cadastros em (e-mail)</FieldLabel>
+            <TextInput
+              type="email"
+              value={cfg.notifyEmail ?? ""}
+              onChange={(e) => set({ notifyEmail: e.target.value })}
+              placeholder="organizacao@run4brasilafrica.com.br"
+            />
+            <div className="mt-1 text-[12px] text-adm-muted">
+              Opcional. A cada novo cadastro, envia um aviso para este e-mail (requer a chave de
+              envio configurada no servidor — veja o README).
+            </div>
+          </div>
         </div>
       </Card>
 
