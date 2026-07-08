@@ -57,7 +57,7 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
         </div>
       ) : (
         <form onSubmit={submit} className="mt-8 max-w-[680px]">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-semibold text-cream/80">Nome</span>
               <input
@@ -83,19 +83,30 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
                 placeholder="seu@email.com"
               />
             </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[13px] font-semibold text-cream/80">Telefone</span>
-              <input
-                type="tel"
-                className={inputClass}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                maxLength={40}
-                autoComplete="tel"
-                placeholder="(00) 00000-0000"
-              />
-            </label>
+            <div className="flex flex-col gap-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[13px] font-semibold text-cream/80">Telefone</span>
+                <input
+                  type="tel"
+                  className={inputClass}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  maxLength={40}
+                  autoComplete="tel"
+                  placeholder="(00) 00000-0000"
+                />
+              </label>
+              <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] text-cream/85">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 shrink-0 accent-[var(--color-gold)]"
+                  checked={hasWhatsapp}
+                  onChange={(e) => setHasWhatsapp(e.target.checked)}
+                />
+                Este número tem WhatsApp
+              </label>
+            </div>
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-semibold text-cream/80">Você é</span>
               <select
@@ -108,16 +119,6 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
               </select>
             </label>
           </div>
-
-          <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-3 text-[14px] text-cream/85">
-            <input
-              type="checkbox"
-              className="h-5 w-5 shrink-0 accent-[var(--color-gold)]"
-              checked={hasWhatsapp}
-              onChange={(e) => setHasWhatsapp(e.target.checked)}
-            />
-            Este número tem WhatsApp
-          </label>
 
           <label className="mt-4 flex flex-col gap-1.5">
             <span className="text-[13px] font-semibold text-cream/80">O que posso ajudar</span>
