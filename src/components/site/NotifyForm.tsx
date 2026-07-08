@@ -56,6 +56,8 @@ export default function NotifyForm() {
         <input
           type="email"
           required
+          aria-label="Seu e-mail para aviso"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="seu@email.com"

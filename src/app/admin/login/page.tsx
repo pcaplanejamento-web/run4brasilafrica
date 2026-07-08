@@ -54,24 +54,28 @@ export default function AdminLogin() {
           Painel administrativo
         </div>
 
-        <label className="mb-1.5 block text-[13px] font-semibold text-[#444]">
+        <label htmlFor="login-email" className="mb-1.5 block text-[13px] font-semibold text-[#444]">
           E-mail
         </label>
         <input
+          id="login-email"
           type="email"
           required
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="nome@run4brasilafrica.com"
           className="mb-4 w-full rounded-md border border-[#ccc] px-3.5 py-2.5 text-[14px] text-adm-ink outline-none focus:border-terracotta"
         />
 
-        <label className="mb-1.5 block text-[13px] font-semibold text-[#444]">
+        <label htmlFor="login-password" className="mb-1.5 block text-[13px] font-semibold text-[#444]">
           Senha
         </label>
         <input
+          id="login-password"
           type="password"
           required
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"

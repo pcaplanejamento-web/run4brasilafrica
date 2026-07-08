@@ -22,8 +22,9 @@ const ibmPlexSans = IBM_Plex_Sans({
 /**
  * Metadata built from the LIVE content (Configurações) so the share card (title,
  * description) and the browser tab never diverge from what the ADM set. The OG
- * image is generated dynamically (see `opengraph-image.tsx`). Falls back to the
- * seed if the content read fails.
+ * image is a static asset (`branding.ogImage` or `/og.png`) — dynamic `next/og`
+ * was removed because it overran the Worker's limits (Error 1102). Falls back to
+ * the seed if the content read fails.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getSiteContent();

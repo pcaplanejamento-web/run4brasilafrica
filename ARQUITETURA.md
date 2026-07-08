@@ -399,7 +399,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - `content.layout: LayoutItem[]` (`{ key, enabled }`) define a **ordem** e o **on/off** das
   seções da tela inicial. O registro fica em **`lib/content/sections.ts`** (`SECTIONS`:
   `key`→`label`+`href` da página de config; `DEFAULT_LAYOUT`; `resolveLayout` que mescla o
-  salvo com o registro, mantendo a ordem e **anexando seções novas** habilitadas).
+  salvo com o registro, **mantendo a ordem/reordenação manual** e **inserindo seções novas na
+  posição natural do registro** — logo após a seção-irmã anterior que já existe, em vez de
+  jogá-las no fim).
 - **`SiteContent`** monta o `<main>` a partir de um mapa `key → JSX` renderizado na ordem de
   `resolveLayout(c.layout)`, pulando as desativadas. Seções sem dado (ex.: `playlist`,
   `raceday`) continuam se auto-ocultando.

@@ -39,16 +39,30 @@ export function sectionMeta(key: string): SectionMeta | undefined {
 
 /**
  * Merge a stored layout with the registry: keep the stored order (known keys
- * only), then append any sections not present yet (enabled). Guarantees every
- * section appears even after new ones are added to the code.
+ * only) and preserve any manual reordering, then insert sections not present
+ * yet **at their natural registry position** (right after the nearest preceding
+ * registry-sibling that exists), so a newly-added section shows up where it
+ * belongs instead of dumped at the bottom. Guarantees every section appears.
  */
 export function resolveLayout(stored: LayoutItem[] | undefined): LayoutItem[] {
   const known = new Set(SECTIONS.map((s) => s.key));
-  const kept = (stored ?? []).filter((li) => known.has(li.key));
-  const seen = new Set(kept.map((li) => li.key));
-  const missing = SECTIONS.filter((s) => !seen.has(s.key)).map((s) => ({
-    key: s.key,
-    enabled: true,
-  }));
-  return [...kept, ...missing];
+  const result = (stored ?? []).filter((li) => known.has(li.key));
+  const present = new Set(result.map((li) => li.key));
+
+  SECTIONS.forEach((s, idx) => {
+    if (present.has(s.key)) return;
+    // Insert just after the previous registry section already in the layout.
+    let insertAt = result.length;
+    for (let i = idx - 1; i >= 0; i--) {
+      const pos = result.findIndex((li) => li.key === SECTIONS[i].key);
+      if (pos >= 0) {
+        insertAt = pos + 1;
+        break;
+      }
+    }
+    result.splice(insertAt, 0, { key: s.key, enabled: true });
+    present.add(s.key);
+  });
+
+  return result;
 }
