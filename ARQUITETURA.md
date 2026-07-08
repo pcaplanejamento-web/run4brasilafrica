@@ -337,7 +337,7 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 - `content.sponsors` (`Sponsor`: `name`, `tier`, `link`, **`instagram?`**, `logo?`) +
   `content.sponsorsShowTier` (flag global). Público (`components/site/Parceiros.tsx`): **card por
-  parceiro** com uma **placa de logo retangular** (`aspect-[16/10]`, fundo branco) que **preenche
+  parceiro** com uma **placa de logo quadrada** (`aspect-square` 1:1, fundo branco) que **preenche
   a largura do card**, o **nome embaixo** e um selo de categoria (Ouro/Prata/Bronze) **opcional**
   (só quando `sponsorsShowTier` está ligado). Card com borda arredondada + hover (sobe/realce).
 - **Clique no card** abre o destino do parceiro: o **Instagram** (`instagram`, aceita `@perfil`,

@@ -27,8 +27,8 @@ function partnerHref(sp: Sponsor) {
 }
 
 /**
- * Partners grid — a modern card per partner: a wide (rectangular) logo tile that
- * fills the card, the name below and an optional tier badge (shown only when the
+ * Partners grid — a modern card per partner: a square (1:1) logo tile that fills
+ * the card width, the name below and an optional tier badge (shown only when the
  * ADM enables it, globally). Clicking a card opens the partner's Instagram (if
  * set) or website. Two columns on mobile, up to five on desktop.
  */
@@ -53,14 +53,14 @@ export default function Parceiros({
           const tier = showTier ? TIER_COLOR[sp.tier] : null;
           const inner = (
             <>
-              {/* Logo tile — fills the card width, rectangular (not square). */}
-              <div className="aspect-[16/10] w-full overflow-hidden bg-white">
+              {/* Logo tile — square (1:1), fills the full width of the card. */}
+              <div className="aspect-square w-full overflow-hidden bg-white">
                 {sp.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={sp.logo}
                     alt={sp.name}
-                    className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-[1.05]"
+                    className="h-full w-full object-contain p-2.5 transition-transform duration-300 group-hover:scale-[1.05]"
                     loading="lazy"
                     draggable={false}
                   />
