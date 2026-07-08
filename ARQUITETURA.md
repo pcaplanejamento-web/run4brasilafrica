@@ -455,11 +455,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Logs de erro**: as rotas de API registram falhas com contexto (`console.error("[api/...]")`),
   visíveis no `wrangler tail` / painel Cloudflare, para diagnóstico.
 
-## Integração contínua (CI)
+## Integração contínua (CI) e testes
 
 - `.github/workflows/ci.yml`: a cada push/PR roda `npm ci` → **lint** → **tsc --noEmit** →
-  **next build**. Pega erros de tipo e os arquivos duplicados que o iCloud às vezes cria, antes
-  de virarem deploy quebrado. O ESLint ignora `.next.*/**` e `.open-next.*/**` (dirs temporários).
+  **test (vitest)** → **next build**. Pega erros de tipo e os arquivos duplicados que o iCloud às
+  vezes cria, antes de virarem deploy quebrado. O ESLint ignora `.next.*/**` e `.open-next.*/**`.
+- **Testes (`tests/`, vitest, `npm test`)**: funções puras — `resolveLayout` (ordem/inserção de
+  seção nova), anti-spam (`isHoneypotTripped`, `clientIp`, `allowRequest`). `vitest.config.ts`
+  faz alias de `@` → `src` e stub de `server-only`.
+
+## Rastreamento de conversão (analytics)
+
+- **`lib/track.ts`** `track(name, params?)` dispara evento GA4 via `window.gtag` **se** o GA
+  estiver configurado (ADM > Configurações); no-op caso contrário. Eventos: `inscricao_click`
+  (todo `CtaButton`), `lead_parceiro` (envio de Seja um Parceiro) e `lead_email` (avise-me). O
+  Cloudflare Web Analytics (pageviews, sem cookies) não precisa de fiação.
 
 ## Captura de e-mails (avisos)
 

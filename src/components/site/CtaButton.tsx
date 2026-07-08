@@ -1,10 +1,14 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { track } from "@/lib/track";
 
 /**
  * Standard "inscreva-se" button used everywhere it appears (header, hero, …) so
  * every registration CTA is the exact same component. Gold pill with the clipped
  * corner; two sizes ("sm" = header, "lg" = hero). External links open in a new
- * tab automatically.
+ * tab automatically. Every click fires a GA4 `inscricao_click` conversion event
+ * (no-op when analytics isn't configured).
  */
 export default function CtaButton({
   href,
@@ -27,7 +31,10 @@ export default function CtaButton({
   return (
     <a
       href={href}
-      onClick={onClick}
+      onClick={() => {
+        track("inscricao_click", { href });
+        onClick?.();
+      }}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       className={`inline-block whitespace-nowrap bg-gold font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 ${sizeCls} ${className}`}
     >

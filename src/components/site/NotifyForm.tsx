@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/track";
 
 /**
  * "Avise-me quando abrir o lote" — collects an e-mail (stored in the site's own
@@ -23,7 +24,10 @@ export default function NotifyForm() {
       });
       const d = (await r.json()) as { ok: boolean };
       setState(d.ok ? "ok" : "error");
-      if (d.ok) setEmail("");
+      if (d.ok) {
+        setEmail("");
+        track("lead_email");
+      }
     } catch {
       setState("error");
     }

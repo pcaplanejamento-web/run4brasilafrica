@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import type { SejaParceiroSection, PartnerKind } from "@/lib/content/types";
+import { track } from "@/lib/track";
 import SectionEyebrow from "./SectionEyebrow";
 import Reveal from "./Reveal";
 import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
@@ -39,6 +40,7 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
       });
       const d = (await r.json()) as { ok: boolean };
       setState(d.ok ? "ok" : "error");
+      if (d.ok) track("lead_parceiro", { kind });
     } catch {
       setState("error");
     }
