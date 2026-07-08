@@ -49,8 +49,14 @@ export default function SiteFooter({
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <span className="text-[12px] opacity-60">{contact.copyright}</span>
+        <Link
+          href="/privacidade"
+          className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"
+        >
+          Privacidade
+        </Link>
         <Link
           href="/admin/login"
           className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"

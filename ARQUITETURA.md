@@ -434,6 +434,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   formulários (`SejaParceiro`, `NotifyForm`) têm o input honeypot escondido (fora da tela,
   `aria-hidden`, `tabIndex=-1`).
 
+## Privacidade (LGPD)
+
+- Página **`/privacidade`** (`app/privacidade/page.tsx`) — nota de privacidade (modelo a revisar
+  com jurídico) que lê o e-mail de contato do conteúdo; linkada no rodapé.
+- Os formulários públicos (Seja um Parceiro e "avise-me") têm **checkbox de consentimento
+  obrigatório** com link para a política. `created_at` de cada registro serve de data do
+  consentimento.
+
 ## Cabeçalhos de segurança e performance
 
 - **`next.config.ts` → `headers()`**: aplica em toda resposta `X-Content-Type-Options: nosniff`,

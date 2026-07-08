@@ -71,6 +71,16 @@ export default function NotifyForm() {
           {state === "loading" ? "Enviando…" : "Avise-me"}
         </button>
       </div>
+      <label className="mt-2 flex max-w-[420px] cursor-pointer items-start gap-2 text-[12px] leading-snug">
+        <input type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>
+          Autorizo o uso do meu e-mail para este aviso (
+          <a href="/privacidade" className="underline" target="_blank" rel="noopener noreferrer">
+            Política de Privacidade
+          </a>
+          ).
+        </span>
+      </label>
       {state === "error" && (
         <p className="mt-1.5 text-[12px] font-semibold">
           Não foi possível registrar agora. Tente novamente.

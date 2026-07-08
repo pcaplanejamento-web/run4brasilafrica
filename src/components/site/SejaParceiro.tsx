@@ -151,6 +151,21 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
             />
           </label>
 
+          <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-[13px] leading-relaxed text-cream/80">
+            <input
+              type="checkbox"
+              required
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-gold)]"
+            />
+            <span>
+              Autorizo o uso dos meus dados para contato sobre parcerias, conforme a{" "}
+              <a href="/privacidade" className="text-gold underline" target="_blank" rel="noopener noreferrer">
+                Política de Privacidade
+              </a>
+              .
+            </span>
+          </label>
+
           {state === "error" && (
             <p className="mt-3 text-[13px] font-semibold text-gold">
               Não foi possível enviar agora. Confira os dados e tente novamente.
