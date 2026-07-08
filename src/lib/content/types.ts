@@ -206,9 +206,11 @@ export interface Album {
 export interface Sponsor {
   name: string;
   tier: SponsorTier;
-  /** Website link (used when there is no Instagram). */
+  /** Single destination link. Interpreted per `linkKind` (site URL or social). */
   link: string;
-  /** Instagram profile (@handle or URL). When set, the card links here instead. */
+  /** What `link` points to: a website ("site") or a social profile ("social"). */
+  linkKind?: "site" | "social";
+  /** Legacy — Instagram profile. Read as fallback when `linkKind` is unset. */
   instagram?: string;
   logo?: string;
 }

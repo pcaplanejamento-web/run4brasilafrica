@@ -166,12 +166,12 @@ export const seedContent: SiteContent = {
   ],
 
   sponsors: [
-    { name: "Banco Atlântico", tier: "Ouro", link: "bancoatlantico.com" },
-    { name: "VoaAfrica Airlines", tier: "Ouro", link: "voaafrica.com" },
-    { name: "Hidrata+", tier: "Prata", link: "hidratamais.com.br" },
-    { name: "Correndo Sports", tier: "Prata", link: "correndosports.com" },
-    { name: "Café Raízes", tier: "Bronze", link: "cafeaizes.com.br" },
-    { name: "Estúdio Aro", tier: "Bronze", link: "estudioaro.com" },
+    { name: "Banco Atlântico", tier: "Ouro", link: "bancoatlantico.com", linkKind: "site" },
+    { name: "VoaAfrica Airlines", tier: "Ouro", link: "voaafrica.com", linkKind: "site" },
+    { name: "Hidrata+", tier: "Prata", link: "hidratamais.com.br", linkKind: "site" },
+    { name: "Correndo Sports", tier: "Prata", link: "correndosports.com", linkKind: "site" },
+    { name: "Café Raízes", tier: "Bronze", link: "cafeaizes.com.br", linkKind: "site" },
+    { name: "Estúdio Aro", tier: "Bronze", link: "estudioaro.com", linkKind: "site" },
   ],
 
   sponsorsShowTier: false,

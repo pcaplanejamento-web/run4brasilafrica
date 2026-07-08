@@ -13,17 +13,22 @@ function site(url?: string) {
   return url.startsWith("http") ? url : `https://${url}`;
 }
 
-/** Build an Instagram profile URL from an @handle, a handle, or a full URL. */
-function instagram(v?: string) {
+/** Build a social profile URL from an @handle, a bare handle, or a full URL. */
+function social(v?: string) {
   if (!v) return null;
   if (/^https?:\/\//i.test(v)) return v;
   const handle = v.trim().replace(/^@/, "").replace(/^(www\.)?instagram\.com\//i, "");
   return handle ? `https://instagram.com/${handle}` : null;
 }
 
-/** The partner card destination: Instagram when set, else the website. */
+/**
+ * The partner card destination. Uses the single `link` interpreted by
+ * `linkKind` (site or social); falls back to the legacy `instagram`/`link`.
+ */
 function partnerHref(sp: Sponsor) {
-  return instagram(sp.instagram) ?? site(sp.link);
+  if (sp.linkKind === "social") return social(sp.link);
+  if (sp.linkKind === "site") return site(sp.link);
+  return social(sp.instagram) ?? site(sp.link);
 }
 
 /**

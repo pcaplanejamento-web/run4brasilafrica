@@ -16,7 +16,7 @@ export const ADM_NAV: AdmNavItem[] = [
   { key: "faq", label: "FAQ", href: "/admin/faq" },
   { key: "kit", label: "Kit do atleta", href: "/admin/kit" },
   { key: "strava", label: "Percurso", href: "/admin/strava" },
-  { key: "patrocinadores", label: "Patrocinadores", href: "/admin/patrocinadores" },
+  { key: "patrocinadores", label: "Parceiros", href: "/admin/patrocinadores" },
   { key: "links", label: "Links & inscrição", href: "/admin/links" },
   { key: "premiacao", label: "Premiação", href: "/admin/premiacao" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },

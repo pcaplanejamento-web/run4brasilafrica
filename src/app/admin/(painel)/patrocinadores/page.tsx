@@ -17,6 +17,18 @@ import ImageUpload from "@/components/admin/ImageUpload";
 
 const TIERS: SponsorTier[] = ["Ouro", "Prata", "Bronze"];
 
+/**
+ * Normalize a sponsor to the single-link model: one `link` + `linkKind`.
+ * Legacy rows (with `instagram` set and no `linkKind`) become social links.
+ */
+function migrate(sp: Sponsor): Sponsor {
+  if (sp.linkKind) return sp;
+  if (sp.instagram) {
+    return { ...sp, link: sp.instagram, linkKind: "social", instagram: undefined };
+  }
+  return { ...sp, linkKind: "site" };
+}
+
 function PatrocinadoresForm({
   initial,
   initialShowTier,
@@ -25,7 +37,7 @@ function PatrocinadoresForm({
   initialShowTier: boolean;
 }) {
   const { save } = useContent();
-  const [rows, setRows] = useState<Sponsor[]>(initial);
+  const [rows, setRows] = useState<Sponsor[]>(() => initial.map(migrate));
   const [showTier, setShowTier] = useState(initialShowTier);
 
   function set(i: number, patch: Partial<Sponsor>) {
@@ -37,15 +49,15 @@ function PatrocinadoresForm({
   function add() {
     setRows((r) => [
       ...r,
-      { name: "Novo patrocinador", tier: "Bronze", link: "" },
+      { name: "Novo parceiro", tier: "Bronze", link: "", linkKind: "site" },
     ]);
   }
 
   return (
     <>
       <PageHeader
-        title="Patrocinadores & apoiadores"
-        aside={<PrimaryButton onClick={add}>+ Novo patrocinador</PrimaryButton>}
+        title="Parceiros"
+        aside={<PrimaryButton onClick={add}>+ Novo parceiro</PrimaryButton>}
       />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-adm-border bg-adm-card px-5 py-4">
@@ -67,26 +79,28 @@ function PatrocinadoresForm({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-adm-border bg-adm-card">
-        <div className="hidden grid-cols-[60px_1.2fr_0.9fr_1fr_1fr_96px] gap-3 border-b border-[#eee] px-5 py-3 text-[12px] font-bold text-adm-muted md:grid">
+        <div className="hidden grid-cols-[96px_1.1fr_0.8fr_0.8fr_1.1fr_88px] gap-3 border-b border-[#eee] px-5 py-3 text-[12px] font-bold text-adm-muted md:grid">
           <div>LOGO</div>
           <div>NOME</div>
           <div>CATEGORIA</div>
-          <div>LINK (SITE)</div>
-          <div>INSTAGRAM</div>
+          <div>TIPO DE LINK</div>
+          <div>LINK</div>
           <div>AÇÕES</div>
         </div>
 
         {rows.map((sp, i) => {
           const c = sponsorTierColors[sp.tier];
+          const social = sp.linkKind === "social";
           return (
             <div
               key={i}
-              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[96px_1.2fr_0.9fr_1fr_1fr_96px] md:items-center md:gap-3"
+              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[96px_1.1fr_0.8fr_0.8fr_1.1fr_88px] md:items-center md:gap-3"
             >
               <ImageUpload
                 value={sp.logo}
                 onChange={(url) => set(i, { logo: url })}
-                className="h-16"
+                className="aspect-square w-full bg-white"
+                fit="contain"
                 label="logo"
               />
               <TextInput
@@ -109,15 +123,17 @@ function PatrocinadoresForm({
                   {sp.tier}
                 </span>
               </div>
+              <Select
+                value={sp.linkKind ?? "site"}
+                onChange={(e) => set(i, { linkKind: e.target.value as "site" | "social" })}
+              >
+                <option value="site">Site</option>
+                <option value="social">Rede social</option>
+              </Select>
               <TextInput
                 value={sp.link}
                 onChange={(e) => set(i, { link: e.target.value })}
-                placeholder="exemplo.com"
-              />
-              <TextInput
-                value={sp.instagram ?? ""}
-                onChange={(e) => set(i, { instagram: e.target.value })}
-                placeholder="@perfil ou instagram.com/perfil"
+                placeholder={social ? "@perfil ou link da rede" : "exemplo.com"}
               />
               <div className="flex gap-2">
                 <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
@@ -129,7 +145,7 @@ function PatrocinadoresForm({
 
       <SaveBar
         onSave={() =>
-          save({ sponsors: rows, sponsorsShowTier: showTier }, "Atualizou patrocinadores")
+          save({ sponsors: rows, sponsorsShowTier: showTier }, "Atualizou parceiros")
         }
       />
     </>

@@ -10,6 +10,8 @@ interface ImageUploadProps {
   label?: string;
   /** When true, accepts a video (mp4/webm/mov) and previews it. */
   video?: boolean;
+  /** How the preview fits its box: "cover" (default) or "contain" (logos, no crop). */
+  fit?: "cover" | "contain";
   /** When set, uploads go to Cloudinary (unsigned) instead of /api/media. */
   cloudinary?: { cloudName?: string; uploadPreset?: string };
 }
@@ -25,8 +27,10 @@ export default function ImageUpload({
   className = "h-40",
   label = "Imagem",
   video = false,
+  fit = "cover",
   cloudinary,
 }: ImageUploadProps) {
+  const fitClass = fit === "contain" ? "object-contain" : "object-cover";
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,14 +99,14 @@ export default function ImageUpload({
           {video ? (
             <video
               src={value}
-              className={`w-full bg-black object-cover ${className}`}
+              className={`w-full bg-black ${fitClass} ${className}`}
               muted
               playsInline
               controls
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt={label} className={`w-full object-cover ${className}`} />
+            <img src={value} alt={label} className={`w-full ${fitClass} ${className}`} />
           )}
           <div className="absolute right-2 top-2 flex gap-2">
             <button
