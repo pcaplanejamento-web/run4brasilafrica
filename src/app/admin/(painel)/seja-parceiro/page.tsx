@@ -135,8 +135,8 @@ function SejaParceiroPanel({ initial }: { initial: SejaParceiroSection }) {
             <div>
               <SectionLabel>Vídeo promocional</SectionLabel>
               <div className="mt-1 text-[12px] text-adm-muted">
-                Vídeo do YouTube ao lado do formulário (desktop) ou acima dele (mobile). Mesmas
-                opções da seção &ldquo;A Causa&rdquo;.
+                Cadastre o vídeo abaixo a qualquer momento; o botão só define se ele aparece no
+                site. Ativado: à esquerda do formulário (desktop) / acima dele (mobile).
               </div>
             </div>
             <div className="w-[150px]">
@@ -150,8 +150,7 @@ function SejaParceiroPanel({ initial }: { initial: SejaParceiroSection }) {
             </div>
           </div>
 
-          {cfg.videoEnabled && (
-            <div className="mt-4 flex flex-col gap-3 border-t border-adm-line pt-4">
+          <div className="mt-4 flex flex-col gap-3 border-t border-adm-line pt-4">
               <div>
                 <FieldLabel>Link do vídeo no YouTube</FieldLabel>
                 <TextInput
@@ -216,7 +215,6 @@ function SejaParceiroPanel({ initial }: { initial: SejaParceiroSection }) {
                 </div>
               </div>
             </div>
-          )}
         </Card>
       </div>
 
