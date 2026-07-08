@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PremiacaoSection } from "@/lib/content/types";
+import SectionEyebrow from "./SectionEyebrow";
 
 /** Podium styling per rank (0 = 1st). `delay` staggers the reveal (1st last). */
 const MEDAL = [
@@ -82,9 +83,9 @@ export default function Premiacao({ premiacao }: { premiacao?: PremiacaoSection 
 
   return (
     <section id="premiacao" ref={ref} className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
-      <div className="mb-2 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
+      <SectionEyebrow className="mb-2">
         {premiacao?.eyebrow || "Premiação"}
-      </div>
+      </SectionEyebrow>
       <h2 className="mb-3 font-display text-[30px] font-bold uppercase md:text-[40px]">{title}</h2>
       {premiacao?.note && (
         <p className="mb-8 max-w-[640px] text-[15px] text-muted-strong">{premiacao.note}</p>

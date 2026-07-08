@@ -1,5 +1,6 @@
 import type { Testimonial } from "@/lib/content/types";
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 
 /** Participant testimonials (Plano §4.1.6). */
 export default function Depoimentos({
@@ -9,9 +10,9 @@ export default function Depoimentos({
 }) {
   return (
     <section className="px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
-      <h2 className="mb-8 font-display text-[26px] font-bold uppercase md:mb-10 md:text-[32px]">
+      <SectionEyebrow as="h2" className="mb-8 md:mb-10">
         Quem já correu
-      </h2>
+      </SectionEyebrow>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-7">
         {testimonials.map((t, i) => (
           <Reveal

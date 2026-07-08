@@ -1,5 +1,6 @@
 import type { Sponsor, SponsorTier } from "@/lib/content/types";
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 
 /** Tier badge colors on the dark theme (gold / silver / bronze). */
 const TIER_COLOR: Record<SponsorTier, { bg: string; text: string }> = {
@@ -50,9 +51,7 @@ export default function Parceiros({
 
   return (
     <section id="parceiros" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
-      <h2 className="font-display text-[26px] font-bold uppercase md:text-[34px]">
-        Parceiros
-      </h2>
+      <SectionEyebrow as="h2">Parceiros</SectionEyebrow>
       {subtitle?.trim() && (
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">
           {subtitle}

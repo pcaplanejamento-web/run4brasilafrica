@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Album, GalleryConfig, GalleryPhoto } from "@/lib/content/types";
 import ProtectedImage from "./ProtectedImage";
 import SlidePager from "./SlidePager";
+import SectionEyebrow from "./SectionEyebrow";
 
 interface GalleryItem {
   thumb: string;
@@ -130,9 +131,7 @@ export default function Galeria({
   return (
     <section id="galeria" className="px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4 md:mb-10">
-        <h2 className="font-display text-[30px] font-bold uppercase md:text-[36px]">
-          Galeria
-        </h2>
+        <SectionEyebrow as="h2">Galeria</SectionEyebrow>
         {buyOn && (
           <a
             href={gallery?.buyUrl}

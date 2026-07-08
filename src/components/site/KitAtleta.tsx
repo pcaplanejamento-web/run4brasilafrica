@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { KitItem, KitSection, Lote } from "@/lib/content/types";
 import Reveal from "./Reveal";
 import { KitIcon } from "./KitIcons";
+import SectionEyebrow from "./SectionEyebrow";
 
 function ItemCard({ item }: { item: KitItem }) {
   return (
@@ -56,9 +57,9 @@ export default function KitAtleta({ kit, lotes }: { kit: KitSection; lotes: Lote
     >
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="mb-2 font-display text-[24px] font-bold uppercase md:text-[30px]">
+          <SectionEyebrow as="h2" className="mb-2">
             {kit.title}
-          </h2>
+          </SectionEyebrow>
           <p className="text-[15px] opacity-75">{kit.subtitle}</p>
         </div>
         {hasReg &&

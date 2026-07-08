@@ -5,6 +5,7 @@ import type { PlaylistSection } from "@/lib/content/types";
 import { useAudioBus } from "./AudioBus";
 import { loadYT } from "./YouTubePlayer";
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 
 /** Extract a YouTube playlist id (from ?list= or a bare id). */
 function ytPlaylistId(url: string | undefined): string | null {
@@ -469,9 +470,9 @@ export default function Playlist({ playlist }: { playlist?: PlaylistSection }) {
       style={{ background: "var(--color-ink-deep)" }}
     >
       <Reveal>
-        <div className="mb-2 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
+        <SectionEyebrow className="mb-2">
           {playlist.title || "Playlist do evento"}
-        </div>
+        </SectionEyebrow>
         {playlist.note && (
           <p className="mb-6 max-w-[560px] text-[15px] leading-[1.6] text-muted-strong">
             {playlist.note}

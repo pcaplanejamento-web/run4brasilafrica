@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import type { AboutSection } from "@/lib/content/types";
 import Reveal from "./Reveal";
 import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
+import SectionEyebrow from "./SectionEyebrow";
 
 /**
  * "A causa" — social mission. Media (image OR YouTube video) in a box with the
@@ -72,9 +73,7 @@ export default function Sobre({ about }: { about: AboutSection }) {
       </Reveal>
 
       <Reveal delay={120}>
-        <div className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
-          {about.eyebrow}
-        </div>
+        <SectionEyebrow className="mb-4">{about.eyebrow}</SectionEyebrow>
         <h2 className="mb-[22px] font-display text-[32px] font-bold uppercase leading-[1.05] md:text-[42px]">
           {about.title}
         </h2>

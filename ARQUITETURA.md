@@ -23,6 +23,13 @@ usam cores cruas** — sempre os tokens (`bg-ink`, `text-gold`, `border-line`,
 Grupos: superfícies escuras do site (`--color-ink*`), acentos (`--color-gold`,
 `--color-brasil`), e o tema claro do ADM (`--color-adm-*`, `--color-terracotta`).
 
+**Título das seções da home:** todos os tópicos usam o mesmo componente
+`components/site/SectionEyebrow.tsx` — o rótulo pequeno em maiúsculas na cor de
+destaque (`text-gold` → `--color-gold`, que o tema mapeia de `accent`). Assim,
+trocar a cor de destaque no ADM muda **todos** os títulos de uma vez. Seções sem
+slogan passam `as="h2"` (heading semântico); as que têm um slogan grande abaixo
+(Percurso, A Causa, Premiação, Playlist) usam o `div` como _kicker_ acima do slogan.
+
 Animações (`.reveal`, `.r4ba-fade`, contadores) também vivem aqui e têm _override_
 completo dentro de `@media (prefers-reduced-motion: reduce)`.
 
