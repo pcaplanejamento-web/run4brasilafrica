@@ -151,6 +151,8 @@ export interface Branding {
   logo?: string;
   /** Browser-tab icon (favicon). */
   favicon?: string;
+  /** Social share image (Open Graph / WhatsApp). Falls back to /og.png. */
+  ogImage?: string;
 }
 
 /**

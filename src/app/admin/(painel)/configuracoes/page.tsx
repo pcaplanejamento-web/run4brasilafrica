@@ -221,6 +221,19 @@ function ConfiguracoesForm({
                 Imagem quadrada pequena (ex.: PNG 64×64 ou 128×128).
               </p>
             </div>
+            <div className="sm:col-span-2">
+              <FieldLabel>Imagem de compartilhamento (WhatsApp / redes)</FieldLabel>
+              <ImageUpload
+                value={branding.ogImage}
+                onChange={(url) => setBranding({ ...branding, ogImage: url })}
+                className="h-40 bg-[#2b2118]"
+                label="imagem de compartilhamento"
+              />
+              <p className="mt-1.5 text-[12px] text-adm-muted">
+                Aparece ao compartilhar o link (proporção 1200×630). Se vazio, usa a
+                imagem padrão. Atualize-a se mudar a data/cidade do evento.
+              </p>
+            </div>
           </div>
         </Card>
 

@@ -77,14 +77,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Domínio único** (`src/middleware.ts`): qualquer acesso a `www.<apex>` ou a um
   `*.workers.dev` é 308-redirecionado para `https://run4brasilafrica.com.br` (preserva
   caminho/query). Só o apex e o localhost passam direto.
-- **Compartilhamento (Open Graph) dinâmico**: `app/layout.tsx` usa `generateMetadata()`
-  lendo o conteúdo ao vivo — título e descrição saem de `event` (marca, `dateLabel`, cidade),
-  então o card do WhatsApp/Twitter nunca diverge das Configurações. A **imagem** do card é
-  gerada em runtime por `app/opengraph-image.tsx` (`next/og`/ImageResponse, `force-dynamic`)
-  com a marca, a chamada e o selo de data/cidade — funciona no runtime do Worker. O JSON-LD
-  (`EventJsonLd`) também aponta a imagem para `/opengraph-image`. (Redes sociais fazem cache
-  do card; um link já compartilhado pode continuar mostrando o antigo até revalidar — ex.:
-  Facebook Sharing Debugger.)
+- **Compartilhamento (Open Graph)**: `app/layout.tsx` usa `generateMetadata()` lendo o conteúdo
+  ao vivo — **título e descrição** saem de `event` (marca, `dateLabel`, cidade), então o texto do
+  card nunca diverge das Configurações. A **imagem** do card é `branding.ogImage` (upload em ADM >
+  Configurações) com fallback para o **estático `public/og.png`** (1200×630). O JSON-LD
+  (`EventJsonLd`) usa a mesma imagem.
+  - **Por que estática e não gerada em runtime**: uma versão anterior gerava a imagem com
+    `next/og` (Satori + resvg **wasm**). Isso inflou o Worker e causava **Error 1102 (exceeded
+    resource limits)** intermitente em cold starts, derrubando o site inteiro. Removido — a imagem
+    voltou a ser um asset leve, configurável pelo ADM (atualize-a se mudar data/cidade).
+  - Redes sociais fazem cache do card; um link já compartilhado pode continuar mostrando o antigo
+    até revalidar (ex.: Facebook Sharing Debugger, ou compartilhar com `?v=2`).
 
 ## Autenticação (ADM)
 

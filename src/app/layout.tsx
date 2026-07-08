@@ -31,6 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const favicon = content.branding?.favicon;
 
   const brand = event.brandName || "Run4BrasilAfrica";
+  const ogImage = content.branding?.ogImage || "/og.png";
   const headline = event.tagline || "Corra por algo maior";
   const title = `${brand} — ${headline}`;
   const where = event.dateLabel || event.city || "";
@@ -63,11 +64,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: brand,
       locale: "pt_BR",
       type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: brand }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: shortDescription,
+      images: [ogImage],
     },
   };
 }
