@@ -158,6 +158,9 @@ export const seedContent: SiteContent = {
     title: "Seja um parceiro",
     subtitle:
       "Sua marca ou o seu trabalho podem impulsionar a causa. Conte como você quer ajudar e a organização entra em contato.",
+    videoEnabled: false,
+    aspectRatio: "16/9",
+    videoStartMuted: true,
   },
 
   galleryTiles: [

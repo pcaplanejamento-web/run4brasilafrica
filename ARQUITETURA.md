@@ -428,10 +428,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   - **`src/app/api/partners/route.ts`**: `POST` público valida e insere; `GET` (com filtro
     opcional `?kind=`) e `DELETE` são só do ADM (exigem sessão).
   - **`SejaParceiro`** (client, seção da home, `key: "sejaParceiro"` em `sections.ts`):
-    formulário com Nome, E-mail, Telefone, tipo (**Pessoa física/jurídica**), marcação **"Este
-    número tem WhatsApp"** e **"O que posso ajudar"** (texto livre). Título/legenda editáveis
-    (`content.sejaParceiro`) via `SectionEyebrow`; responsivo + alvos de toque (`min-h-11`).
-  - ADM > **Seja um Parceiro** (`/admin/seja-parceiro`): edita o texto da seção **e** lista os
+    formulário com Nome, E-mail, Telefone (com a marcação **"Este número tem WhatsApp"** logo
+    abaixo), tipo (**Pessoa física/jurídica**) e **"O que posso ajudar"** (texto livre).
+    Título/legenda editáveis (`content.sejaParceiro`) via `SectionEyebrow`; responsivo + alvos
+    de toque (`min-h-11`).
+  - **Vídeo promocional opcional** (mesmas regras de "A Causa" — reaproveita `YouTubePlayer`,
+    `youtubeId`, `isVerticalYouTube`): `videoEnabled` liga/desliga; `videoUrl`, `aspectRatio`
+    (mesmas opções), `clickToPlay`, `videoStartMuted`, `videoControls`, `videoCaptions`. Quando
+    ligado, a seção vira 2 colunas no desktop (**vídeo à esquerda, formulário à direita**) e
+    empilha no mobile (**vídeo primeiro, depois o formulário**). Desligado → só o formulário
+    (coluna única, como antes).
+  - ADM > **Seja um Parceiro** (`/admin/seja-parceiro`): edita o texto da seção, **configura o
+    vídeo** (card "Vídeo promocional" com toggle + os mesmos controles de A Causa) **e** lista os
     cadastros — **filtro por PF/PJ**, botão que abre o **WhatsApp** (`wa.me`, assume +55 quando
     não há código do país) de quem marcou ter WhatsApp, `mailto:` do e-mail, exporta CSV e remove.
 

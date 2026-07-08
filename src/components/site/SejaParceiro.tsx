@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import type { SejaParceiroSection, PartnerKind } from "@/lib/content/types";
 import SectionEyebrow from "./SectionEyebrow";
+import Reveal from "./Reveal";
+import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
 
 const inputClass =
   "min-h-11 w-full rounded-lg border border-line bg-ink-panel px-3.5 text-[15px] text-cream outline-none transition-colors placeholder:text-muted focus:border-gold";
+
+/** Portrait videos are capped by viewport height so they always fit (same as "A Causa"). */
+const MEDIA_MAX_VH = 70;
 
 /**
  * "Seja um Parceiro" — a public form where a person or company signs up to
@@ -38,25 +43,27 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
     }
   }
 
-  return (
-    <section id="seja-parceiro" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
-      <SectionEyebrow as="h2">{config.title || "Seja um parceiro"}</SectionEyebrow>
-      {config.subtitle?.trim() && (
-        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">
-          {config.subtitle}
-        </p>
-      )}
+  const ytId = config.videoEnabled ? youtubeId(config.videoUrl) : null;
+  const aspect = config.aspectRatio || "16/9";
+  const [arW, arH] = aspect.split("/").map((n) => parseFloat(n));
+  const portrait = arW > 0 && arH > 0 && arH > arW;
+  const boxStyle: CSSProperties = { aspectRatio: aspect };
+  if (portrait) {
+    boxStyle.maxHeight = `${MEDIA_MAX_VH}vh`;
+    boxStyle.maxWidth = `calc(${MEDIA_MAX_VH}vh * ${arW} / ${arH})`;
+  }
 
-      {state === "ok" ? (
-        <div className="mt-8 max-w-[680px] rounded-xl border border-gold/40 bg-ink-panel p-6 text-cream">
-          <div className="text-[17px] font-bold">Recebemos o seu cadastro!</div>
-          <p className="mt-2 text-[15px] leading-relaxed text-cream/75">
-            Obrigado por querer apoiar a causa. A organização vai analisar e entrar em contato em
-            breve.
-          </p>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="mt-8 max-w-[680px]">
+  const content =
+    state === "ok" ? (
+      <div className="rounded-xl border border-gold/40 bg-ink-panel p-6 text-cream">
+        <div className="text-[17px] font-bold">Recebemos o seu cadastro!</div>
+        <p className="mt-2 text-[15px] leading-relaxed text-cream/75">
+          Obrigado por querer apoiar a causa. A organização vai analisar e entrar em contato em
+          breve.
+        </p>
+      </div>
+    ) : (
+      <form onSubmit={submit}>
           <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] font-semibold text-cream/80">Nome</span>
@@ -146,6 +153,38 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
             {state === "loading" ? "Enviando…" : "Quero ser parceiro"}
           </button>
         </form>
+      );
+
+  return (
+    <section id="seja-parceiro" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
+      <SectionEyebrow as="h2">{config.title || "Seja um parceiro"}</SectionEyebrow>
+      {config.subtitle?.trim() && (
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">
+          {config.subtitle}
+        </p>
+      )}
+
+      {ytId ? (
+        <div className="mt-8 grid grid-cols-1 items-start gap-8 md:grid-cols-2 md:gap-12">
+          <Reveal>
+            <div
+              className="relative mx-auto w-full overflow-hidden rounded-xl bg-ink-panel"
+              style={boxStyle}
+            >
+              <YouTubePlayer
+                videoId={ytId}
+                startMuted={config.videoStartMuted !== false}
+                clickToPlay={!!config.clickToPlay}
+                vertical={isVerticalYouTube(config.videoUrl)}
+                showControls={!!config.videoControls}
+                showCaptions={!!config.videoCaptions}
+              />
+            </div>
+          </Reveal>
+          <div>{content}</div>
+        </div>
+      ) : (
+        <div className="mt-8 max-w-[680px]">{content}</div>
       )}
     </section>
   );

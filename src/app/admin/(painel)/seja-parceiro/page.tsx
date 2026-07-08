@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useContent } from "@/lib/content/store";
-import type { PartnerLead, PartnerKind } from "@/lib/content/types";
+import type { PartnerLead, PartnerKind, SejaParceiroSection } from "@/lib/content/types";
 import {
   AdmLoading,
   Card,
@@ -16,6 +16,15 @@ import {
   TextArea,
   TextInput,
 } from "@/components/admin/ui";
+
+const ASPECT_OPTIONS = [
+  { value: "16/9", label: "16:9 (widescreen)" },
+  { value: "4/3", label: "4:3 (paisagem)" },
+  { value: "1/1", label: "1:1 (quadrado)" },
+  { value: "3/4", label: "3:4 (retrato)" },
+  { value: "9/16", label: "9:16 (Reels)" },
+  { value: "21/9", label: "21:9 (cinema)" },
+];
 
 function fmt(iso: string): string {
   const d = iso.slice(0, 10).split("-");
@@ -36,17 +45,11 @@ function waLink(phone: string): string | null {
   return `https://wa.me/${d}`;
 }
 
-function SejaParceiroPanel({
-  initialTitle,
-  initialSubtitle,
-}: {
-  initialTitle: string;
-  initialSubtitle: string;
-}) {
+function SejaParceiroPanel({ initial }: { initial: SejaParceiroSection }) {
   const { save } = useContent();
 
-  const [title, setTitle] = useState(initialTitle);
-  const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const [cfg, setCfg] = useState<SejaParceiroSection>(initial);
+  const set = (patch: Partial<SejaParceiroSection>) => setCfg((c) => ({ ...c, ...patch }));
 
   const [leads, setLeads] = useState<PartnerLead[] | null>(null);
   const [filter, setFilter] = useState<"todos" | PartnerKind>("todos");
@@ -113,14 +116,109 @@ function SejaParceiroPanel({
         <div className="mt-3 flex flex-col gap-4">
           <div>
             <FieldLabel>Título</FieldLabel>
-            <TextInput value={title} onChange={(e) => setTitle(e.target.value)} />
+            <TextInput value={cfg.title ?? ""} onChange={(e) => set({ title: e.target.value })} />
           </div>
           <div>
             <FieldLabel>Legenda / chamada</FieldLabel>
-            <TextArea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} rows={2} />
+            <TextArea
+              value={cfg.subtitle ?? ""}
+              onChange={(e) => set({ subtitle: e.target.value })}
+              rows={2}
+            />
           </div>
         </div>
       </Card>
+
+      <div className="mt-6">
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <SectionLabel>Vídeo promocional</SectionLabel>
+              <div className="mt-1 text-[12px] text-adm-muted">
+                Vídeo do YouTube ao lado do formulário (desktop) ou acima dele (mobile). Mesmas
+                opções da seção &ldquo;A Causa&rdquo;.
+              </div>
+            </div>
+            <div className="w-[150px]">
+              <Select
+                value={cfg.videoEnabled ? "sim" : "nao"}
+                onChange={(e) => set({ videoEnabled: e.target.value === "sim" })}
+              >
+                <option value="nao">Desativado</option>
+                <option value="sim">Ativado</option>
+              </Select>
+            </div>
+          </div>
+
+          {cfg.videoEnabled && (
+            <div className="mt-4 flex flex-col gap-3 border-t border-adm-line pt-4">
+              <div>
+                <FieldLabel>Link do vídeo no YouTube</FieldLabel>
+                <TextInput
+                  value={cfg.videoUrl ?? ""}
+                  onChange={(e) => set({ videoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <FieldLabel>Proporção</FieldLabel>
+                  <Select
+                    value={cfg.aspectRatio ?? "16/9"}
+                    onChange={(e) => set({ aspectRatio: e.target.value })}
+                  >
+                    {ASPECT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <FieldLabel>Exibição</FieldLabel>
+                  <Select
+                    value={cfg.clickToPlay ? "click" : "auto"}
+                    onChange={(e) => set({ clickToPlay: e.target.value === "click" })}
+                  >
+                    <option value="auto">Tocar automático (mudo)</option>
+                    <option value="click">Clique para começar</option>
+                  </Select>
+                </div>
+                <div>
+                  <FieldLabel>Iniciar com som?</FieldLabel>
+                  <Select
+                    value={cfg.videoStartMuted === false ? "sim" : "nao"}
+                    onChange={(e) => set({ videoStartMuted: e.target.value !== "sim" })}
+                  >
+                    <option value="nao">Não — começa mudo</option>
+                    <option value="sim">Sim — som ao interagir</option>
+                  </Select>
+                </div>
+                <div>
+                  <FieldLabel>Controles do YouTube</FieldLabel>
+                  <Select
+                    value={cfg.videoControls ? "sim" : "nao"}
+                    onChange={(e) => set({ videoControls: e.target.value === "sim" })}
+                  >
+                    <option value="nao">Ocultar (só o vídeo)</option>
+                    <option value="sim">Mostrar (play/pausa, tela cheia, compartilhar, logo)</option>
+                  </Select>
+                </div>
+                <div>
+                  <FieldLabel>Legendas</FieldLabel>
+                  <Select
+                    value={cfg.videoCaptions ? "sim" : "nao"}
+                    onChange={(e) => set({ videoCaptions: e.target.value === "sim" })}
+                  >
+                    <option value="nao">Não mostrar</option>
+                    <option value="sim">Mostrar legendas</option>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
 
       <div className="mt-6 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -218,7 +316,14 @@ function SejaParceiroPanel({
       <SaveBar
         onSave={() =>
           save(
-            { sejaParceiro: { title: title.trim(), subtitle: subtitle.trim() } },
+            {
+              sejaParceiro: {
+                ...cfg,
+                title: (cfg.title ?? "").trim(),
+                subtitle: (cfg.subtitle ?? "").trim(),
+                videoUrl: (cfg.videoUrl ?? "").trim(),
+              },
+            },
             "Atualizou Seja um Parceiro",
           )
         }
@@ -230,10 +335,5 @@ function SejaParceiroPanel({
 export default function SejaParceiroPage() {
   const { hydrated, content } = useContent();
   if (!hydrated) return <AdmLoading />;
-  return (
-    <SejaParceiroPanel
-      initialTitle={content.sejaParceiro?.title ?? ""}
-      initialSubtitle={content.sejaParceiro?.subtitle ?? ""}
-    />
-  );
+  return <SejaParceiroPanel initial={content.sejaParceiro ?? {}} />;
 }

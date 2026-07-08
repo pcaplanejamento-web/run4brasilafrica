@@ -319,6 +319,19 @@ export interface PremiacaoSection {
 export interface SejaParceiroSection {
   title?: string;
   subtitle?: string;
+  /** Optional promotional YouTube video (same rules/config as "A Causa"). */
+  videoEnabled?: boolean;
+  videoUrl?: string;
+  /** CSS aspect-ratio for the video box (e.g. "16/9", "4/3", "9/16"). */
+  aspectRatio?: string;
+  /** Start muted (sound on first interaction). Defaults to true. */
+  videoStartMuted?: boolean;
+  /** Show a "click to play" overlay instead of autoplay. */
+  clickToPlay?: boolean;
+  /** Show the YouTube control bar. */
+  videoControls?: boolean;
+  /** Force closed captions on. */
+  videoCaptions?: boolean;
 }
 
 /** One "Seja um Parceiro" lead (stored in the D1 `partners` table, not content). */
