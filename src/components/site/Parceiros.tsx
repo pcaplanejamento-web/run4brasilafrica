@@ -60,7 +60,7 @@ export default function Parceiros({
                   <img
                     src={sp.logo}
                     alt={sp.name}
-                    className="h-full w-full object-contain p-2.5 transition-transform duration-300 group-hover:scale-[1.05]"
+                    className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.05]"
                     loading="lazy"
                     draggable={false}
                   />
