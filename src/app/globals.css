@@ -51,6 +51,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* Offset anchor jumps by the sticky header height (SiteNav + countdown bar,
+     ~112px) so the target section's title lands just below it instead of hidden
+     under it. Applies to every in-page link (nav menu + section buttons). */
+  scroll-padding-top: 7rem;
 }
 
 body {

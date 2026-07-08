@@ -415,6 +415,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Acessibilidade**: link "Pular para o conteúdo" (`.skip-link`, aparece no foco) → `#conteudo`
   (o `<main>`); anel de foco visível para teclado (`:focus-visible`). Imagens da galeria com
   `loading="lazy"` + `decoding="async"` (performance no mobile).
+- **Âncoras vs. header fixo**: `html { scroll-padding-top: 7rem }` (globals.css) desloca todo
+  salto de link interno (menu do topo + botão "Seja um parceiro") pela altura do cabeçalho fixo
+  (SiteNav + barra de contagem, ~112px), para o título da seção-alvo parar **logo abaixo** dele
+  em vez de ficar escondido atrás.
 
 ## Captura de e-mails (avisos)
 
