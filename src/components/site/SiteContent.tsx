@@ -16,6 +16,7 @@ import { AudioBusProvider } from "./AudioBus";
 import InscricaoCTA from "./InscricaoCTA";
 import Galeria from "./Galeria";
 import Parceiros from "./Parceiros";
+import SejaParceiro from "./SejaParceiro";
 import Depoimentos from "./Depoimentos";
 import Faq from "./Faq";
 import KitAtleta from "./KitAtleta";
@@ -58,6 +59,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         subtitle={c.sponsorsSubtitle}
       />
     ),
+    sejaParceiro: <SejaParceiro config={c.sejaParceiro ?? {}} />,
     depoimentos: <Depoimentos testimonials={c.testimonials ?? []} />,
     faq: <Faq items={c.faq ?? []} />,
     kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,

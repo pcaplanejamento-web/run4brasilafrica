@@ -154,6 +154,12 @@ export const seedContent: SiteContent = {
     resultsUrl: "",
   },
 
+  sejaParceiro: {
+    title: "Seja um parceiro",
+    subtitle:
+      "Sua marca ou o seu trabalho podem impulsionar a causa. Conte como você quer ajudar e a organização entra em contato.",
+  },
+
   galleryTiles: [
     { album: "LARGADA" },
     { album: "PERCURSO" },

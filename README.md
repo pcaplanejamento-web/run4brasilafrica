@@ -90,7 +90,8 @@ Na Cloudflare o app roda em **Workers** através do adaptador **OpenNext**
 > O backend (D1) já vem no `wrangler.jsonc` (binding `CONTENT_DB`) — não há
 > variáveis de ambiente a definir. Se recriar o Worker do zero, crie o banco com
 > `npx wrangler d1 create run4brasilafrica-content`, atualize o `database_id` e
-> aplique o schema: `npx wrangler d1 execute run4brasilafrica-content --remote --file migrations/0001_content.sql`.
+> aplique **todas** as migrações em ordem (`migrations/0001_content.sql` … `0004_partners.sql`),
+> ex.: `npx wrangler d1 execute run4brasilafrica-content --remote --file migrations/0001_content.sql`.
 
 ### Opção B — Linha de comando (mais direto)
 

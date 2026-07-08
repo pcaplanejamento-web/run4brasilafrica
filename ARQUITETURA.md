@@ -420,6 +420,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     (`upcoming`): o visitante deixa o e-mail para ser avisado.
   - ADM > **Avisos (e-mails)** (`/admin/inscritos`): lista, exporta CSV e remove e-mails.
 
+## Seja um Parceiro (cadastro de apoiadores)
+
+- Seção pública + captura de leads (guardado no próprio sistema, sem serviço externo):
+  - Tabela D1 `partners` (`id`, `name`, `email`, `phone`, `message`, `kind` = `fisica|juridica`,
+    `has_whatsapp` 0/1, `created_at`) — `migrations/0004_partners.sql`.
+  - **`src/app/api/partners/route.ts`**: `POST` público valida e insere; `GET` (com filtro
+    opcional `?kind=`) e `DELETE` são só do ADM (exigem sessão).
+  - **`SejaParceiro`** (client, seção da home, `key: "sejaParceiro"` em `sections.ts`):
+    formulário com Nome, E-mail, Telefone, tipo (**Pessoa física/jurídica**), marcação **"Este
+    número tem WhatsApp"** e **"O que posso ajudar"** (texto livre). Título/legenda editáveis
+    (`content.sejaParceiro`) via `SectionEyebrow`; responsivo + alvos de toque (`min-h-11`).
+  - ADM > **Seja um Parceiro** (`/admin/seja-parceiro`): edita o texto da seção **e** lista os
+    cadastros — **filtro por PF/PJ**, botão que abre o **WhatsApp** (`wa.me`, assume +55 quando
+    não há código do país) de quem marcou ter WhatsApp, `mailto:` do e-mail, exporta CSV e remove.
+
 ## Premiação (pódio animado)
 
 - **Resultado e Premiação são a mesma seção** — a antiga seção «Resultados» foi removida e o

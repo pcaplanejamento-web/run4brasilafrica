@@ -315,6 +315,25 @@ export interface PremiacaoSection {
   resultsUrl?: string;
 }
 
+/** "Seja um Parceiro" section — editable heading/intro; the form is fixed. */
+export interface SejaParceiroSection {
+  title?: string;
+  subtitle?: string;
+}
+
+/** One "Seja um Parceiro" lead (stored in the D1 `partners` table, not content). */
+export type PartnerKind = "fisica" | "juridica";
+export interface PartnerLead {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  kind: PartnerKind;
+  hasWhatsapp: boolean;
+  created_at: string;
+}
+
 export interface Edition {
   year: string;
   date: string;
@@ -369,6 +388,7 @@ export interface SiteContent {
   kit: KitSection;
   contact: ContactLinks;
   premiacao: PremiacaoSection;
+  sejaParceiro: SejaParceiroSection;
   /* ADM-only content */
   contentSections: ContentSection[];
   editions: Edition[];
