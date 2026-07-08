@@ -206,7 +206,10 @@ export interface Album {
 export interface Sponsor {
   name: string;
   tier: SponsorTier;
+  /** Website link (used when there is no Instagram). */
   link: string;
+  /** Instagram profile (@handle or URL). When set, the card links here instead. */
+  instagram?: string;
   logo?: string;
 }
 

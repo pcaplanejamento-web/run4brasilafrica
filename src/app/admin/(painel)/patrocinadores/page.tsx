@@ -67,11 +67,12 @@ function PatrocinadoresForm({
       </div>
 
       <div className="overflow-hidden rounded-lg border border-adm-border bg-adm-card">
-        <div className="hidden grid-cols-[60px_1.4fr_1fr_1fr_120px] gap-3 border-b border-[#eee] px-5 py-3 text-[12px] font-bold text-adm-muted md:grid">
+        <div className="hidden grid-cols-[60px_1.2fr_0.9fr_1fr_1fr_96px] gap-3 border-b border-[#eee] px-5 py-3 text-[12px] font-bold text-adm-muted md:grid">
           <div>LOGO</div>
           <div>NOME</div>
           <div>CATEGORIA</div>
-          <div>LINK</div>
+          <div>LINK (SITE)</div>
+          <div>INSTAGRAM</div>
           <div>AÇÕES</div>
         </div>
 
@@ -80,7 +81,7 @@ function PatrocinadoresForm({
           return (
             <div
               key={i}
-              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[96px_1.4fr_1fr_1fr_120px] md:items-center md:gap-3"
+              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[96px_1.2fr_0.9fr_1fr_1fr_96px] md:items-center md:gap-3"
             >
               <ImageUpload
                 value={sp.logo}
@@ -112,6 +113,11 @@ function PatrocinadoresForm({
                 value={sp.link}
                 onChange={(e) => set(i, { link: e.target.value })}
                 placeholder="exemplo.com"
+              />
+              <TextInput
+                value={sp.instagram ?? ""}
+                onChange={(e) => set(i, { instagram: e.target.value })}
+                placeholder="@perfil ou instagram.com/perfil"
               />
               <div className="flex gap-2">
                 <GhostButton onClick={() => remove(i)}>Remover</GhostButton>

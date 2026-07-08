@@ -335,15 +335,16 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ## Parceiros (grade de cards)
 
-- `content.sponsors` (`Sponsor`: `name`, `tier`, `link`, `logo?`) + `content.sponsorsShowTier`
-  (flag global). Público (`components/site/Parceiros.tsx`): **card moderno por parceiro** —
-  logo grande em cima, **nome embaixo** e um selo de categoria (Ouro/Prata/Bronze) **opcional**,
-  mostrado só quando `sponsorsShowTier` está ligado. Card com borda arredondada e hover (sobe +
-  realce dourado); o card é um link quando o parceiro tem `link`. Grade **2 colunas no mobile**,
-  3 no tablet, 4 no desktop. Some quando não há parceiros.
-- ADM > **Patrocinadores**: CRUD (logo/nome/categoria/link) + **toggle global** "Mostrar a
-  categoria no site" (`sponsorsShowTier`). A categoria continua sendo definida por parceiro; o
-  toggle só controla se ela aparece no site.
+- `content.sponsors` (`Sponsor`: `name`, `tier`, `link`, **`instagram?`**, `logo?`) +
+  `content.sponsorsShowTier` (flag global). Público (`components/site/Parceiros.tsx`): **card por
+  parceiro** com uma **placa de logo retangular** (`aspect-[16/10]`, fundo branco) que **preenche
+  a largura do card**, o **nome embaixo** e um selo de categoria (Ouro/Prata/Bronze) **opcional**
+  (só quando `sponsorsShowTier` está ligado). Card com borda arredondada + hover (sobe/realce).
+- **Clique no card** abre o destino do parceiro: o **Instagram** (`instagram`, aceita `@perfil`,
+  `instagram.com/perfil` ou URL) quando preenchido, senão o **site** (`link`). Grade **2 colunas
+  no mobile**, 3 no tablet, 4/5 no desktop. Some quando não há parceiros.
+- ADM > **Patrocinadores**: CRUD (logo/nome/categoria/link do site/**Instagram**) + **toggle
+  global** "Mostrar a categoria no site" (`sponsorsShowTier`).
 
 ## Depoimentos, FAQ e Kit do atleta (editáveis no ADM)
 
