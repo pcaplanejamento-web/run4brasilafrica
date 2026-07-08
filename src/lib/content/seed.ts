@@ -174,6 +174,8 @@ export const seedContent: SiteContent = {
     { name: "Estúdio Aro", tier: "Bronze", link: "estudioaro.com" },
   ],
 
+  sponsorsShowTier: false,
+
   testimonials: [
     {
       quote:

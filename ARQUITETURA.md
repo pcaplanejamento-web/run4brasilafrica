@@ -333,6 +333,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 5. Se o volume crescer, dá para migrar o D1 para outro banco (ex.: Supabase) — a fronteira
    (`/api/content` + `lib/content`) já isola isso dos componentes.
 
+## Parceiros (grade de cards)
+
+- `content.sponsors` (`Sponsor`: `name`, `tier`, `link`, `logo?`) + `content.sponsorsShowTier`
+  (flag global). Público (`components/site/Parceiros.tsx`): **card moderno por parceiro** —
+  logo grande em cima, **nome embaixo** e um selo de categoria (Ouro/Prata/Bronze) **opcional**,
+  mostrado só quando `sponsorsShowTier` está ligado. Card com borda arredondada e hover (sobe +
+  realce dourado); o card é um link quando o parceiro tem `link`. Grade **2 colunas no mobile**,
+  3 no tablet, 4 no desktop. Some quando não há parceiros.
+- ADM > **Patrocinadores**: CRUD (logo/nome/categoria/link) + **toggle global** "Mostrar a
+  categoria no site" (`sponsorsShowTier`). A categoria continua sendo definida por parceiro; o
+  toggle só controla se ela aparece no site.
+
 ## Depoimentos, FAQ e Kit do atleta (editáveis no ADM)
 
 - **Depoimentos** ("Quem já correu"): `content.testimonials` (`quote`, `name`, `role`,

@@ -51,7 +51,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         gallery={c.gallery}
       />
     ),
-    parceiros: <Parceiros sponsors={c.sponsors ?? []} />,
+    parceiros: <Parceiros sponsors={c.sponsors ?? []} showTier={c.sponsorsShowTier} />,
     depoimentos: <Depoimentos testimonials={c.testimonials ?? []} />,
     faq: <Faq items={c.faq ?? []} />,
     kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,

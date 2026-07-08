@@ -356,6 +356,8 @@ export interface SiteContent {
   cloudinary: Cloudinary;
   analytics: Analytics;
   sponsors: Sponsor[];
+  /** Show the tier badge (Ouro/Prata/Bronze) on the public partners grid. */
+  sponsorsShowTier?: boolean;
   testimonials: Testimonial[];
   faq: FaqItem[];
   kit: KitSection;
