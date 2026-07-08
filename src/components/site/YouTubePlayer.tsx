@@ -27,6 +27,29 @@ interface YTPlayer {
   getPlayerState(): number;
   getIframe(): HTMLIFrameElement;
   destroy(): void;
+  /** Caption control (present once the captions module loads). */
+  unloadModule?(name: string): void;
+  setOption?(module: string, option: string, value: unknown): void;
+}
+
+/**
+ * Force captions OFF. YouTube has no URL param to disable captions
+ * (`cc_load_policy=0` only means "viewer default"), so we unload the caption
+ * module and clear the track via the IFrame API. Safe to call repeatedly.
+ */
+function disableCaptions(p: YTPlayer) {
+  for (const mod of ["captions", "cc"]) {
+    try {
+      p.setOption?.(mod, "track", {});
+    } catch {
+      /* module not ready yet */
+    }
+    try {
+      p.unloadModule?.(mod);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 interface YTNamespace {
   Player: new (el: HTMLElement, opts: unknown) => YTPlayer;
@@ -182,11 +205,18 @@ export default function YouTubePlayer({
               );
               ro.observe(cont);
             }
+            if (!showCaptions) disableCaptions(e.target);
             if (!clickToPlay) {
               e.target.mute();
               e.target.playVideo();
               setMuted(true);
             }
+          },
+          // Fires when modules (incl. captions) load — the reliable moment to
+          // force captions off, since there's no URL param for it.
+          onApiChange: (e: { target: YTPlayer }) => {
+            if (cancelled) return;
+            if (!showCaptions) disableCaptions(e.target);
           },
         },
       });
