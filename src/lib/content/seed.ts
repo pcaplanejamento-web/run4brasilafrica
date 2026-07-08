@@ -222,7 +222,6 @@ export const seedContent: SiteContent = {
     title: "KIT DO ATLETA",
     subtitle: "Tudo que você recebe ao se inscrever.",
     regulamentoLabel: "Regulamento",
-    kitLabel: "O que vem no kit",
     regulamentoMode: "link",
     regulamentoUrl: "",
     regulamentoText: "",

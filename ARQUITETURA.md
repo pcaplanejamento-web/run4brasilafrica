@@ -24,8 +24,9 @@ Grupos: superfícies escuras do site (`--color-ink*`), acentos (`--color-gold`,
 `--color-brasil`), e o tema claro do ADM (`--color-adm-*`, `--color-terracotta`).
 
 **Título das seções da home:** todos os tópicos usam o mesmo componente
-`components/site/SectionEyebrow.tsx` — o rótulo pequeno em maiúsculas na cor de
-destaque (`text-gold` → `--color-gold`, que o tema mapeia de `accent`). Assim,
+`components/site/SectionEyebrow.tsx` — o rótulo em maiúsculas na cor de destaque
+(`text-[16px] md:text-[20px]`, `text-gold` → `--color-gold`, que o tema mapeia de
+`accent`). Um único lugar controla tamanho e cor de todos os títulos. Assim,
 trocar a cor de destaque no ADM muda **todos** os títulos de uma vez. Seções sem
 slogan passam `as="h2"` (heading semântico); as que têm um slogan grande abaixo
 (Percurso, A Causa, Premiação, Playlist) usam o `div` como _kicker_ acima do slogan.
@@ -378,7 +379,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   nome + imagem opcional) em modo **único** (`items`) ou **por lote** (`perLote` mapeado por
   `loteId`, escolhido por `kitMode`). Público (`KitAtleta`, client): botão do regulamento
   (link ou expande o texto) + **grade de cards** dos itens (ícone `ImageUpload` ou check),
-  com **abas por lote** quando o kit varia. ADM em **/admin/kit** (`ItemsEditor` reutilizável).
+  com **abas por lote** quando o kit varia. O público mostra só o **título da seção**
+  (`SectionEyebrow`, `kit.title`) + subtítulo e a grade — sem rótulo extra acima dos cards
+  (o antigo `kitLabel` foi removido por ser redundante com o título). ADM em **/admin/kit**
+  (`ItemsEditor` reutilizável).
   Cada item pode ter um **ícone da biblioteca** (`KitIcons.tsx` — set de SVGs sem emoji, com
   picker no ADM) ou uma imagem enviada. Novos itens no `ADM_NAV`: Depoimentos, FAQ, Kit.
 

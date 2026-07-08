@@ -19,7 +19,7 @@ export default function SectionEyebrow({
   as?: "h2" | "div";
 }) {
   return (
-    <Tag className={`text-[13px] font-bold uppercase tracking-[0.1em] text-gold ${className}`}>
+    <Tag className={`text-[16px] font-bold uppercase tracking-[0.1em] text-gold md:text-[20px] ${className}`}>
       {children}
     </Tag>
   );

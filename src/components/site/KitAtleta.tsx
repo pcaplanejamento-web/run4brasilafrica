@@ -114,18 +114,13 @@ export default function KitAtleta({ kit, lotes }: { kit: KitSection; lotes: Lote
       )}
 
       {items.length > 0 && (
-        <>
-          <div className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-gold">
-            {kit.kitLabel}
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {items.map((it, i) => (
-              <Reveal key={`${it.name}-${i}`} delay={(i % 6) * 60} className="h-full">
-                <ItemCard item={it} />
-              </Reveal>
-            ))}
-          </div>
-        </>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {items.map((it, i) => (
+            <Reveal key={`${it.name}-${i}`} delay={(i % 6) * 60} className="h-full">
+              <ItemCard item={it} />
+            </Reveal>
+          ))}
+        </div>
       )}
     </section>
   );

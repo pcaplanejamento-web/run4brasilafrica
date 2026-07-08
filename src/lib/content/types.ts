@@ -264,7 +264,6 @@ export interface KitSection {
   title: string;
   subtitle: string;
   regulamentoLabel: string;
-  kitLabel: string;
   /** Regulation: a link to a file, or inline text. */
   regulamentoMode?: "link" | "text";
   regulamentoUrl?: string;

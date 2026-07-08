@@ -166,14 +166,6 @@ function KitForm({
                 onChange={(e) => setKit({ ...kit, regulamentoLabel: e.target.value })}
               />
             </div>
-            <div>
-              <FieldLabel>Título da lista do kit</FieldLabel>
-              <TextInput
-                value={kit.kitLabel}
-                onChange={(e) => setKit({ ...kit, kitLabel: e.target.value })}
-                placeholder="O que vem no kit"
-              />
-            </div>
           </div>
         </Card>
 
