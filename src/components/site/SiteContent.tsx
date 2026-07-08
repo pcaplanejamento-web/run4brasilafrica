@@ -35,6 +35,10 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   // gallery reload). `force-dynamic` means every page load is already fresh.
   const c = initial;
 
+  const layout = resolveLayout(c.layout);
+  // The "Seja um parceiro" CTA only works when its target section is enabled.
+  const sejaAtiva = layout.some((li) => li.key === "sejaParceiro" && li.enabled);
+
   // Each homepage section keyed so the ADM dashboard can reorder / toggle them.
   const rendered: Record<string, ReactNode> = {
     hero: <Hero hero={c.hero} />,
@@ -57,6 +61,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         sponsors={c.sponsors ?? []}
         showTier={c.sponsorsShowTier}
         subtitle={c.sponsorsSubtitle}
+        showCta={(c.sponsorsShowCta ?? false) && sejaAtiva}
       />
     ),
     sejaParceiro: <SejaParceiro config={c.sejaParceiro ?? {}} />,
@@ -65,7 +70,6 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,
     premiacao: <Premiacao premiacao={c.premiacao} />,
   };
-  const layout = resolveLayout(c.layout);
 
   return (
     <>

@@ -42,16 +42,28 @@ export default function Parceiros({
   sponsors,
   showTier,
   subtitle,
+  showCta,
 }: {
   sponsors: Sponsor[];
   showTier?: boolean;
   subtitle?: string;
+  showCta?: boolean;
 }) {
   if (sponsors.length === 0) return null;
 
   return (
     <section id="parceiros" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
-      <SectionEyebrow as="h2">Parceiros</SectionEyebrow>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SectionEyebrow as="h2">Parceiros</SectionEyebrow>
+        {showCta && (
+          <a
+            href="#seja-parceiro"
+            className="clip-cta-lg inline-block bg-gold px-6 py-3 text-[13px] font-bold uppercase text-gold-ink transition-transform hover:-translate-y-0.5 md:text-[14px]"
+          >
+            Seja um parceiro
+          </a>
+        )}
+      </div>
       {subtitle?.trim() && (
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">
           {subtitle}

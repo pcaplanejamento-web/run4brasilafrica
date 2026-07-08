@@ -350,6 +350,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   selo de categoria (Ouro/Prata/Bronze) **opcional** (só quando `sponsorsShowTier` está ligado).
   Card com borda arredondada + hover (sobe/realce). Uma **legenda opcional**
   (`sponsorsSubtitle`) aparece abaixo do título "Parceiros".
+- **Botão "Seja um parceiro"** (`sponsorsShowCta`): opcional, na **mesma linha do título,
+  alinhado à direita** (estilo `clip-cta-lg bg-gold`), rola até `#seja-parceiro`. Só aparece
+  quando `sponsorsShowCta` **e** a seção "Seja um Parceiro" está ativa no layout — `SiteContent`
+  passa `showCta={(c.sponsorsShowCta ?? false) && sejaAtiva}` (gate automático: se a seção for
+  desativada, o botão some sozinho). No ADM > Parceiros o toggle fica **desabilitado** quando a
+  seção está inativa e o save grava `false` nesse caso.
 - **Link único + tipo**: o card abre o `link` interpretado por `linkKind` — `"site"` (normaliza
   `https://`) ou `"social"` (aceita `@perfil`, `instagram.com/perfil` ou URL completa de qualquer
   rede). `partnerHref()` faz fallback ao legado (`instagram` → social; senão `link` → site) para

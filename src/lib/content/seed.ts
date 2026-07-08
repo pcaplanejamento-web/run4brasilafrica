@@ -187,6 +187,8 @@ export const seedContent: SiteContent = {
 
   sponsorsSubtitle: "Marcas que correm com a gente por uma causa maior.",
 
+  sponsorsShowCta: false,
+
   testimonials: [
     {
       quote:

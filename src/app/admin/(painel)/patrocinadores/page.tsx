@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { Sponsor, SponsorTier } from "@/lib/content/types";
 import { sponsorTierColors } from "@/lib/content/theme";
+import { resolveLayout } from "@/lib/content/sections";
 import {
   AdmLoading,
   FieldLabel,
@@ -35,15 +36,20 @@ function PatrocinadoresForm({
   initial,
   initialShowTier,
   initialSubtitle,
+  initialShowCta,
+  sejaAtiva,
 }: {
   initial: Sponsor[];
   initialShowTier: boolean;
   initialSubtitle: string;
+  initialShowCta: boolean;
+  sejaAtiva: boolean;
 }) {
   const { save } = useContent();
   const [rows, setRows] = useState<Sponsor[]>(() => initial.map(migrate));
   const [showTier, setShowTier] = useState(initialShowTier);
   const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const [showCta, setShowCta] = useState(initialShowCta);
 
   function set(i: number, patch: Partial<Sponsor>) {
     setRows((r) => r.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -89,6 +95,29 @@ function PatrocinadoresForm({
           <Select
             value={showTier ? "sim" : "nao"}
             onChange={(e) => setShowTier(e.target.value === "sim")}
+          >
+            <option value="nao">Não</option>
+            <option value="sim">Sim</option>
+          </Select>
+        </div>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-adm-border bg-adm-card px-5 py-4">
+        <div>
+          <div className="text-[13px] font-bold text-adm-ink">
+            Botão &quot;Seja um parceiro&quot; no título
+          </div>
+          <div className="text-[12px] text-adm-muted">
+            {sejaAtiva
+              ? "Mostra um botão ao lado do título que rola até a seção “Seja um Parceiro”."
+              : "Ative a seção “Seja um Parceiro” no Dashboard para poder usar este botão."}
+          </div>
+        </div>
+        <div className="w-[120px]">
+          <Select
+            value={sejaAtiva && showCta ? "sim" : "nao"}
+            disabled={!sejaAtiva}
+            onChange={(e) => setShowCta(e.target.value === "sim")}
           >
             <option value="nao">Não</option>
             <option value="sim">Sim</option>
@@ -168,6 +197,7 @@ function PatrocinadoresForm({
               sponsors: rows,
               sponsorsShowTier: showTier,
               sponsorsSubtitle: subtitle.trim(),
+              sponsorsShowCta: sejaAtiva ? showCta : false,
             },
             "Atualizou parceiros",
           )
@@ -180,11 +210,16 @@ function PatrocinadoresForm({
 export default function PatrocinadoresPage() {
   const { hydrated, content } = useContent();
   if (!hydrated) return <AdmLoading />;
+  const sejaAtiva = resolveLayout(content.layout).some(
+    (li) => li.key === "sejaParceiro" && li.enabled,
+  );
   return (
     <PatrocinadoresForm
       initial={content.sponsors}
       initialShowTier={content.sponsorsShowTier ?? false}
       initialSubtitle={content.sponsorsSubtitle ?? ""}
+      initialShowCta={content.sponsorsShowCta ?? false}
+      sejaAtiva={sejaAtiva}
     />
   );
 }

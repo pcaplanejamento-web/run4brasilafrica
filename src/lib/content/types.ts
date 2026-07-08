@@ -396,6 +396,9 @@ export interface SiteContent {
   sponsorsShowTier?: boolean;
   /** Optional caption shown under the "Parceiros" section title. */
   sponsorsSubtitle?: string;
+  /** Show a "Seja um parceiro" button in the Parceiros title row (scrolls to the
+   * "Seja um Parceiro" section). Only effective when that section is enabled. */
+  sponsorsShowCta?: boolean;
   testimonials: Testimonial[];
   faq: FaqItem[];
   kit: KitSection;
