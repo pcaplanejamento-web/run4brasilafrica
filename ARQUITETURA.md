@@ -340,17 +340,24 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`components/site/Parceiros.tsx`): **card por parceiro** com uma **placa de logo quadrada**
   (`aspect-square` 1:1, fundo branco) que **preenche a largura do card**, o **nome embaixo** e um
   selo de categoria (Ouro/Prata/Bronze) **opcional** (só quando `sponsorsShowTier` está ligado).
-  Card com borda arredondada + hover (sobe/realce).
+  Card com borda arredondada + hover (sobe/realce). Uma **legenda opcional**
+  (`sponsorsSubtitle`) aparece abaixo do título "Parceiros".
 - **Link único + tipo**: o card abre o `link` interpretado por `linkKind` — `"site"` (normaliza
   `https://`) ou `"social"` (aceita `@perfil`, `instagram.com/perfil` ou URL completa de qualquer
   rede). `partnerHref()` faz fallback ao legado (`instagram` → social; senão `link` → site) para
   conteúdo salvo antes da migração. Grade **2 colunas no mobile**, 3 no tablet, 4/5 no desktop.
   Some quando não há parceiros.
-- ADM > **Parceiros** (`patrocinadores/page.tsx`, título "Parceiros"): CRUD (logo/nome/categoria/
-  **tipo de link** Site|Rede social/**link único**) + **toggle global** "Mostrar a categoria no
-  site" (`sponsorsShowTier`). A logo usa `ImageUpload` com **`fit="contain"`** numa caixa
+- ADM > **Parceiros** (`patrocinadores/page.tsx`, título "Parceiros"): campo **Legenda**
+  (`sponsorsSubtitle`, `TextArea`, opcional) + CRUD (logo/nome/categoria/**tipo de link**
+  Site|Rede social/**link único**) + **toggle global** "Mostrar a categoria no site"
+  (`sponsorsShowTier`). A logo usa `ImageUpload` com **`fit="contain"`** numa caixa
   **`aspect-square`** (1:1, sem corte). `migrate()` normaliza linhas legadas ao carregar
   (`instagram` → `linkKind:"social"`, senão `linkKind:"site"`).
+- **`ImageUpload` (`components/admin/ImageUpload.tsx`) — controles por ícone (sem texto):** botão
+  vazio = ícone de **upload**; com imagem, overlay com ícones **trocar** (setas) e **remover**
+  (lixeira), `h-9 w-9` (alvo de toque), com `aria-label`/`title`. Estado de envio = **spinner**.
+  Prop **`fit`** ("cover" padrão | "contain"). Como todo upload de imagem do ADM usa este
+  componente, a mudança vale em todos os lugares (banner, A Causa, kit, galeria, logo/favicon, etc.).
 
 ## Depoimentos, FAQ e Kit do atleta (editáveis no ADM)
 

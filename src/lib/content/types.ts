@@ -363,6 +363,8 @@ export interface SiteContent {
   sponsors: Sponsor[];
   /** Show the tier badge (Ouro/Prata/Bronze) on the public partners grid. */
   sponsorsShowTier?: boolean;
+  /** Optional caption shown under the "Parceiros" section title. */
+  sponsorsSubtitle?: string;
   testimonials: Testimonial[];
   faq: FaqItem[];
   kit: KitSection;

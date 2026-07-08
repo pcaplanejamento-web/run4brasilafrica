@@ -40,19 +40,26 @@ function partnerHref(sp: Sponsor) {
 export default function Parceiros({
   sponsors,
   showTier,
+  subtitle,
 }: {
   sponsors: Sponsor[];
   showTier?: boolean;
+  subtitle?: string;
 }) {
   if (sponsors.length === 0) return null;
 
   return (
     <section id="parceiros" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
-      <h2 className="mb-8 font-display text-[26px] font-bold uppercase md:mb-10 md:text-[34px]">
+      <h2 className="font-display text-[26px] font-bold uppercase md:text-[34px]">
         Parceiros
       </h2>
+      {subtitle?.trim() && (
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">
+          {subtitle}
+        </p>
+      )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:mt-10 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
         {sponsors.map((sp, i) => {
           const href = partnerHref(sp);
           const tier = showTier ? TIER_COLOR[sp.tier] : null;

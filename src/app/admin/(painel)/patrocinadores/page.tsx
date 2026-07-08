@@ -6,11 +6,13 @@ import type { Sponsor, SponsorTier } from "@/lib/content/types";
 import { sponsorTierColors } from "@/lib/content/theme";
 import {
   AdmLoading,
+  FieldLabel,
   GhostButton,
   PageHeader,
   PrimaryButton,
   SaveBar,
   Select,
+  TextArea,
   TextInput,
 } from "@/components/admin/ui";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -32,13 +34,16 @@ function migrate(sp: Sponsor): Sponsor {
 function PatrocinadoresForm({
   initial,
   initialShowTier,
+  initialSubtitle,
 }: {
   initial: Sponsor[];
   initialShowTier: boolean;
+  initialSubtitle: string;
 }) {
   const { save } = useContent();
   const [rows, setRows] = useState<Sponsor[]>(() => initial.map(migrate));
   const [showTier, setShowTier] = useState(initialShowTier);
+  const [subtitle, setSubtitle] = useState(initialSubtitle);
 
   function set(i: number, patch: Partial<Sponsor>) {
     setRows((r) => r.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -59,6 +64,19 @@ function PatrocinadoresForm({
         title="Parceiros"
         aside={<PrimaryButton onClick={add}>+ Novo parceiro</PrimaryButton>}
       />
+
+      <div className="mb-5 rounded-lg border border-adm-border bg-adm-card px-5 py-4">
+        <FieldLabel>Legenda (aparece abaixo do título &quot;Parceiros&quot; no site)</FieldLabel>
+        <TextArea
+          value={subtitle}
+          onChange={(e) => setSubtitle(e.target.value)}
+          rows={2}
+          placeholder="Ex.: Marcas que correm com a gente por uma causa maior."
+        />
+        <div className="mt-1 text-[12px] text-adm-muted">
+          Opcional — deixe em branco para não exibir nenhuma legenda.
+        </div>
+      </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-adm-border bg-adm-card px-5 py-4">
         <div>
@@ -145,7 +163,14 @@ function PatrocinadoresForm({
 
       <SaveBar
         onSave={() =>
-          save({ sponsors: rows, sponsorsShowTier: showTier }, "Atualizou parceiros")
+          save(
+            {
+              sponsors: rows,
+              sponsorsShowTier: showTier,
+              sponsorsSubtitle: subtitle.trim(),
+            },
+            "Atualizou parceiros",
+          )
         }
       />
     </>
@@ -159,6 +184,7 @@ export default function PatrocinadoresPage() {
     <PatrocinadoresForm
       initial={content.sponsors}
       initialShowTier={content.sponsorsShowTier ?? false}
+      initialSubtitle={content.sponsorsSubtitle ?? ""}
     />
   );
 }
