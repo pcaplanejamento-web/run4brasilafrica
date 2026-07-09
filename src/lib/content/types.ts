@@ -350,6 +350,18 @@ export interface PartnerLead {
   created_at: string;
 }
 
+/** "Localização / como chegar" section. */
+export interface LocationSection {
+  title?: string;
+  /** Venue / place name (e.g. "Parque Municipal"). */
+  venueName?: string;
+  /** Full address — powers the map + "como chegar" when no custom embed is set. */
+  address?: string;
+  /** Optional custom Google Maps embed URL (overrides the address-based map). */
+  mapEmbedUrl?: string;
+  note?: string;
+}
+
 /** Privacy notice (LGPD) — editable in ADM > Configurações, shown in a modal. */
 export interface PrivacySection {
   title?: string;
@@ -415,6 +427,7 @@ export interface SiteContent {
   contact: ContactLinks;
   premiacao: PremiacaoSection;
   sejaParceiro: SejaParceiroSection;
+  location?: LocationSection;
   privacy?: PrivacySection;
   /* ADM-only content */
   contentSections: ContentSection[];

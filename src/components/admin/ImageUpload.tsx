@@ -2,6 +2,44 @@
 
 import { useRef, useState } from "react";
 
+/**
+ * Downscale + re-encode an image in the browser before upload, to cut file size
+ * (lighter site, faster mobile). Exports **WebP** so logo transparency is kept
+ * (JPEG would fill it black). SVG/GIF are left untouched (vector/animated), and
+ * if compression doesn't actually shrink the file the original is used.
+ */
+async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise<File> {
+  if (
+    !file.type.startsWith("image/") ||
+    file.type === "image/svg+xml" ||
+    file.type === "image/gif"
+  ) {
+    return file;
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    let { width, height } = bitmap;
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>((res) =>
+      canvas.toBlob(res, "image/webp", quality),
+    );
+    if (!blob || blob.size >= file.size) return file; // no real gain
+    const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
+    return new File([blob], name, { type: "image/webp" });
+  } catch {
+    return file; // any failure → upload the original untouched
+  }
+}
+
 /* Inline icons (no text labels on the controls). */
 const svg = "h-[18px] w-[18px]";
 const stroke = {
@@ -82,10 +120,13 @@ export default function ImageUpload({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleFile(file: File) {
+  async function handleFile(rawFile: File) {
     setError(null);
     setBusy(true);
     try {
+      // Images are compressed client-side first; videos upload as-is.
+      const file = video ? rawFile : await compressImage(rawFile);
+
       // Cloudinary path (unsigned, direct from the browser) when configured.
       if (cloudinary?.cloudName && cloudinary?.uploadPreset) {
         const fd = new FormData();

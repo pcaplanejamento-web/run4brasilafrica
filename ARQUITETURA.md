@@ -434,6 +434,22 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   formulários (`SejaParceiro`, `NotifyForm`) têm o input honeypot escondido (fora da tela,
   `aria-hidden`, `tabIndex=-1`).
 
+## Localização, agenda (.ics) e compressão de imagem
+
+- **Localização / como chegar** (`content.location`, seção `key: "location"`, componente
+  `Localizacao`): título + nome do local + **endereço** + botão **"Como chegar"** (abre rotas no
+  Google Maps a partir do endereço). Mapa embutido **só** quando o ADM cola uma URL de
+  incorporação oficial (`mapEmbedUrl`) — endereço sozinho não gera iframe (evita mapa vazio).
+  Auto-oculta sem endereço/local. ADM em **/admin/localizacao**. CSP libera `www.google.com` /
+  `maps.google.com` em `frame-src`.
+- **"Adicionar à agenda" (.ics)**: rota **`/api/agenda`** monta um `VEVENT` do conteúdo ao vivo
+  (`inscricao.raceDate`, hora local −03:00 → UTC; nome/local do evento), servido como
+  `text/calendar` (download `run4brasilafrica.ics`). Botão na faixa **Dia da Corrida**.
+- **Compressão de imagem no upload** (`ImageUpload.compressImage`): antes de enviar, imagens são
+  redimensionadas (máx. 1600px) e recodificadas em **WebP** (q0.82) no navegador — preserva a
+  transparência das logos (JPEG deixaria fundo preto), pula SVG/GIF, e mantém o original se não
+  reduzir. Vale para todos os uploads do ADM.
+
 ## Privacidade (LGPD)
 
 - **Texto editável** em ADM > Configurações (`content.privacy` = `{ title, body }`, `body` com

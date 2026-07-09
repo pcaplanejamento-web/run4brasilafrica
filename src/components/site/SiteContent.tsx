@@ -7,6 +7,7 @@ import StatsBar from "./StatsBar";
 import Sobre from "./Sobre";
 import Playlist from "./Playlist";
 import Percurso from "./Percurso";
+import Localizacao from "./Localizacao";
 import RaceDay from "./RaceDay";
 import RaceCountdownBar from "./RaceCountdownBar";
 import WhatsAppFloat from "./WhatsAppFloat";
@@ -47,6 +48,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     about: <Sobre about={c.about} />,
     playlist: <Playlist playlist={c.playlist} />,
     percurso: <Percurso percurso={c.percurso} />,
+    location: <Localizacao location={c.location} />,
     raceday: <RaceDay inscricao={c.inscricao} />,
     inscricao: <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />,
     galeria: (

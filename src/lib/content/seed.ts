@@ -154,6 +154,13 @@ export const seedContent: SiteContent = {
     resultsUrl: "",
   },
 
+  location: {
+    title: "Localização",
+    venueName: "",
+    address: "",
+    note: "Onde a corrida acontece e como chegar.",
+  },
+
   privacy: {
     title: "Política de Privacidade",
     body: `Esta política explica como o Run4BrasilAfrica trata os dados pessoais informados no site, em conformidade com a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).

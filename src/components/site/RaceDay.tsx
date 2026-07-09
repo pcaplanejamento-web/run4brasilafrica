@@ -39,6 +39,18 @@ export default function RaceDay({ inscricao }: { inscricao: Inscricao }) {
             <div className="mt-1 font-display text-[34px] font-bold uppercase leading-none md:text-[48px]">
               {fmtDate(date)}
             </div>
+            {!past && (
+              <a
+                href="/api/agenda"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-gold-ink/25 px-4 text-[13px] font-bold uppercase transition-colors hover:bg-gold-ink hover:text-gold"
+              >
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                Adicionar à agenda
+              </a>
+            )}
           </div>
           <div>
             {past ? (

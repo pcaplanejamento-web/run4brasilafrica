@@ -17,6 +17,7 @@ export const SECTIONS: SectionMeta[] = [
   { key: "about", label: "A Causa", href: "/admin/banner" },
   { key: "playlist", label: "Playlist do evento", href: "/admin/playlist" },
   { key: "percurso", label: "O Percurso", href: "/admin/strava" },
+  { key: "location", label: "Localização", href: "/admin/localizacao" },
   { key: "raceday", label: "Dia da Corrida", href: "/admin/links" },
   { key: "inscricao", label: "Inscrição / Lotes", href: "/admin/links" },
   { key: "galeria", label: "Galeria", href: "/admin/galeria" },
