@@ -453,6 +453,15 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   transparência das logos (JPEG deixaria fundo preto), pula SVG/GIF, e mantém o original se não
   reduzir. Vale para todos os uploads do ADM.
 
+## Compartilhar o evento
+
+- Seção `key: "compartilhar"` (componente `ShareEvent`, client) — botões de divulgação:
+  **compartilhar nativo** (`navigator.share`, só aparece onde existe — celular, oferece
+  Instagram/Stories/etc., gated por efeito para evitar mismatch de hidratação), **WhatsApp**
+  (`wa.me/?text=`), **Facebook** (sharer), **X** (intent) e **copiar link** (clipboard). A
+  mensagem vem de `content.share.message` ou é montada do evento (nome, chamada, data) + URL do
+  site. Título/legenda editáveis. ADM em **/admin/compartilhar**.
+
 ## Privacidade (LGPD)
 
 - **Texto editável** em ADM > Configurações (`content.privacy` = `{ title, body }`, `body` com

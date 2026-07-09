@@ -350,6 +350,14 @@ export interface PartnerLead {
   created_at: string;
 }
 
+/** "Compartilhe o evento" section — share buttons; message auto-built if empty. */
+export interface ShareSection {
+  title?: string;
+  subtitle?: string;
+  /** Custom share text; when empty, built from the event (name, tagline, date). */
+  message?: string;
+}
+
 /** "Localização / como chegar" section. */
 export interface LocationSection {
   title?: string;
@@ -428,6 +436,7 @@ export interface SiteContent {
   premiacao: PremiacaoSection;
   sejaParceiro: SejaParceiroSection;
   location?: LocationSection;
+  share?: ShareSection;
   privacy?: PrivacySection;
   /* ADM-only content */
   contentSections: ContentSection[];

@@ -22,6 +22,7 @@ import Depoimentos from "./Depoimentos";
 import Faq from "./Faq";
 import KitAtleta from "./KitAtleta";
 import Premiacao from "./Premiacao";
+import ShareEvent from "./ShareEvent";
 import SiteFooter from "./SiteFooter";
 import PrivacyModal from "./PrivacyModal";
 
@@ -72,6 +73,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     faq: <Faq items={c.faq ?? []} />,
     kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,
     premiacao: <Premiacao premiacao={c.premiacao} />,
+    compartilhar: <ShareEvent share={c.share} event={c.event} />,
   };
 
   return (
