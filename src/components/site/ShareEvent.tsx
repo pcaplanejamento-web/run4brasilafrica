@@ -22,8 +22,8 @@ function FbIcon() {
 }
 function XIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-      <path d="M18.9 2H22l-7.3 8.3L23 22h-6.8l-5.3-6.9L4.8 22H1.7l7.8-8.9L1 2h7l4.8 6.4L18.9 2zm-1.2 18h1.7L7.4 3.8H5.6L17.7 20z" />
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.451-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117l11.966 15.644z" />
     </svg>
   );
 }
@@ -66,6 +66,10 @@ export default function ShareEvent({ share, event }: { share?: ShareSection; eve
   const fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SITE_URL)}`;
   const x = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
 
+  function openPopup(url: string) {
+    const win = window.open(url, "share", "width=620,height=680");
+    if (!win) window.location.href = url; // popup blocked → navigate instead
+  }
   function copy() {
     navigator.clipboard?.writeText(SITE_URL).then(() => {
       setCopied(true);
@@ -100,10 +104,10 @@ export default function ShareEvent({ share, event }: { share?: ShareSection; eve
           <WhatsIcon />
           WhatsApp
         </a>
-        <a href={fb} target="_blank" rel="noopener noreferrer" className={btn} aria-label="Compartilhar no Facebook">
+        <button type="button" onClick={() => openPopup(fb)} className={btn} aria-label="Compartilhar no Facebook">
           <FbIcon />
           Facebook
-        </a>
+        </button>
         <a href={x} target="_blank" rel="noopener noreferrer" className={btn} aria-label="Compartilhar no X">
           <XIcon />X
         </a>
