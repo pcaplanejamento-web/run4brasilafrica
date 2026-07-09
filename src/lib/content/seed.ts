@@ -154,6 +154,25 @@ export const seedContent: SiteContent = {
     resultsUrl: "",
   },
 
+  privacy: {
+    title: "Política de Privacidade",
+    body: `Esta política explica como o Run4BrasilAfrica trata os dados pessoais informados no site, em conformidade com a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).
+
+QUAIS DADOS COLETAMOS
+Coletamos apenas o que você envia nos formulários do site: no "Seja um Parceiro", nome, e-mail, telefone, tipo (pessoa física/jurídica) e a mensagem sobre como deseja ajudar; nos avisos por e-mail, apenas o e-mail.
+
+PARA QUE USAMOS
+Usamos esses dados exclusivamente para entrar em contato sobre parcerias e para avisar sobre inscrições/novidades do evento. Não vendemos nem compartilhamos seus dados com terceiros para fins de marketing.
+
+ONDE FICAM GUARDADOS
+Os dados ficam armazenados na infraestrutura do próprio site (Cloudflare) e são acessíveis apenas à equipe organizadora autenticada. Mantemos os dados pelo tempo necessário para as finalidades acima.
+
+SEUS DIREITOS
+Você pode solicitar, a qualquer momento, o acesso, a correção ou a exclusão dos seus dados, bem como revogar o consentimento. Basta escrever para contato@run4brasilafrica.com.
+
+Em caso de dúvidas jurídicas, consulte um advogado antes de usar este texto como versão final.`,
+  },
+
   sejaParceiro: {
     title: "Seja um parceiro",
     subtitle:

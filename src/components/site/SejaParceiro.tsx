@@ -161,7 +161,7 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
             />
             <span>
               Autorizo o uso dos meus dados para contato sobre parcerias, conforme a{" "}
-              <a href="/privacidade" className="text-gold underline" target="_blank" rel="noopener noreferrer">
+              <a href="#privacidade" className="text-gold underline">
                 Política de Privacidade
               </a>
               .

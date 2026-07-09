@@ -22,6 +22,7 @@ import Faq from "./Faq";
 import KitAtleta from "./KitAtleta";
 import Premiacao from "./Premiacao";
 import SiteFooter from "./SiteFooter";
+import PrivacyModal from "./PrivacyModal";
 
 /**
  * Renders the public site from the LIVE content already read on the server
@@ -93,6 +94,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
       </AudioBusProvider>
       <SiteFooter contact={c.contact} logo={c.branding?.logo} />
       <WhatsAppFloat contact={c.contact} />
+      <PrivacyModal privacy={c.privacy} />
     </>
   );
 }

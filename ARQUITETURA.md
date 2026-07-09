@@ -436,8 +436,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ## Privacidade (LGPD)
 
-- Página **`/privacidade`** (`app/privacidade/page.tsx`) — nota de privacidade (modelo a revisar
-  com jurídico) que lê o e-mail de contato do conteúdo; linkada no rodapé.
+- **Texto editável** em ADM > Configurações (`content.privacy` = `{ title, body }`, `body` com
+  quebras de linha preservadas). Card "Política de privacidade".
+- **Banner flutuante** (`components/site/PrivacyModal.tsx`): abre **sem sair da página** quando a
+  URL fica com `#privacidade` — por isso os links (rodapé + consentimento dos formulários) são só
+  `href="#privacidade"` e funcionam de qualquer componente. Fecha no X / backdrop / Esc, trava o
+  scroll de fundo, responsivo (vira folha inferior no mobile). Renderizado uma vez no `SiteContent`.
+- Página **`/privacidade`** (`app/privacidade/page.tsx`) mantida para link direto/SEO, renderizando
+  o mesmo `content.privacy`.
 - Os formulários públicos (Seja um Parceiro e "avise-me") têm **checkbox de consentimento
   obrigatório** com link para a política. `created_at` de cada registro serve de data do
   consentimento.

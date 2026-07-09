@@ -79,7 +79,7 @@ export default function NotifyForm() {
         <input type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
           Autorizo o uso do meu e-mail para este aviso (
-          <a href="/privacidade" className="underline" target="_blank" rel="noopener noreferrer">
+          <a href="#privacidade" className="underline">
             Política de Privacidade
           </a>
           ).

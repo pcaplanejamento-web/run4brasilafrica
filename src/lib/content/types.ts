@@ -350,6 +350,13 @@ export interface PartnerLead {
   created_at: string;
 }
 
+/** Privacy notice (LGPD) — editable in ADM > Configurações, shown in a modal. */
+export interface PrivacySection {
+  title?: string;
+  /** Full text; rendered with line breaks preserved (`whitespace-pre-line`). */
+  body?: string;
+}
+
 export interface Edition {
   year: string;
   date: string;
@@ -408,6 +415,7 @@ export interface SiteContent {
   contact: ContactLinks;
   premiacao: PremiacaoSection;
   sejaParceiro: SejaParceiroSection;
+  privacy?: PrivacySection;
   /* ADM-only content */
   contentSections: ContentSection[];
   editions: Edition[];

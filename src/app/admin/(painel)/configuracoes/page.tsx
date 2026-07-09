@@ -10,6 +10,7 @@ import type {
   EventInfo,
   Hero,
   Metrics,
+  PrivacySection,
   ThemeColors,
 } from "@/lib/content/types";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -21,6 +22,7 @@ import {
   PageTitle,
   SaveBar,
   SectionLabel,
+  TextArea,
   TextInput,
 } from "@/components/admin/ui";
 import ChangePassword from "@/components/admin/ChangePassword";
@@ -53,6 +55,7 @@ function ConfiguracoesForm({
   initialTheme,
   initialCloudinary,
   initialAnalytics,
+  initialPrivacy,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
@@ -61,6 +64,7 @@ function ConfiguracoesForm({
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
   initialAnalytics: Analytics;
+  initialPrivacy: PrivacySection;
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
@@ -70,6 +74,7 @@ function ConfiguracoesForm({
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
   const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
+  const [privacy, setPrivacy] = useState<PrivacySection>(initialPrivacy);
 
   const b = BACKEND_LABEL[backend];
 
@@ -348,6 +353,33 @@ function ConfiguracoesForm({
           </p>
         </Card>
 
+        {/* Privacidade (LGPD) */}
+        <Card>
+          <SectionLabel>Política de privacidade</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Texto mostrado no aviso de privacidade (abre num banner flutuante no site, ao clicar
+            em &ldquo;Política de Privacidade&rdquo;). As quebras de linha são mantidas.
+          </p>
+          <div className="flex flex-col gap-4">
+            <div>
+              <FieldLabel>Título</FieldLabel>
+              <TextInput
+                value={privacy.title ?? ""}
+                onChange={(e) => setPrivacy({ ...privacy, title: e.target.value })}
+                placeholder="Política de Privacidade"
+              />
+            </div>
+            <div>
+              <FieldLabel>Texto</FieldLabel>
+              <TextArea
+                value={privacy.body ?? ""}
+                onChange={(e) => setPrivacy({ ...privacy, body: e.target.value })}
+                rows={12}
+              />
+            </div>
+          </div>
+        </Card>
+
         {/* Change my password */}
         <ChangePassword />
 
@@ -370,7 +402,7 @@ function ConfiguracoesForm({
         <SaveBar
           onSave={() =>
             save(
-              { event, hero, metrics, branding, theme, cloudinary, analytics },
+              { event, hero, metrics, branding, theme, cloudinary, analytics, privacy },
               "Atualizou configurações do evento",
             )
           }
@@ -392,6 +424,7 @@ export default function ConfiguracoesPage() {
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}
       initialAnalytics={content.analytics ?? {}}
+      initialPrivacy={content.privacy ?? {}}
     />
   );
 }
