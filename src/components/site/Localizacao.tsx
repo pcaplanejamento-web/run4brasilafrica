@@ -1,17 +1,19 @@
 import type { LocationSection } from "@/lib/content/types";
+import { geocodeAddress, type LatLon } from "@/lib/geocode";
 import SectionEyebrow from "./SectionEyebrow";
-import MapEmbed from "./MapEmbed";
+import LeafletMap from "./LeafletMap";
 
 /**
  * "Localização / como chegar" — a map + address + a "Como chegar" button.
  *
- * The map comes from the **address** via OpenStreetMap (embeddable, no key),
- * unless the ADM pasted a real Google **embed** URL (`/maps/embed?pb=…`), which
- * is used as-is. A pasted Google share/place link (e.g. `maps.app.goo.gl/…`)
- * can't be embedded, so it's used as the "Como chegar" destination instead.
- * Self-hides when nothing is configured.
+ * The map is rendered **server-side** as an OpenStreetMap iframe (embeddable, no
+ * key), from the address geocoded via `geocodeAddress` (cached in KV) — so the
+ * map is already in the HTML, with no client fetch. A real Google **embed** URL
+ * (`/maps/embed?pb=…`) pasted in the ADM is used as-is; a Google share/place
+ * link (`maps.app.goo.gl/…`) can't be embedded, so it becomes the "Como chegar"
+ * destination. Self-hides when nothing is configured.
  */
-export default function Localizacao({ location }: { location?: LocationSection }) {
+export default async function Localizacao({ location }: { location?: LocationSection }) {
   const address = location?.address?.trim();
   const venue = location?.venueName?.trim();
   const note = location?.note?.trim();
@@ -21,7 +23,12 @@ export default function Localizacao({ location }: { location?: LocationSection }
   const isMapsLink =
     !isGoogleEmbed && /(google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/.test(link);
 
-  const hasMap = isGoogleEmbed || !!address;
+  // Resolve the map (server-side): explicit Google embed URL → iframe; otherwise
+  // geocode the address and render an interactive Leaflet map on the client.
+  let pt: LatLon | null = null;
+  if (!isGoogleEmbed && address) pt = await geocodeAddress(address);
+  const hasMap = isGoogleEmbed || !!pt;
+
   const hasText = !!(venue || address);
   if (!hasMap && !hasText) return null;
 
@@ -41,20 +48,22 @@ export default function Localizacao({ location }: { location?: LocationSection }
       )}
 
       <div className={`mt-8 grid grid-cols-1 gap-8 ${hasText ? "md:grid-cols-2 md:items-center" : ""}`}>
-        {isGoogleEmbed ? (
-          <div className="overflow-hidden rounded-2xl border border-line-soft">
-            <iframe
-              src={link}
-              title="Mapa da localização"
-              loading="lazy"
-              className="h-[300px] w-full md:h-[380px]"
-              style={{ border: 0 }}
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
+        {hasMap && (
+          <div className="overflow-hidden rounded-2xl border border-line-soft bg-ink-panel">
+            {isGoogleEmbed ? (
+              <iframe
+                src={link}
+                title="Mapa da localização"
+                loading="lazy"
+                className="h-[300px] w-full md:h-[380px]"
+                style={{ border: 0 }}
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            ) : (
+              pt && <LeafletMap lat={pt.lat} lon={pt.lon} />
+            )}
           </div>
-        ) : (
-          address && <MapEmbed address={address} />
         )}
 
         {hasText && (
