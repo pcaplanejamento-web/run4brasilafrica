@@ -27,13 +27,15 @@ export default function LeafletMap({ lat, lon }: { lat: number; lon: number }) {
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap",
       }).addTo(map);
-      L.circleMarker([lat, lon], {
-        radius: 9,
-        color: "#c8ce2e",
-        weight: 3,
-        fillColor: "#c8ce2e",
-        fillOpacity: 0.9,
-      }).addTo(map);
+      // A proper teardrop pin (SVG divIcon — no default-icon image path issue),
+      // in the brand gold, anchored at its tip on the exact location.
+      const pin = L.divIcon({
+        className: "",
+        iconSize: [34, 46],
+        iconAnchor: [17, 46],
+        html: `<svg width="34" height="46" viewBox="0 0 34 46" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))"><path d="M17 1C8.2 1 1 8.1 1 17c0 11.6 16 28 16 28s16-16.4 16-28C33 8.1 25.8 1 17 1z" fill="#c8ce2e" stroke="#1a1400" stroke-width="2"/><circle cx="17" cy="17" r="6" fill="#1a1400"/></svg>`,
+      });
+      L.marker([lat, lon], { icon: pin, keyboard: false }).addTo(map);
       // The container may not have its final size when the map inits — recompute
       // so all tiles load, and keep it correct on resize.
       const fix = () => map?.invalidateSize();

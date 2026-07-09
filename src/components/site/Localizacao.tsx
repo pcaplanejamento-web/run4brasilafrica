@@ -36,11 +36,12 @@ export default async function Localizacao({ location }: { location?: LocationSec
   const hasText = !!(venue || address);
   if (!hasMap && !hasText) return null;
 
-  const directions = isMapsLink
-    ? link
-    : address
-      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
-      : "";
+  // "Como chegar" opens Google Maps directions (route from the visitor's location)
+  // to the exact resolved coordinates, falling back to the address.
+  const destination = pt ? `${pt.lat},${pt.lon}` : address || "";
+  const directions = destination
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`
+    : "";
 
   return (
     <section id="localizacao" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
