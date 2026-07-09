@@ -2,11 +2,32 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 /**
- * Baseline security headers applied to every response. We intentionally omit a
- * strict Content-Security-Policy for now: the site embeds YouTube/Spotify
- * iframes and injects the theme as an inline <style>, so a CSP needs careful
- * per-source tuning (a separate task) to avoid breaking those.
+ * Content-Security-Policy allow-list, tuned for what this site actually loads:
+ * self, the inline theme <style> and Next's inline hydration scripts, the
+ * YouTube/Spotify embeds + their iframe APIs, analytics (GA4 + Cloudflare), and
+ * images from anywhere over https (user-uploaded logos, Cloudinary, Google
+ * Photos). Shipped as **Report-Only** first (`report-uri` → `/api/csp-report`):
+ * it reports violations without blocking, so we can confirm nothing breaks
+ * before switching the header to enforcing `Content-Security-Policy`.
  */
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://static.cloudflareinsights.com https://www.youtube.com https://s.ytimg.com https://open.spotify.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://open.spotify.com",
+  "media-src 'self' blob: https://res.cloudinary.com",
+  "connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://region1.google-analytics.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://www.youtube.com https://s.ytimg.com https://open.spotify.com",
+  "worker-src 'self' blob:",
+  "report-uri /api/csp-report",
+].join("; ");
+
+/** Baseline security headers applied to every response. */
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -20,6 +41,7 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   },
+  { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicy },
 ];
 
 const nextConfig: NextConfig = {

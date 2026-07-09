@@ -463,8 +463,13 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **`next.config.ts` → `headers()`**: aplica em toda resposta `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`,
   `Strict-Transport-Security` (HSTS 1 ano), `Permissions-Policy` (bloqueia câmera/mic/geo/topics)
-  e `X-DNS-Prefetch-Control: on`. **CSP** ficou de fora por ora (os iframes de YouTube/Spotify e o
-  `<style>` de tema inline exigem afinar as fontes — tarefa à parte).
+  e `X-DNS-Prefetch-Control: on`.
+- **CSP** (`Content-Security-Policy`): allow-list afinada para o que o site carrega — `self`, o
+  `<style>` de tema e os scripts inline do Next (`'unsafe-inline'`), embeds/APIs de YouTube e
+  Spotify, analytics (GA4 + Cloudflare) e imagens por `https:` (logos, Cloudinary, Google Fotos).
+  Publicada como **`Content-Security-Policy-Report-Only`** (reporta, não bloqueia); violações vão
+  para **`/api/csp-report`** (log via `wrangler tail`). Depois de confirmar que nada é bloqueado,
+  trocar o header para o modo que aplica (`Content-Security-Policy`).
 - **Preconnect/dns-prefetch** no `<head>` (layout) para YouTube/Spotify/Cloudinary/Google Fotos,
   acelerando o carregamento quando esses recursos são usados. Imagens da galeria já usam
   `loading="lazy"` + `decoding="async"` dentro de contêineres com proporção fixa (sem CLS).
