@@ -442,6 +442,22 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   obrigatório** com link para a política. `created_at` de cada registro serve de data do
   consentimento.
 
+## Cache da home (ISR) e o Error 1102
+
+- **Problema:** a home era `force-dynamic` — SSR completo a cada requisição. Em cold start (comum
+  num site de baixo tráfego, com o isolate reciclado), o render podia estourar o limite de recurso
+  do Worker → **Error 1102** intermitente.
+- **Solução:** a home virou **ISR** (`export const revalidate = 30` em `app/page.tsx`) com **cache
+  incremental em KV** (`NEXT_INC_CACHE_KV`) + **`enableCacheInterception`** (`open-next.config.ts`).
+  Cold isolates servem o **HTML já cacheado** (`x-nextjs-cache: HIT`) sem rodar o SSR pesado. As
+  rotas do ADM e `/api/*` continuam dinâmicas (não cacheadas).
+- **Frescor:** edições no ADM aparecem na home em até ~30s (revalidação em background). O ADM em
+  si lê `/api/content` ao vivo, então mostra as edições na hora.
+- **Deploy:** o build pré-renderiza a home com o **seed** (não há D1 no build) e popula o KV. Por
+  isso o `cf:deploy` roda `scripts/refresh-cache.mjs` ao final: **limpa o cache KV e aquece a home**
+  para ela regenerar do D1 ao vivo — evita mostrar conteúdo seed após um deploy. Edições de
+  conteúdo (sem deploy) não têm esse efeito.
+
 ## Cabeçalhos de segurança e performance
 
 - **`next.config.ts` → `headers()`**: aplica em toda resposta `X-Content-Type-Options: nosniff`,

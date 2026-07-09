@@ -19,6 +19,10 @@
     {
       "binding": "MEDIA_KV",
       "id": "88744caa8f124280b75281d9e7148dc0"
+    },
+    {
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "d9400024cc83471d872950cf8af0cbfc"
     }
   ]
 }
