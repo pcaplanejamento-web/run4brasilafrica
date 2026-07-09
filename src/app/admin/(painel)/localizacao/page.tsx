@@ -27,8 +27,9 @@ function LocalizacaoForm({ initial }: { initial: LocationSection }) {
         <Card>
           <SectionLabel>Seção &ldquo;Localização&rdquo; no site</SectionLabel>
           <p className="mb-3 text-[12px] text-adm-muted">
-            Preencha o endereço para aparecer o mapa e o botão &ldquo;Como chegar&rdquo;. A seção
-            fica oculta enquanto não houver endereço nem nome do local.
+            Basta preencher o <strong>endereço</strong>: o mapa aparece automaticamente e o botão
+            &ldquo;Como chegar&rdquo; leva até lá. A seção fica oculta enquanto não houver endereço
+            nem nome do local.
           </p>
           <div className="flex flex-col gap-4">
             <div>
@@ -65,16 +66,16 @@ function LocalizacaoForm({ initial }: { initial: LocationSection }) {
               />
             </div>
             <div>
-              <FieldLabel>Mapa (URL de incorporação do Google Maps)</FieldLabel>
+              <FieldLabel>Link do Google Maps para o botão (opcional)</FieldLabel>
               <TextInput
                 value={loc.mapEmbedUrl ?? ""}
                 onChange={(e) => set({ mapEmbedUrl: e.target.value })}
-                placeholder="https://www.google.com/maps/embed?pb=..."
+                placeholder="https://maps.app.goo.gl/... (link de compartilhamento)"
               />
               <div className="mt-1 text-[12px] text-adm-muted">
-                No Google Maps: Compartilhar → Incorporar um mapa → copie apenas o endereço do{" "}
-                <code>src=&quot;...&quot;</code>. Sem isso, mostramos o endereço + botão &ldquo;Como
-                chegar&rdquo; (sem mapa).
+                Opcional: cole o link de compartilhamento do local e o botão &ldquo;Como
+                chegar&rdquo; abre exatamente esse ponto. Vazio = a rota é gerada do endereço acima.
+                (O mapa exibido vem sempre do endereço.)
               </div>
             </div>
           </div>

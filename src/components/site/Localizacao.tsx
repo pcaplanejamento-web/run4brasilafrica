@@ -1,26 +1,35 @@
 import type { LocationSection } from "@/lib/content/types";
 import SectionEyebrow from "./SectionEyebrow";
+import MapEmbed from "./MapEmbed";
 
 /**
- * "Localização / como chegar" — an embedded map + address + a "Como chegar"
- * button (opens directions in the visitor's maps app). The map is either a
- * custom embed URL (ADM) or built from the address. Self-hides when nothing is
- * configured. Two columns on desktop, stacked on mobile.
+ * "Localização / como chegar" — a map + address + a "Como chegar" button.
+ *
+ * The map comes from the **address** via OpenStreetMap (embeddable, no key),
+ * unless the ADM pasted a real Google **embed** URL (`/maps/embed?pb=…`), which
+ * is used as-is. A pasted Google share/place link (e.g. `maps.app.goo.gl/…`)
+ * can't be embedded, so it's used as the "Como chegar" destination instead.
+ * Self-hides when nothing is configured.
  */
 export default function Localizacao({ location }: { location?: LocationSection }) {
   const address = location?.address?.trim();
   const venue = location?.venueName?.trim();
   const note = location?.note?.trim();
-  // Only embed an explicit, official Google Maps embed URL (reliable). An address
-  // alone gives the card + "Como chegar" button, never an empty map.
-  const embed = location?.mapEmbedUrl?.trim() || "";
+  const link = location?.mapEmbedUrl?.trim() || "";
 
-  if (!embed && !address && !venue) return null;
+  const isGoogleEmbed = /\/maps\/embed/.test(link);
+  const isMapsLink =
+    !isGoogleEmbed && /(google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/.test(link);
 
-  const directions = address
-    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
-    : "";
+  const hasMap = isGoogleEmbed || !!address;
   const hasText = !!(venue || address);
+  if (!hasMap && !hasText) return null;
+
+  const directions = isMapsLink
+    ? link
+    : address
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
+      : "";
 
   return (
     <section id="localizacao" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
@@ -31,13 +40,11 @@ export default function Localizacao({ location }: { location?: LocationSection }
         </p>
       )}
 
-      <div
-        className={`mt-8 grid grid-cols-1 gap-8 ${hasText ? "md:grid-cols-2 md:items-center" : ""}`}
-      >
-        {embed && (
+      <div className={`mt-8 grid grid-cols-1 gap-8 ${hasText ? "md:grid-cols-2 md:items-center" : ""}`}>
+        {isGoogleEmbed ? (
           <div className="overflow-hidden rounded-2xl border border-line-soft">
             <iframe
-              src={embed}
+              src={link}
               title="Mapa da localização"
               loading="lazy"
               className="h-[300px] w-full md:h-[380px]"
@@ -46,7 +53,10 @@ export default function Localizacao({ location }: { location?: LocationSection }
               allowFullScreen
             />
           </div>
+        ) : (
+          address && <MapEmbed address={address} />
         )}
+
         {hasText && (
           <div>
             {venue && (

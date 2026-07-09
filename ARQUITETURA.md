@@ -437,11 +437,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 ## Localização, agenda (.ics) e compressão de imagem
 
 - **Localização / como chegar** (`content.location`, seção `key: "location"`, componente
-  `Localizacao`): título + nome do local + **endereço** + botão **"Como chegar"** (abre rotas no
-  Google Maps a partir do endereço). Mapa embutido **só** quando o ADM cola uma URL de
-  incorporação oficial (`mapEmbedUrl`) — endereço sozinho não gera iframe (evita mapa vazio).
-  Auto-oculta sem endereço/local. ADM em **/admin/localizacao**. CSP libera `www.google.com` /
-  `maps.google.com` em `frame-src`.
+  `Localizacao`): título + nome do local + **endereço** + botão **"Como chegar"**. O **mapa vem do
+  endereço** via **OpenStreetMap** (`MapEmbed` client → geocoding em `/api/geocode` (Nominatim,
+  cacheado em KV) → iframe `openstreetmap.org/export/embed.html`), pois links de compartilhamento
+  do Google (`maps.app.goo.gl`) e páginas do Maps **não podem ser embutidos** (recusam iframe). Se
+  o ADM colar uma URL de **incorporação** real do Google (`/maps/embed?pb=…`), ela é usada como
+  iframe; um link de compartilhamento vira o destino do botão "Como chegar". Auto-oculta sem
+  endereço/local. ADM em **/admin/localizacao**. CSP libera `www.openstreetmap.org`,
+  `www.google.com` e `maps.google.com` em `frame-src`.
 - **"Adicionar à agenda" (.ics)**: rota **`/api/agenda`** monta um `VEVENT` do conteúdo ao vivo
   (`inscricao.raceDate`, hora local −03:00 → UTC; nome/local do evento), servido como
   `text/calendar` (download `run4brasilafrica.ics`). Botão na faixa **Dia da Corrida**.

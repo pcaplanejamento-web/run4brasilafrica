@@ -23,7 +23,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://open.spotify.com https://www.strava.com https://strava-embeds.com https://connect.garmin.com https://www.google.com https://maps.google.com",
+  "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://open.spotify.com https://www.strava.com https://strava-embeds.com https://connect.garmin.com https://www.google.com https://maps.google.com https://www.openstreetmap.org",
   "media-src 'self' blob: https://res.cloudinary.com",
   "connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://region1.google-analytics.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://www.youtube.com https://s.ytimg.com https://open.spotify.com https://strava-embeds.com https://www.strava.com",
   "worker-src 'self' blob:",
