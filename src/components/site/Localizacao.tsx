@@ -1,5 +1,5 @@
 import type { LocationSection } from "@/lib/content/types";
-import { geocodeAddress, type LatLon } from "@/lib/geocode";
+import { geocodeAddress, resolveGoogleMapsCoords, type LatLon } from "@/lib/geocode";
 import SectionEyebrow from "./SectionEyebrow";
 import LeafletMap from "./LeafletMap";
 
@@ -23,10 +23,14 @@ export default async function Localizacao({ location }: { location?: LocationSec
   const isMapsLink =
     !isGoogleEmbed && /(google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/.test(link);
 
-  // Resolve the map (server-side): explicit Google embed URL → iframe; otherwise
-  // geocode the address and render an interactive Leaflet map on the client.
+  // Resolve the map coordinates (server-side): a Google embed URL → iframe;
+  // otherwise use the exact pin from the pasted Google link, falling back to
+  // geocoding the address. The Leaflet map renders those coords on the client.
   let pt: LatLon | null = null;
-  if (!isGoogleEmbed && address) pt = await geocodeAddress(address);
+  if (!isGoogleEmbed) {
+    if (isMapsLink) pt = await resolveGoogleMapsCoords(link);
+    if (!pt && address) pt = await geocodeAddress(address);
+  }
   const hasMap = isGoogleEmbed || !!pt;
 
   const hasText = !!(venue || address);
