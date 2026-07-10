@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { Hero as HeroType, HeroSlide } from "@/lib/content/types";
-import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
+import YouTubePlayer from "./YouTubePlayer";
+import { youtubeId, isVerticalYouTube } from "@/lib/youtube";
 import CtaButton from "./CtaButton";
 import SlidePager from "./SlidePager";
+import HeroMedia from "./HeroMedia";
 
 const title = (s: HeroSlide) => s.title || s.text || "";
 const ctaLabel = (s: HeroSlide) => s.ctaLabel || s.cta || "Inscreva-se";
@@ -51,21 +53,12 @@ export default function Hero({ hero }: { hero: HeroType }) {
   return (
     <section
       id="top"
-      className="clip-hero relative min-h-[540px] overflow-hidden md:h-[680px]"
+      className="clip-hero relative aspect-[3/4] max-h-[92vh] w-full overflow-hidden md:aspect-video"
       style={{ background: "var(--color-ink)" }}
     >
-      {/* Media (one at a time) */}
-      {slide.mediaType === "image" && slide.image ? (
-        <div
-          key={`img-${slide.id}`}
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${slide.image})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-      ) : ytId ? (
+      {/* Media (one at a time). Video fills the box; images use the configured
+          desktop (16:9) / mobile (3:4) art + focal point via HeroMedia. */}
+      {slide.mediaType === "video" && ytId ? (
         <YouTubePlayer
           key={`yt-${slide.id}-${ytId}`}
           videoId={ytId}
@@ -75,13 +68,7 @@ export default function Hero({ hero }: { hero: HeroType }) {
           showCaptions={!!slide.videoCaptions}
         />
       ) : (
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "repeating-linear-gradient(-25deg, oklch(0.62 0.16 35) 0 30px, oklch(0.55 0.16 32) 30px 60px)",
-          }}
-        />
+        <HeroMedia key={`media-${slide.id}`} slide={slide} variant="responsive" />
       )}
 
       {/* Legibility overlay */}

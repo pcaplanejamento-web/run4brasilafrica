@@ -143,12 +143,23 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   da A Causa funciona no celular.
 - **`Hero`** (client) é um carrossel de verdade sobre `hero.slides` — **só slides criados
   aparecem** (0 → não renderiza nada); **sem imagem de fundo global**. Renderiza só o slide
-  ativo (1 player por vez, destruído na troca). Cada slide tem sua mídia: `mediaType:"image"`
-  → `background-image` cover; `mediaType:"video"` → `YouTubePlayer` (cover) com o
-  `videoStartMuted` do slide. Sobre a mídia: selo (`subtitle`), título (`title`) e botão
-  (`ctaLabel`→`ctaUrl`, `_blank` se for URL externa). Indicadores clicáveis; auto-advance
-  (`slideDurationSeconds`, reinicia ao escolher um slide) respeitando reduce-motion.
-  Fallback de slides legados: `title||text`, `ctaLabel||cta`.
+  ativo (1 player por vez, destruído na troca). A caixa do banner tem **proporção por
+  breakpoint**: `aspect-[3/4]` (retrato 3:4) no mobile e `md:aspect-video` (16:9) no desktop,
+  limitada a `max-h-[92vh]`. Cada slide tem sua mídia: `mediaType:"image"` → `HeroMedia`;
+  `mediaType:"video"` → `YouTubePlayer` (cover) com o `videoStartMuted` do slide. Sobre a
+  mídia: selo (`subtitle`), título (`title`) e botão (`ctaLabel`→`ctaUrl`, `_blank` se for URL
+  externa). Indicadores clicáveis; auto-advance (`slideDurationSeconds`, reinicia ao escolher
+  um slide) respeitando reduce-motion. Fallback de slides legados: `title||text`,
+  `ctaLabel||cta`.
+- **`HeroMedia`** (`components/site/HeroMedia.tsx`, **sem `"use client"`, sem hooks** — serve
+  tanto o site público quanto a pré-visualização do ADM, garantindo que sejam idênticos) —
+  renderiza a mídia **imagem** de um slide. Cada slide guarda **duas imagens**: `image`
+  (desktop, 16:9) e `imageMobile` (mobile, 3:4; cai para `image` se vazia), cada uma com seu
+  **ponto focal** (`focusX/focusY` desktop, `focusXm/focusYm` mobile — object-position em %,
+  default 50/50, via `focusPos`). No `variant="responsive"` (site) renderiza as duas camadas
+  com `hidden md:block` / `md:hidden`, então cada breakpoint mostra a arte + enquadramento
+  certos; `variant="desktop"|"mobile"` renderiza uma só (usado nas caixas de preview do ADM).
+  Sem imagem → placeholder listrado.
 - **`Sobre`** ("A Causa", client) — caixa de mídia com a proporção escolhida
   (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, **9/16 Reels**, 21/9): imagem `object-cover`,
   ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Em
@@ -165,11 +176,16 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   logo — a API do YouTube não permite isolar cada um) e as **legendas** (`videoCaptions` →
   `cc_load_policy`). Quando os controles nativos aparecem, o iframe fica clicável
   (`pointer-events:auto`) e o botão de som próprio é ocultado.
-- **ADM** (`/admin/banner`): editor de slides (tipo Foto|Vídeo, upload ou link do YouTube +
-  "iniciar com som", controles/legendas, selo/título/botão/destino, reordenar/remover;
-  normaliza slides legados no load), configurações gerais (duração, reduce-motion) e o grupo
-  **"Seção A Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som,
-  controles/legendas, proporção). Salva `{ hero, about }`.
+- **ADM** (`/admin/banner`): editor de slides (tipo Foto|Vídeo, selo/título/botão/destino,
+  reordenar/remover; normaliza slides legados no load — incluindo `imageMobile`, `focusX/Y`,
+  `focusXm/Ym`). Para **Foto**: dois uploads — **desktop (16:9)** (`image`) e **mobile (3:4)**
+  (`imageMobile`) — e um bloco **"Pré-visualização e enquadramento"** com duas caixas na mesma
+  proporção do site (16:9 e 3:4) usando o **mesmo `HeroMedia`**; cada caixa é um `FocusPicker`:
+  clicar/tocar define o **ponto focal** (`getBoundingClientRect` → x%/y%, com marcador
+  cruzeta), guardado por breakpoint. Para **Vídeo**: link do YouTube + "iniciar com som" +
+  controles/legendas. Configurações gerais (duração, reduce-motion) e o grupo **"Seção A
+  Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som, controles/legendas,
+  proporção). Salva `{ hero, about }`.
 
 ## Playlist do evento + coordenação de áudio
 
@@ -408,6 +424,58 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Dashboard** (`/admin/dashboard`): card **"Componentes da tela inicial"** (substitui o
   "Acesso rápido") — lista reordenável (setas ↑/↓, alvos ~36px), toggle **Ativo/Oculto** e o
   nome **linka para a página de configuração** da seção. Salva `{ layout }`.
+
+## Abas personalizadas (construtor de seções no ADM)
+
+- O ADM pode **criar novas abas (seções)** da tela inicial montando-as com os componentes já
+  existentes no sistema. Modelo em `types.ts`: `CustomSection { id, title, blocks: CustomBlock[] }`
+  e `CustomBlock { id, type, ... }`, com `type` ∈ `subtitulo | texto | imagem | video | botao |
+  carrossel | formulario`. Persistido em `content.customSections: CustomSection[]` (seed `[]`).
+- **Chave de layout**: cada aba entra no `content.layout` com a chave `custom:<id>` (helpers
+  `customKey`/`customIdFromKey`/`isCustomKey` em `sections.ts`). O `resolveLayout(stored,
+  customIds?)` **preserva** as chaves `custom:*` que ainda existem e **descarta órfãs** (abas
+  excluídas); anexa ao fim as que faltarem. Chamadores que não passam `customIds` (ex.:
+  `AdmSidebar`, `patrocinadores`) ignoram as chaves custom com segurança (não têm `sectionMeta`).
+- **Helpers de YouTube em módulo não-client** (`src/lib/youtube.ts`): `youtubeId` e
+  `isVerticalYouTube` ficam **fora** do `YouTubePlayer.tsx` (`"use client"`). Como
+  `CustomSectionView` é **Server Component** e chama esses helpers no render, tê-los num módulo
+  client faria o SSR quebrar com _"Attempted to call youtubeId() from the server but youtubeId is
+  on the client"_ (500 na home). Todos os importadores (Hero, Sobre, SejaParceiro,
+  CustomSectionView) importam os helpers de `@/lib/youtube` e o **componente** de
+  `./YouTubePlayer`.
+- **Disposição (colunas)**: cada bloco tem `column?: "full" | "left" | "right"` (padrão
+  `full`). No desktop, corridas de blocos `left`/`right` consecutivos viram uma **linha de 2
+  colunas** (`md:grid-cols-2`) — os `left` empilham na coluna esquerda e os `right` na direita;
+  um bloco `full` quebra a corrida e ocupa a largura toda. No **mobile** tudo colapsa em uma
+  coluna, em ordem de leitura (célula esquerda e depois a direita). Ex.: vídeo à esquerda com
+  textos/botão/formulário à direita. Lógica em `layoutSegments` no `CustomSectionView`; controle
+  por bloco no editor (`PositionPicker`).
+- **Renderização pública** (`CustomSectionView`, servidor): título via `SectionEyebrow as="h2"`
+  + blocos na ordem. Cada bloco **reusa um componente do site** — `texto`/`subtitulo` (tipografia),
+  `imagem` (`<img>` com proporção), `video` (`YouTubePlayer`, cobre Shorts 9:16), `botao`
+  (`CtaButton`), `carrossel` (`CustomCarousel`, client: autoplay + setas + bolinhas + swipe),
+  `formulario` (`NotifyForm`, captura de e-mail). Blocos vazios se auto-ocultam; a seção some se
+  não tiver título nem blocos com conteúdo. `SiteContent` injeta cada aba no mapa `rendered` com
+  a chave `custom:<id>`, então a ordem/on-off segue o mesmo fluxo das seções nativas.
+- **Criar/excluir** (Dashboard, card de componentes): botão **"+ Criar aba"** abre um mini-form
+  — título + **lista ordenável de componentes** (clicar na paleta adiciona; a lista abaixo
+  permite reordenar ↑/↓ e remover, então a ordem de criação já é definida aqui). Cria a
+  `CustomSection` com os blocos nessa ordem, adiciona `custom:<id>` ao layout, salva
+  `{ customSections, layout }` e navega para a configuração. Cada aba na lista ganha selo
+  **"Aba"**, botão de **excluir** (confirmação) e o mesmo toggle Ativo/Oculto — ou seja, dá
+  para cadastrar uma aba **sem ativá-la**.
+- **Menu do ADM** (`AdmSidebar`): as abas personalizadas aparecem no menu lateral **como
+  qualquer outra seção**, intercaladas na **mesma ordem do layout** (`resolveLayout` com os
+  `customIds`), cada uma linkando para `/admin/custom/<id>`. O label é o título da aba; some
+  automaticamente quando a aba é excluída.
+- **Editar/configurar** (`/admin/custom/[id]`, dentro do grupo `(painel)`; abre ao clicar no
+  nome da aba no Dashboard **ou no menu lateral**): editor de blocos — adicionar (seletor de tipo), remover, reordenar
+  (↑/↓), **editar o título** e os campos de cada tipo (textos, upload de imagem via
+  `ImageUpload`, link do YouTube + proporção, rótulo/URL do botão, imagens do carrossel). Salva
+  substituindo **apenas** a seção correspondente em `content.customSections` (merge raso do
+  `save` preserva as demais abas e todo o resto do conteúdo). O form é **keyed por `section.id`**
+  → navegar entre abas remonta com estado limpo, sem carregar edições não salvas de uma aba para
+  outra.
 
 ## Analytics, robustez e acessibilidade
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useContent } from "@/lib/content/store";
 import type { AboutSection, Hero, HeroSlide, MediaType } from "@/lib/content/types";
+import HeroMedia from "@/components/site/HeroMedia";
 import {
   AdmLoading,
   Card,
@@ -23,6 +24,11 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
     id: s.id ?? `slide-${i + 1}`,
     mediaType: s.mediaType ?? "image",
     image: s.image,
+    imageMobile: s.imageMobile,
+    focusX: s.focusX,
+    focusY: s.focusY,
+    focusXm: s.focusXm,
+    focusYm: s.focusYm,
     videoUrl: s.videoUrl,
     videoStartMuted: s.videoStartMuted ?? true,
     title: s.title || s.text || "",
@@ -32,6 +38,64 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
     videoControls: s.videoControls,
     videoCaptions: s.videoCaptions,
   };
+}
+
+/**
+ * Interactive framing preview: shows the slide's image in the target ratio
+ * (desktop 16:9 / mobile 3:4) exactly like the public banner, and clicking sets
+ * the focal point (object-position) — the same value the live site uses.
+ */
+function FocusPicker({
+  slide,
+  variant,
+  ratioClass,
+  label,
+  onPick,
+}: {
+  slide: HeroSlide;
+  variant: "desktop" | "mobile";
+  ratioClass: string;
+  label: string;
+  onPick: (x: number, y: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const fx = variant === "desktop" ? slide.focusX ?? 50 : slide.focusXm ?? 50;
+  const fy = variant === "desktop" ? slide.focusY ?? 50 : slide.focusYm ?? 50;
+  const pick = (clientX: number, clientY: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const x = Math.round(Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100)));
+    const y = Math.round(Math.max(0, Math.min(100, ((clientY - r.top) / r.height) * 100)));
+    onPick(x, y);
+  };
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <div
+        ref={ref}
+        role="button"
+        tabIndex={0}
+        aria-label={`${label} — clique para definir o ponto de foco`}
+        onClick={(e) => pick(e.clientX, e.clientY)}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (t) pick(t.clientX, t.clientY);
+        }}
+        className={`relative ${ratioClass} w-full cursor-crosshair touch-none select-none overflow-hidden rounded-lg border border-adm-border bg-[#1a1400]`}
+      >
+        <HeroMedia slide={slide} variant={variant} />
+        <span
+          className="pointer-events-none absolute z-10 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_2px_rgba(0,0,0,.5)]"
+          style={{ left: `${fx}%`, top: `${fy}%` }}
+        />
+      </div>
+      <p className="mt-1 text-[11px] text-adm-muted">
+        Toque/clique para escolher o que fica centralizado ({fx}% · {fy}%).
+      </p>
+    </div>
+  );
 }
 
 const ASPECT_OPTIONS = [
@@ -151,17 +215,63 @@ function BannerForm({
                   </Select>
 
                   {sl.mediaType === "image" ? (
-                    <div className="mt-3">
-                      <ImageUpload
-                        value={sl.image}
-                        onChange={(url) => setSlide(i, { image: url })}
-                        className="h-40"
-                        label="foto do slide"
-                        cloudinary={cloudinary}
-                      />
-                      <p className="mt-1.5 text-[12px] text-adm-muted">
-                        Foto horizontal de alta qualidade (JPG/PNG/WebP).
-                      </p>
+                    <div className="mt-3 flex flex-col gap-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <FieldLabel>Foto desktop (16:9)</FieldLabel>
+                          <ImageUpload
+                            value={sl.image}
+                            onChange={(url) => setSlide(i, { image: url })}
+                            className="h-32"
+                            label="foto desktop"
+                            cloudinary={cloudinary}
+                          />
+                          <p className="mt-1.5 text-[12px] text-adm-muted">
+                            Horizontal, alta qualidade (ideal 2400×1350).
+                          </p>
+                        </div>
+                        <div>
+                          <FieldLabel>Foto mobile (3:4)</FieldLabel>
+                          <ImageUpload
+                            value={sl.imageMobile}
+                            onChange={(url) => setSlide(i, { imageMobile: url })}
+                            className="h-32"
+                            label="foto mobile"
+                            cloudinary={cloudinary}
+                          />
+                          <p className="mt-1.5 text-[12px] text-adm-muted">
+                            Vertical (ideal 1080×1440). Vazio = usa a de desktop.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <SectionLabel>Pré-visualização e enquadramento</SectionLabel>
+                        <p className="-mt-2 mb-3 text-[12px] text-adm-muted">
+                          É exatamente como aparece na tela inicial. Toque/clique na imagem
+                          para escolher o ponto que fica centralizado em cada tela.
+                        </p>
+                        <div className="flex flex-wrap items-start gap-4">
+                          <div className="min-w-[240px] flex-1">
+                            <FocusPicker
+                              slide={sl}
+                              variant="desktop"
+                              ratioClass="aspect-video"
+                              label="Desktop (16:9)"
+                              onPick={(x, y) => setSlide(i, { focusX: x, focusY: y })}
+                            />
+                          </div>
+                          <div className="w-[150px] flex-none">
+                            <FocusPicker
+                              slide={sl}
+                              variant="mobile"
+                              ratioClass="aspect-[3/4]"
+                              label="Mobile (3:4)"
+                              onPick={(x, y) => setSlide(i, { focusXm: x, focusYm: y })}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="mt-3">

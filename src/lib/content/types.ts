@@ -26,8 +26,16 @@ export type MediaType = "image" | "video";
 export interface HeroSlide {
   id: string;
   mediaType: MediaType;
-  /** Uploaded image URL (when mediaType === "image"). */
+  /** Uploaded image URL for DESKTOP (16:9), when mediaType === "image". */
   image?: string;
+  /** Uploaded image URL for MOBILE (3:4). Falls back to `image` when empty. */
+  imageMobile?: string;
+  /** Focal point (object-position %, 0–100) — how the image is framed in its box.
+   *  `focusX/Y` = desktop, `focusXm/Ym` = mobile. Default 50/50 (centered). */
+  focusX?: number;
+  focusY?: number;
+  focusXm?: number;
+  focusYm?: number;
   /** YouTube link (when mediaType === "video"). */
   videoUrl?: string;
   /** Whether the video should start with sound (on first interaction). */
@@ -350,6 +358,51 @@ export interface PartnerLead {
   created_at: string;
 }
 
+/**
+ * Custom home "aba" (section) the ADM builds from reusable blocks. Its layout key
+ * is `custom:<id>`. Each block reuses an existing site component.
+ */
+export type CustomBlockType =
+  | "subtitulo"
+  | "texto"
+  | "imagem"
+  | "video"
+  | "botao"
+  | "carrossel"
+  | "formulario";
+
+/** Posição do bloco na seção: largura total, coluna esquerda ou direita
+ *  (2 colunas no desktop; sempre empilhado no mobile). Ausente = "full". */
+export type CustomBlockColumn = "full" | "left" | "right";
+
+export interface CustomBlock {
+  id: string;
+  type: CustomBlockType;
+  /** Disposição do bloco (padrão "full"). */
+  column?: CustomBlockColumn;
+  /** subtítulo / texto. */
+  text?: string;
+  /** imagem (URL). */
+  imageUrl?: string;
+  /** vídeo (YouTube). */
+  videoUrl?: string;
+  /** proporção do vídeo/imagem (ex.: "16/9"). */
+  aspectRatio?: string;
+  /** botão. */
+  buttonLabel?: string;
+  buttonUrl?: string;
+  /** carrossel/banner (lista de imagens). */
+  images?: string[];
+  /** formulário: qual formulário existente embutir. */
+  formKind?: "email";
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  blocks: CustomBlock[];
+}
+
 /** "Compartilhe o evento" section — share buttons; message auto-built if empty. */
 export interface ShareSection {
   title?: string;
@@ -437,6 +490,8 @@ export interface SiteContent {
   sejaParceiro: SejaParceiroSection;
   location?: LocationSection;
   share?: ShareSection;
+  /** Custom "abas" built in the ADM (rendered by `custom:<id>` keys in `layout`). */
+  customSections?: CustomSection[];
   privacy?: PrivacySection;
   /* ADM-only content */
   contentSections: ContentSection[];

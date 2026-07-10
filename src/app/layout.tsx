@@ -84,10 +84,15 @@ export default async function RootLayout({
   const content = await getSiteContent();
   // Theme colors applied on the server → correct colors on the FIRST paint.
   const theme = themeCss(content.theme);
-  // Preload the first hero image / the logo so they show up immediately.
+  // Preload the first hero image (per breakpoint) / the logo so they show up
+  // immediately.
   const firstSlide = content.hero?.slides?.[0];
-  const heroImg =
-    firstSlide?.mediaType === "image" && firstSlide.image ? firstSlide.image : null;
+  const isImg = firstSlide?.mediaType === "image";
+  const heroImg = isImg && firstSlide?.image ? firstSlide.image : null;
+  const heroImgMobile =
+    isImg && (firstSlide?.imageMobile || firstSlide?.image)
+      ? firstSlide.imageMobile || firstSlide.image!
+      : null;
   const logo = content.branding?.logo;
 
   return (
@@ -105,7 +110,24 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://open.spotify.com" />
         <link rel="preconnect" href="https://res.cloudinary.com" />
         <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
-        {heroImg && <link rel="preload" as="image" href={heroImg} fetchPriority="high" />}
+        {heroImg && (
+          <link
+            rel="preload"
+            as="image"
+            href={heroImg}
+            media="(min-width: 768px)"
+            fetchPriority="high"
+          />
+        )}
+        {heroImgMobile && (
+          <link
+            rel="preload"
+            as="image"
+            href={heroImgMobile}
+            media="(max-width: 767px)"
+            fetchPriority="high"
+          />
+        )}
         {logo && <link rel="preload" as="image" href={logo} />}
       </head>
       <body className="min-h-full">
