@@ -14,6 +14,7 @@ export default function SlidePager({
   onSelect,
   tone = "solid",
   maxDots = 12,
+  forceCounter = false,
   prevLabel = "Anterior",
   nextLabel = "Próximo",
   dotLabel = (i) => `Ir para ${i + 1}`,
@@ -25,6 +26,8 @@ export default function SlidePager({
   onSelect: (index: number) => void;
   tone?: "solid" | "overlay";
   maxDots?: number;
+  /** Always show the numeric "current / total" counter instead of the dots. */
+  forceCounter?: boolean;
   prevLabel?: string;
   nextLabel?: string;
   dotLabel?: (index: number) => string;
@@ -52,7 +55,7 @@ export default function SlidePager({
         </svg>
       </button>
 
-      {count <= maxDots ? (
+      {!forceCounter && count <= maxDots ? (
         <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
           {Array.from({ length: count }, (_, k) => (
             <button

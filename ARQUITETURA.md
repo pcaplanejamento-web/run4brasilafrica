@@ -163,16 +163,23 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `bg-gold/25` + `backdrop-blur`, texto dourado). O `CtaButton` recebe isso via prop
   `variant` — **sem borda**, porque `clip-path` cortaria uma borda/inset-shadow nas arestas
   diagonais; a silhueta recortada é que define a forma.
-- **Swipe (toque/mouse)**: com mais de um slide, o banner aceita **arrastar para trocar de
-  slide**, igual à galeria de fotos (`onPointerDown`/`onPointerUp`, limiar de 40px, `go(±1)`;
-  `select-none`). Um `swiped` ref + `onClickCapture` na seção cancelam o clique gerado pelo
-  arrasto para que o swipe **não** dispare o botão nem o link clicável do banner. Sobre vídeo
-  (iframe) o swipe não se aplica (o iframe captura o gesto), como na galeria (só imagens).
+- **Swipe com o dedo acompanhando (toque/mouse)**: todos os slides ficam num **track
+  horizontal** (`flex`, cada slide `w-full flex-none`) que **segue o dedo em tempo real** ao
+  arrastar e **assenta** no vizinho ao soltar — o feel de carrossel profissional. A lógica
+  vem do hook compartilhado **`useDragTrack`** (`src/lib/useDragTrack.ts`), o **mesmo usado na
+  galeria de fotos**: `dragPct` (deslocamento em % da largura) aplicado ao `translateX`,
+  `transition` desligada enquanto arrasta e uma curva de ease ao soltar; limiar de ~15% (ou
+  60px) para trocar; **resistência (rubber-band)** nas bordas. **Não circular** (clamp nas
+  pontas); o **auto-advance faz ping-pong** (vai e volta) em vez de saltar do último para o
+  primeiro. Um `swiped` ref + `onClickCapture` cancelam o clique gerado pelo arrasto (o swipe
+  não dispara o botão nem o link clicável). Só o **slide ativo** monta o `YouTubePlayer`
+  (os outros mostram a imagem como pôster), mantendo 1 player por vez. `touch-pan-y` preserva
+  o scroll vertical da página.
 - **Paginador do banner**: fica **abaixo** do banner, centralizado, usando o **mesmo
-  `SlidePager` e a mesma configuração da galeria de fotos** (`tone="solid"`,
-  `className="mt-5 w-full flex-wrap …"`). Antes eram dois paginadores `tone="overlay"` por
-  cima da mídia (um no mobile, um no canto inferior direito do desktop) — foram removidos
-  para o banner não ter nada sobreposto. Com 1 slide o `SlidePager` retorna `null`.
+  `SlidePager` da galeria de fotos**, no **modo numérico** (`forceCounter` → contador
+  "atual / total" com as setas, sem bolinhas — como a galeria). Antes eram dois paginadores
+  `tone="overlay"` por cima da mídia — removidos para o banner não ter nada sobreposto. Com 1
+  slide o `SlidePager` retorna `null`.
 - **`HeroMedia`** (`components/site/HeroMedia.tsx`, **sem `"use client"`, sem hooks** — serve
   tanto o site público quanto a pré-visualização do ADM, garantindo que sejam idênticos) —
   renderiza a mídia **imagem** de um slide. Cada slide guarda **duas imagens**: `image`

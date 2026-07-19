@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Album, GalleryConfig, GalleryPhoto } from "@/lib/content/types";
 import ProtectedImage from "./ProtectedImage";
 import SlidePager from "./SlidePager";
 import SectionEyebrow from "./SectionEyebrow";
+import { useDragTrack } from "@/lib/useDragTrack";
 
 interface GalleryItem {
   thumb: string;
@@ -41,7 +42,6 @@ export default function Galeria({
   const [mobile, setMobile] = useState(false);
   const [page, setPage] = useState(0);
   const [settled, setSettled] = useState(0);
-  const startX = useRef<number | null>(null);
 
   // Track the breakpoint (grid size differs on desktop vs mobile).
   useEffect(() => {
@@ -123,6 +123,14 @@ export default function Galeria({
   const go = (dir: number) =>
     setPage((p) => (p + dir + pageCount) % pageCount);
 
+  // Finger-following swipe (same hook as the hero banner).
+  const drag = useDragTrack({
+    enabled: pageCount > 1,
+    onGo: go,
+    atStart: current === 0,
+    atEnd: current === pageCount - 1,
+  });
+
   const buyOn = !!gallery?.buyEnabled && !!gallery?.buyUrl;
   const hasPhotos = items.length > 0;
   const loadingPhotos = sourceCount > 0 && settled < sourceCount;
@@ -147,18 +155,18 @@ export default function Galeria({
       {hasPhotos ? (
         <div className="relative">
           <div
-            className="gallery-slider overflow-hidden select-none"
-            onPointerDown={(e) => (startX.current = e.clientX)}
-            onPointerUp={(e) => {
-              if (startX.current === null) return;
-              const dx = e.clientX - startX.current;
-              startX.current = null;
-              if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
-            }}
+            ref={drag.ref}
+            className="gallery-slider touch-pan-y select-none overflow-hidden"
+            {...drag.handlers}
           >
             <div
-              className="flex transition-transform duration-500 ease-out"
-              style={{ transform: `translateX(-${current * 100}%)` }}
+              className="flex"
+              style={{
+                transform: `translateX(calc(-${current * 100}% + ${drag.dragPct}%))`,
+                transition: drag.dragging
+                  ? "none"
+                  : "transform 450ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+              }}
             >
               {pages.map((pg, pi) => (
                 <div
