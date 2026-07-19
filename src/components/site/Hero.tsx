@@ -51,6 +51,10 @@ export default function Hero({ hero }: { hero: HeroType }) {
   const fade = reduced ? "" : "r4ba-fade";
 
   const ctaRight = slide.ctaAlign === "right";
+  // When the slide has no button, the whole banner can be a link (ADM-configured).
+  const bannerLink =
+    slide.ctaEnabled === false ? (slide.slideLink || "").trim() : "";
+  const bannerLinkExternal = /^https?:\/\//.test(bannerLink);
 
   return (
     <div>
@@ -74,11 +78,19 @@ export default function Hero({ hero }: { hero: HeroType }) {
           <HeroMedia key={`media-${slide.id}`} slide={slide} variant="responsive" />
         )}
 
-        {/* Legibility overlay */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "linear-gradient(0deg, rgba(10,8,6,.85), transparent 55%)" }}
-        />
+        {/* No shadow overlay — the banner shows clean (user request). */}
+
+        {/* Clickable-banner link: only when there's no button and a link is set. */}
+        {bannerLink && (
+          <a
+            href={bannerLink}
+            aria-label={title(slide) || "Abrir link do banner"}
+            {...(bannerLinkExternal
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            className="absolute inset-0 z-20"
+          />
+        )}
 
         {/* Only the banner's own content sits on top of the media. */}
         <div className="absolute inset-x-5 bottom-8 sm:inset-x-8 md:inset-x-14 md:bottom-12">

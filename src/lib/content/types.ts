@@ -51,6 +51,9 @@ export interface HeroSlide {
   /** CTA style: "solid" = filled gold (default), "transparent" = translucent
    *  gold over the media (same design language, lighter weight). */
   ctaVariant?: "solid" | "transparent";
+  /** When the slide has NO button (ctaEnabled === false), an optional link that
+   *  makes the whole banner clickable and sends the visitor to this URL. */
+  slideLink?: string;
   /** Show the YouTube control bar (play/pause, fullscreen, share, logo). */
   videoControls?: boolean;
   /** Force closed captions on. */

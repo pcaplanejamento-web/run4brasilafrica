@@ -94,12 +94,9 @@ export default function InscricaoCTA({
   const others = sortLotesDesc(sorted).filter((l) => l.id !== active.id);
   const activeStatus: LoteStatus = ready ? loteStatus(active, now) : "upcoming";
   const cd = loteCountdown(active, activeStatus);
-  const headline =
-    activeStatus === "open"
-      ? `${active.name} aberto.`
-      : activeStatus === "upcoming"
-        ? `${active.name} em breve.`
-        : "Inscrições encerradas.";
+  // Just the lote name — the status pill above already signals open/upcoming/
+  // closed, so no status word is appended next to the title (avoids redundancy).
+  const headline = active.name;
 
   return (
     <section id="inscricao" className="px-5 py-14 sm:px-8 md:px-14 md:py-20">

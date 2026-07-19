@@ -31,7 +31,10 @@ function Layer({
       className={`absolute inset-0 ${className}`}
       style={{
         backgroundImage: `url(${img})`,
-        backgroundSize: "cover",
+        // "contain" → the ADM image is shown WHOLE, never cropped (16:9 desktop /
+        // 3:4 mobile box). If the photo's ratio differs, the leftover area shows
+        // the section's ink background instead of cutting the image.
+        backgroundSize: "contain",
         backgroundPosition: position,
         backgroundRepeat: "no-repeat",
       }}
@@ -47,7 +50,8 @@ function Layer({
  *  - "responsive": desktop image on ≥md, mobile image (falls back to desktop)
  *    below md — used inside the public hero box (16:9 on desktop, 3:4 on mobile).
  *  - "desktop" / "mobile": a single framing, for the ADM preview boxes.
- * Each variant uses its own focal point (object-position).
+ * The image is shown WHOLE (backgroundSize "contain", no crop); the focal point
+ * only nudges its position within the box if it doesn't fill exactly.
  */
 export default function HeroMedia({
   slide,

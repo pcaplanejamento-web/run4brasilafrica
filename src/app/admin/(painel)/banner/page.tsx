@@ -36,6 +36,7 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
     ctaLabel: s.ctaLabel || s.cta || "Inscreva-se",
     ctaUrl: s.ctaUrl || "#inscricao",
     ctaEnabled: s.ctaEnabled !== false,
+    slideLink: s.slideLink,
     ctaAlign: s.ctaAlign === "right" ? "right" : "left",
     ctaVariant: s.ctaVariant === "transparent" ? "transparent" : "solid",
     videoControls: s.videoControls,
@@ -410,6 +411,16 @@ function BannerForm({
                           <option value="transparent">Transparente (dourado translúcido)</option>
                         </Select>
                       </div>
+                    </div>
+                  )}
+                  {sl.ctaEnabled === false && (
+                    <div>
+                      <FieldLabel>Link ao clicar no banner (opcional)</FieldLabel>
+                      <TextInput
+                        value={sl.slideLink ?? ""}
+                        onChange={(e) => setSlide(i, { slideLink: e.target.value })}
+                        placeholder="https://... ou #inscricao (vazio = banner sem clique)"
+                      />
                     </div>
                   )}
                 </div>

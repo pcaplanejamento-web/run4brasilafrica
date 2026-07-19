@@ -148,9 +148,11 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   limitada a `max-h-[92vh]`. Cada slide tem sua mídia: `mediaType:"image"` → `HeroMedia`;
   `mediaType:"video"` → `YouTubePlayer` (cover) com o `videoStartMuted` do slide.
   **Banner limpo**: a arte aparece inteira na proporção definida — o recorte diagonal
-  (`clip-hero`) foi removido e **nada externo fica por cima**; só os componentes do próprio
-  banner ficam sobre a mídia: selo (`subtitle`), título (`title`) e botão
-  (`ctaLabel`→`ctaUrl`, `_blank` se for URL externa). Auto-advance
+  (`clip-hero`) e o **sombreado inferior** foram removidos e **nada externo fica por cima**;
+  só os componentes do próprio banner ficam sobre a mídia: selo (`subtitle`), título
+  (`title`) e botão (`ctaLabel`→`ctaUrl`, `_blank` se for URL externa). **Banner clicável**:
+  quando o slide está sem botão (`ctaEnabled === false`) e tem `slideLink`, o banner inteiro
+  vira um link (âncora `absolute inset-0 z-20`, `_blank` se externo). Auto-advance
   (`slideDurationSeconds`, reinicia ao escolher um slide) respeitando reduce-motion.
   Fallback de slides legados: `title||text`, `ctaLabel||cta`.
 - **Botão do banner (por slide)**: `ctaEnabled` (padrão `true`; `false` esconde o botão neste
@@ -174,7 +176,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   default 50/50, via `focusPos`). No `variant="responsive"` (site) renderiza as duas camadas
   com `hidden md:block` / `md:hidden`, então cada breakpoint mostra a arte + enquadramento
   certos; `variant="desktop"|"mobile"` renderiza uma só (usado nas caixas de preview do ADM).
-  Sem imagem → placeholder listrado.
+  A imagem aparece **inteira, sem corte** (`background-size: contain`) — se a proporção da foto
+  não bater com a caixa (16:9 / 3:4), a área restante mostra o fundo (ink) em vez de cortar; o
+  ponto focal só reposiciona a imagem dentro da caixa. Sem imagem → placeholder listrado.
 - **`Sobre`** ("A Causa", client) — caixa de mídia com a proporção escolhida
   (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, **9/16 Reels**, 21/9): imagem `object-cover`,
   ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Em
@@ -198,8 +202,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   proporção do site (16:9 e 3:4) usando o **mesmo `HeroMedia`**; cada caixa é um `FocusPicker`:
   clicar/tocar define o **ponto focal** (`getBoundingClientRect` → x%/y%, com marcador
   cruzeta), guardado por breakpoint. Ainda por slide: **"Exibir botão no slide?"**
-  (Sim/Não → `ctaEnabled`; quando "Não", os campos do botão ficam ocultos), **"Posição do
-  botão"** (Esquerda/Direita → `ctaAlign`) e **"Estilo do botão"** (Colorido/Transparente →
+  (Sim/Não → `ctaEnabled`; quando "Não", os campos do botão ficam ocultos e aparece **"Link ao
+  clicar no banner (opcional)"** → `slideLink`, que torna o banner inteiro clicável), **"Posição
+  do botão"** (Esquerda/Direita → `ctaAlign`) e **"Estilo do botão"** (Colorido/Transparente →
   `ctaVariant`). Para **Vídeo**: link do YouTube + "iniciar com som" + controles/legendas. Configurações gerais (duração, reduce-motion) e o grupo **"Seção A
   Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som, controles/legendas,
   proporção). Salva `{ hero, about }`.
@@ -241,9 +246,11 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (o aberto, senão o próximo), `loteCountdown` (alvo+rótulo) e `validateLotes` (regras).
 - **`InscricaoCTA`** (client, tempo real): a faixa principal é o lote ativo com suas cores;
   a contagem (`Countdown`) aponta para a **abertura** ("Inscrições abrem em") enquanto está
-  por vir, ou para o **encerramento** ("Inscrições encerram em") quando aberto. Mostra
-  Abertura/Encerramento por lote; a lista traz o status (Aberto/Em breve/Encerrado). Sem
-  lotes → inscrição única. (SSR usa `now=0` → sem mismatch de hidratação.)
+  por vir, ou para o **encerramento** ("Inscrições encerram em") quando aberto. O título é
+  **só o nome do lote** — o **selo de estado** (pill Aberto/Em breve/Encerrado) já sinaliza a
+  situação, então nenhuma palavra de status é anexada ao lado do título (evita redundância; o
+  mesmo vale no editor do ADM, que mostra só o nome do lote). Mostra Abertura/Encerramento por
+  lote; a lista traz o status. Sem lotes → inscrição única. (SSR usa `now=0` → sem mismatch.)
 - Ordem dos lotes: `sortLotes` ordena pelo **número no nome** (Lote 1, 2, 3…), então a lista
   lê sempre 1→N independentemente das datas/ordem do array; a faixa em destaque é o lote
   **ativo** (`activeLote`).

@@ -136,10 +136,7 @@ function LinksForm({
               >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[13px] font-bold text-adm-ink">
-                    {l.name}{" "}
-                    <span style={{ color: l.open ? "#2f7a45" : "#999" }}>
-                      · {l.open ? "Aberto" : "Fechado"}
-                    </span>
+                    {l.name}
                   </span>
                   <div className="flex gap-2">
                     {l.open ? (
