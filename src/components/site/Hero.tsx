@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Hero as HeroType, HeroSlide } from "@/lib/content/types";
 import YouTubePlayer from "./YouTubePlayer";
 import { youtubeId, isVerticalYouTube } from "@/lib/youtube";
@@ -22,6 +22,10 @@ export default function Hero({ hero }: { hero: HeroType }) {
   const slides = hero.slides ?? [];
   const [index, setIndex] = useState(0);
   const [reduced, setReduced] = useState(false);
+  // Swipe (touch/pointer) — same behaviour as the photo gallery. `swiped` guards
+  // the clickable-banner link so a swipe doesn't also fire navigation.
+  const startX = useRef<number | null>(null);
+  const swiped = useRef(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -55,13 +59,43 @@ export default function Hero({ hero }: { hero: HeroType }) {
   const bannerLink =
     slide.ctaEnabled === false ? (slide.slideLink || "").trim() : "";
   const bannerLinkExternal = /^https?:\/\//.test(bannerLink);
+  const multi = slides.length > 1;
+
+  // Swipe handlers (touch + mouse), only when there's more than one slide.
+  const swipeHandlers = multi
+    ? {
+        onPointerDown: (e: React.PointerEvent) => {
+          startX.current = e.clientX;
+          swiped.current = false;
+        },
+        onPointerUp: (e: React.PointerEvent) => {
+          if (startX.current === null) return;
+          const dx = e.clientX - startX.current;
+          startX.current = null;
+          if (Math.abs(dx) > 40) {
+            swiped.current = true;
+            go(dx < 0 ? 1 : -1);
+          }
+        },
+        // If the gesture was a swipe, cancel the click it may generate so it
+        // doesn't also trigger the CTA button or the clickable-banner link.
+        onClickCapture: (e: React.MouseEvent) => {
+          if (swiped.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            swiped.current = false;
+          }
+        },
+      }
+    : {};
 
   return (
     <div>
       <section
         id="top"
-        className="relative aspect-[3/4] max-h-[92vh] w-full overflow-hidden md:aspect-video"
+        className={`relative aspect-[3/4] max-h-[92vh] w-full overflow-hidden md:aspect-video ${multi ? "select-none" : ""}`}
         style={{ background: "var(--color-ink)" }}
+        {...swipeHandlers}
       >
         {/* Media (one at a time). Video fills the box; images use the configured
             desktop (16:9) / mobile (3:4) art + focal point via HeroMedia. */}
