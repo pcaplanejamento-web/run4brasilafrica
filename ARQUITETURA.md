@@ -165,16 +165,24 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   diagonais; a silhueta recortada é que define a forma.
 - **Swipe com o dedo acompanhando (toque/mouse)**: todos os slides ficam num **track
   horizontal** (`flex`, cada slide `w-full flex-none`) que **segue o dedo em tempo real** ao
-  arrastar e **assenta** no vizinho ao soltar — o feel de carrossel profissional. A lógica
+  arrastar e **assenta** no vizinho ao soltar — o feel de carrossel profissional. O arrasto
   vem do hook compartilhado **`useDragTrack`** (`src/lib/useDragTrack.ts`), o **mesmo usado na
-  galeria de fotos**: `dragPct` (deslocamento em % da largura) aplicado ao `translateX`,
+  galeria de fotos**: `dragPct` (deslocamento em % da largura) somado ao `translateX`,
   `transition` desligada enquanto arrasta e uma curva de ease ao soltar; limiar de ~15% (ou
-  60px) para trocar; **resistência (rubber-band)** nas bordas. **Não circular** (clamp nas
-  pontas); o **auto-advance faz ping-pong** (vai e volta) em vez de saltar do último para o
-  primeiro. Um `swiped` ref + `onClickCapture` cancelam o clique gerado pelo arrasto (o swipe
+  60px). Um `swiped` ref + `onClickCapture` cancelam o clique gerado pelo arrasto (o swipe
   não dispara o botão nem o link clicável). Só o **slide ativo** monta o `YouTubePlayer`
   (os outros mostram a imagem como pôster), mantendo 1 player por vez. `touch-pan-y` preserva
   o scroll vertical da página.
+- **Loop infinito (como sites profissionais)**: o carrossel é **circular** — do último,
+  avançar vai ao primeiro; do primeiro, voltar vai ao último — **sem o "sweep"** (varrer de
+  volta por todos os slides). Técnica de **clones nas pontas**: o track é
+  `[cloneÚltimo, …slides, clonePrimeiro]` e a posição real do slide `i` é `pos = i+1`. Ao dar
+  a volta, o track **anima até o clone** e, ao terminar (`ANIM_MS`≈450ms), faz um **salto
+  instantâneo** (`transition: none`) para o slide real equivalente na mesma posição visual —
+  imperceptível. Estados: `index` (lógico), `pos` (slot do track), `instant` (desliga a
+  transição no salto), `busy` (bloqueia reentrância durante o assentamento). O **auto-advance
+  também dá a volta** (`go(1)`), pausado enquanto `busy`. `reduceMotion` → troca instantânea
+  (sem animação). Com 1 slide não há clones nem navegação.
 - **Paginador do banner**: fica **abaixo** do banner, centralizado, usando o **mesmo
   `SlidePager` da galeria de fotos**, no **modo numérico** (`forceCounter` → contador
   "atual / total" com as setas, sem bolinhas — como a galeria). Antes eram dois paginadores
