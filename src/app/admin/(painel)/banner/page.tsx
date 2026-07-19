@@ -35,6 +35,7 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
     subtitle: s.subtitle ?? "",
     ctaLabel: s.ctaLabel || s.cta || "Inscreva-se",
     ctaUrl: s.ctaUrl || "#inscricao",
+    ctaEnabled: s.ctaEnabled !== false,
     ctaAlign: s.ctaAlign === "right" ? "right" : "left",
     ctaVariant: s.ctaVariant === "transparent" ? "transparent" : "solid",
     videoControls: s.videoControls,
@@ -352,51 +353,65 @@ function BannerForm({
                       onChange={(e) => setSlide(i, { title: e.target.value })}
                     />
                   </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <FieldLabel>Texto do botão</FieldLabel>
-                      <TextInput
-                        value={sl.ctaLabel}
-                        onChange={(e) => setSlide(i, { ctaLabel: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel>Destino do botão</FieldLabel>
-                      <TextInput
-                        value={sl.ctaUrl}
-                        onChange={(e) => setSlide(i, { ctaUrl: e.target.value })}
-                        placeholder="#inscricao"
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel>Posição do botão</FieldLabel>
-                      <Select
-                        value={sl.ctaAlign === "right" ? "right" : "left"}
-                        onChange={(e) =>
-                          setSlide(i, {
-                            ctaAlign: e.target.value as "left" | "right",
-                          })
-                        }
-                      >
-                        <option value="left">Esquerda</option>
-                        <option value="right">Direita</option>
-                      </Select>
-                    </div>
-                    <div>
-                      <FieldLabel>Estilo do botão</FieldLabel>
-                      <Select
-                        value={sl.ctaVariant === "transparent" ? "transparent" : "solid"}
-                        onChange={(e) =>
-                          setSlide(i, {
-                            ctaVariant: e.target.value as "solid" | "transparent",
-                          })
-                        }
-                      >
-                        <option value="solid">Colorido (dourado sólido)</option>
-                        <option value="transparent">Transparente (dourado translúcido)</option>
-                      </Select>
-                    </div>
+                  <div>
+                    <FieldLabel>Exibir botão no slide?</FieldLabel>
+                    <Select
+                      value={sl.ctaEnabled === false ? "nao" : "sim"}
+                      onChange={(e) =>
+                        setSlide(i, { ctaEnabled: e.target.value === "sim" })
+                      }
+                    >
+                      <option value="sim">Sim, mostrar botão</option>
+                      <option value="nao">Não, sem botão</option>
+                    </Select>
                   </div>
+                  {sl.ctaEnabled !== false && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <FieldLabel>Texto do botão</FieldLabel>
+                        <TextInput
+                          value={sl.ctaLabel}
+                          onChange={(e) => setSlide(i, { ctaLabel: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <FieldLabel>Destino do botão</FieldLabel>
+                        <TextInput
+                          value={sl.ctaUrl}
+                          onChange={(e) => setSlide(i, { ctaUrl: e.target.value })}
+                          placeholder="#inscricao"
+                        />
+                      </div>
+                      <div>
+                        <FieldLabel>Posição do botão</FieldLabel>
+                        <Select
+                          value={sl.ctaAlign === "right" ? "right" : "left"}
+                          onChange={(e) =>
+                            setSlide(i, {
+                              ctaAlign: e.target.value as "left" | "right",
+                            })
+                          }
+                        >
+                          <option value="left">Esquerda</option>
+                          <option value="right">Direita</option>
+                        </Select>
+                      </div>
+                      <div>
+                        <FieldLabel>Estilo do botão</FieldLabel>
+                        <Select
+                          value={sl.ctaVariant === "transparent" ? "transparent" : "solid"}
+                          onChange={(e) =>
+                            setSlide(i, {
+                              ctaVariant: e.target.value as "solid" | "transparent",
+                            })
+                          }
+                        >
+                          <option value="solid">Colorido (dourado sólido)</option>
+                          <option value="transparent">Transparente (dourado translúcido)</option>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

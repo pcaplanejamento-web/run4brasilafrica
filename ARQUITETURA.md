@@ -153,7 +153,8 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`ctaLabel`→`ctaUrl`, `_blank` se for URL externa). Auto-advance
   (`slideDurationSeconds`, reinicia ao escolher um slide) respeitando reduce-motion.
   Fallback de slides legados: `title||text`, `ctaLabel||cta`.
-- **Botão do banner (por slide)**: `ctaAlign` (`"left"` padrão | `"right"`) escolhe o lado —
+- **Botão do banner (por slide)**: `ctaEnabled` (padrão `true`; `false` esconde o botão neste
+  slide — útil para um banner só de imagem/anúncio). `ctaAlign` (`"left"` padrão | `"right"`) escolhe o lado —
   o CTA fica num flex com `justify-start`/`justify-end`, então pode desviar do ponto de
   interesse da foto. `ctaVariant` escolhe o estilo, ambos com o mesmo recorte (`clip-cta-lg`)
   do design: `"solid"` (dourado preenchido, padrão) ou `"transparent"` (dourado translúcido
@@ -196,8 +197,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`imageMobile`) — e um bloco **"Pré-visualização e enquadramento"** com duas caixas na mesma
   proporção do site (16:9 e 3:4) usando o **mesmo `HeroMedia`**; cada caixa é um `FocusPicker`:
   clicar/tocar define o **ponto focal** (`getBoundingClientRect` → x%/y%, com marcador
-  cruzeta), guardado por breakpoint. Ainda por slide: **"Posição do botão"**
-  (Esquerda/Direita → `ctaAlign`) e **"Estilo do botão"** (Colorido/Transparente →
+  cruzeta), guardado por breakpoint. Ainda por slide: **"Exibir botão no slide?"**
+  (Sim/Não → `ctaEnabled`; quando "Não", os campos do botão ficam ocultos), **"Posição do
+  botão"** (Esquerda/Direita → `ctaAlign`) e **"Estilo do botão"** (Colorido/Transparente →
   `ctaVariant`). Para **Vídeo**: link do YouTube + "iniciar com som" + controles/legendas. Configurações gerais (duração, reduce-motion) e o grupo **"Seção A
   Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som, controles/legendas,
   proporção). Salva `{ hero, about }`.

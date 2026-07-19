@@ -44,6 +44,8 @@ export interface HeroSlide {
   subtitle?: string;
   ctaLabel: string;
   ctaUrl: string;
+  /** Whether the CTA button shows on this slide. Default true (undefined = shown). */
+  ctaEnabled?: boolean;
   /** Which side of the banner the CTA button sits on. Default "left". */
   ctaAlign?: "left" | "right";
   /** CTA style: "solid" = filled gold (default), "transparent" = translucent

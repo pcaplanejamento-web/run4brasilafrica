@@ -98,18 +98,21 @@ export default function Hero({ hero }: { hero: HeroType }) {
             {title(slide)}
           </h1>
 
-          {/* CTA side is per-slide (ctaAlign), so it can dodge the artwork. */}
-          <div className={`mt-7 flex md:mt-8 ${ctaRight ? "justify-end" : "justify-start"}`}>
-            <CtaButton
-              key={`cta-${i}`}
-              href={url}
-              size="lg"
-              variant={slide.ctaVariant === "transparent" ? "transparent" : "solid"}
-              className={fade}
-            >
-              {ctaLabel(slide)}
-            </CtaButton>
-          </div>
+          {/* CTA is optional per-slide (ctaEnabled) and its side is per-slide
+              (ctaAlign), so it can be hidden or dodge the artwork. */}
+          {slide.ctaEnabled !== false && (
+            <div className={`mt-7 flex md:mt-8 ${ctaRight ? "justify-end" : "justify-start"}`}>
+              <CtaButton
+                key={`cta-${i}`}
+                href={url}
+                size="lg"
+                variant={slide.ctaVariant === "transparent" ? "transparent" : "solid"}
+                className={fade}
+              >
+                {ctaLabel(slide)}
+              </CtaButton>
+            </div>
+          )}
         </div>
       </section>
 
