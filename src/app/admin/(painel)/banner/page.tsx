@@ -35,6 +35,8 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
     subtitle: s.subtitle ?? "",
     ctaLabel: s.ctaLabel || s.cta || "Inscreva-se",
     ctaUrl: s.ctaUrl || "#inscricao",
+    ctaAlign: s.ctaAlign === "right" ? "right" : "left",
+    ctaVariant: s.ctaVariant === "transparent" ? "transparent" : "solid",
     videoControls: s.videoControls,
     videoCaptions: s.videoCaptions,
   };
@@ -365,6 +367,34 @@ function BannerForm({
                         onChange={(e) => setSlide(i, { ctaUrl: e.target.value })}
                         placeholder="#inscricao"
                       />
+                    </div>
+                    <div>
+                      <FieldLabel>Posição do botão</FieldLabel>
+                      <Select
+                        value={sl.ctaAlign === "right" ? "right" : "left"}
+                        onChange={(e) =>
+                          setSlide(i, {
+                            ctaAlign: e.target.value as "left" | "right",
+                          })
+                        }
+                      >
+                        <option value="left">Esquerda</option>
+                        <option value="right">Direita</option>
+                      </Select>
+                    </div>
+                    <div>
+                      <FieldLabel>Estilo do botão</FieldLabel>
+                      <Select
+                        value={sl.ctaVariant === "transparent" ? "transparent" : "solid"}
+                        onChange={(e) =>
+                          setSlide(i, {
+                            ctaVariant: e.target.value as "solid" | "transparent",
+                          })
+                        }
+                      >
+                        <option value="solid">Colorido (dourado sólido)</option>
+                        <option value="transparent">Transparente (dourado translúcido)</option>
+                      </Select>
                     </div>
                   </div>
                 </div>

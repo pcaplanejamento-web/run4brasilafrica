@@ -146,11 +146,25 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   ativo (1 player por vez, destruído na troca). A caixa do banner tem **proporção por
   breakpoint**: `aspect-[3/4]` (retrato 3:4) no mobile e `md:aspect-video` (16:9) no desktop,
   limitada a `max-h-[92vh]`. Cada slide tem sua mídia: `mediaType:"image"` → `HeroMedia`;
-  `mediaType:"video"` → `YouTubePlayer` (cover) com o `videoStartMuted` do slide. Sobre a
-  mídia: selo (`subtitle`), título (`title`) e botão (`ctaLabel`→`ctaUrl`, `_blank` se for URL
-  externa). Indicadores clicáveis; auto-advance (`slideDurationSeconds`, reinicia ao escolher
-  um slide) respeitando reduce-motion. Fallback de slides legados: `title||text`,
-  `ctaLabel||cta`.
+  `mediaType:"video"` → `YouTubePlayer` (cover) com o `videoStartMuted` do slide.
+  **Banner limpo**: a arte aparece inteira na proporção definida — o recorte diagonal
+  (`clip-hero`) foi removido e **nada externo fica por cima**; só os componentes do próprio
+  banner ficam sobre a mídia: selo (`subtitle`), título (`title`) e botão
+  (`ctaLabel`→`ctaUrl`, `_blank` se for URL externa). Auto-advance
+  (`slideDurationSeconds`, reinicia ao escolher um slide) respeitando reduce-motion.
+  Fallback de slides legados: `title||text`, `ctaLabel||cta`.
+- **Botão do banner (por slide)**: `ctaAlign` (`"left"` padrão | `"right"`) escolhe o lado —
+  o CTA fica num flex com `justify-start`/`justify-end`, então pode desviar do ponto de
+  interesse da foto. `ctaVariant` escolhe o estilo, ambos com o mesmo recorte (`clip-cta-lg`)
+  do design: `"solid"` (dourado preenchido, padrão) ou `"transparent"` (dourado translúcido
+  `bg-gold/25` + `backdrop-blur`, texto dourado). O `CtaButton` recebe isso via prop
+  `variant` — **sem borda**, porque `clip-path` cortaria uma borda/inset-shadow nas arestas
+  diagonais; a silhueta recortada é que define a forma.
+- **Paginador do banner**: fica **abaixo** do banner, centralizado, usando o **mesmo
+  `SlidePager` e a mesma configuração da galeria de fotos** (`tone="solid"`,
+  `className="mt-5 w-full flex-wrap …"`). Antes eram dois paginadores `tone="overlay"` por
+  cima da mídia (um no mobile, um no canto inferior direito do desktop) — foram removidos
+  para o banner não ter nada sobreposto. Com 1 slide o `SlidePager` retorna `null`.
 - **`HeroMedia`** (`components/site/HeroMedia.tsx`, **sem `"use client"`, sem hooks** — serve
   tanto o site público quanto a pré-visualização do ADM, garantindo que sejam idênticos) —
   renderiza a mídia **imagem** de um slide. Cada slide guarda **duas imagens**: `image`
@@ -182,8 +196,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`imageMobile`) — e um bloco **"Pré-visualização e enquadramento"** com duas caixas na mesma
   proporção do site (16:9 e 3:4) usando o **mesmo `HeroMedia`**; cada caixa é um `FocusPicker`:
   clicar/tocar define o **ponto focal** (`getBoundingClientRect` → x%/y%, com marcador
-  cruzeta), guardado por breakpoint. Para **Vídeo**: link do YouTube + "iniciar com som" +
-  controles/legendas. Configurações gerais (duração, reduce-motion) e o grupo **"Seção A
+  cruzeta), guardado por breakpoint. Ainda por slide: **"Posição do botão"**
+  (Esquerda/Direita → `ctaAlign`) e **"Estilo do botão"** (Colorido/Transparente →
+  `ctaVariant`). Para **Vídeo**: link do YouTube + "iniciar com som" + controles/legendas. Configurações gerais (duração, reduce-motion) e o grupo **"Seção A
   Causa"** (textos, botão, mídia foto/vídeo, exibição autoplay|clique, som, controles/legendas,
   proporção). Salva `{ hero, about }`.
 
@@ -237,7 +252,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   linha única no mobile) com data + hora da corrida e contagem regressiva ao vivo; quando a
   data **já passou**, mostra **"Evento realizado"** (idem em `RaceDay`).
 - **Números em destaque** (`content.stats`): editor próprio em **/admin/numeros** (item
-  `numeros` no `ADM_NAV`; a seção `stats` do dashboard aponta para lá).
+  `numeros` no `ADM_NAV`; a seção `stats` do dashboard aponta para lá). O `StatsBar` fica em
+  **fluxo normal, abaixo** da seção anterior (`pt-12 md:pt-14`): ele já foi puxado por cima do
+  banner com margem negativa (`-mt-10`), o que cobria a arte — a sobreposição foi removida
+  para o banner aparecer inteiro. Sem números cadastrados o componente não renderiza nada.
 - **SEO**: `EventJsonLd` injeta **schema.org/SportsEvent** (nome, data da corrida, local,
   oferta de inscrição) no HTML — o Google entende a corrida como evento.
 - **CTA do header** (`SiteNav`): o botão adapta o texto ao lote ativo via `loteCtaLabel` —

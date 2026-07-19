@@ -50,88 +50,82 @@ export default function Hero({ hero }: { hero: HeroType }) {
   const url = ctaUrl(slide);
   const fade = reduced ? "" : "r4ba-fade";
 
+  const ctaRight = slide.ctaAlign === "right";
+
   return (
-    <section
-      id="top"
-      className="clip-hero relative aspect-[3/4] max-h-[92vh] w-full overflow-hidden md:aspect-video"
-      style={{ background: "var(--color-ink)" }}
-    >
-      {/* Media (one at a time). Video fills the box; images use the configured
-          desktop (16:9) / mobile (3:4) art + focal point via HeroMedia. */}
-      {slide.mediaType === "video" && ytId ? (
-        <YouTubePlayer
-          key={`yt-${slide.id}-${ytId}`}
-          videoId={ytId}
-          startMuted={slide.videoStartMuted !== false}
-          vertical={isVerticalYouTube(slide.videoUrl)}
-          showControls={!!slide.videoControls}
-          showCaptions={!!slide.videoCaptions}
-        />
-      ) : (
-        <HeroMedia key={`media-${slide.id}`} slide={slide} variant="responsive" />
-      )}
-
-      {/* Legibility overlay */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: "linear-gradient(0deg, rgba(10,8,6,.85), transparent 55%)" }}
-      />
-
-      <div className="absolute inset-x-5 bottom-12 sm:inset-x-8 md:inset-x-14 md:bottom-[90px]">
-        {slide.subtitle && (
-          <div
-            key={`sub-${i}`}
-            className={`mb-5 inline-block bg-gold px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-gold-ink md:mb-[22px] md:text-[13px] ${fade}`}
-          >
-            {slide.subtitle}
-          </div>
-        )}
-
-        <h1
-          key={`title-${i}`}
-          className={`max-w-[960px] font-display text-[44px] font-bold uppercase leading-[0.98] sm:text-[60px] md:text-[88px] ${fade}`}
-        >
-          {title(slide)}
-        </h1>
-
-        <div className="mt-7 md:mt-8">
-          <CtaButton key={`cta-${i}`} href={url} size="lg" className={fade}>
-            {ctaLabel(slide)}
-          </CtaButton>
-        </div>
-
-        {/* Mobile: pager isolated, centered, right below the button. */}
-        {slides.length > 1 && (
-          <div className="mt-7 flex justify-center md:hidden">
-            <SlidePager
-              count={slides.length}
-              current={i}
-              onGo={go}
-              onSelect={setIndex}
-              tone="overlay"
-              prevLabel="Slide anterior"
-              nextLabel="Próximo slide"
-              dotLabel={(k) => `Ir para o slide ${k + 1}`}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Desktop: pager floats at the bottom-right of the banner. */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-[90px] right-14 z-10 hidden md:flex">
-          <SlidePager
-            count={slides.length}
-            current={i}
-            onGo={go}
-            onSelect={setIndex}
-            tone="overlay"
-            prevLabel="Slide anterior"
-            nextLabel="Próximo slide"
-            dotLabel={(k) => `Ir para o slide ${k + 1}`}
+    <div>
+      <section
+        id="top"
+        className="relative aspect-[3/4] max-h-[92vh] w-full overflow-hidden md:aspect-video"
+        style={{ background: "var(--color-ink)" }}
+      >
+        {/* Media (one at a time). Video fills the box; images use the configured
+            desktop (16:9) / mobile (3:4) art + focal point via HeroMedia. */}
+        {slide.mediaType === "video" && ytId ? (
+          <YouTubePlayer
+            key={`yt-${slide.id}-${ytId}`}
+            videoId={ytId}
+            startMuted={slide.videoStartMuted !== false}
+            vertical={isVerticalYouTube(slide.videoUrl)}
+            showControls={!!slide.videoControls}
+            showCaptions={!!slide.videoCaptions}
           />
+        ) : (
+          <HeroMedia key={`media-${slide.id}`} slide={slide} variant="responsive" />
+        )}
+
+        {/* Legibility overlay */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(0deg, rgba(10,8,6,.85), transparent 55%)" }}
+        />
+
+        {/* Only the banner's own content sits on top of the media. */}
+        <div className="absolute inset-x-5 bottom-8 sm:inset-x-8 md:inset-x-14 md:bottom-12">
+          {slide.subtitle && (
+            <div
+              key={`sub-${i}`}
+              className={`mb-5 inline-block bg-gold px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.08em] text-gold-ink md:mb-[22px] md:text-[13px] ${fade}`}
+            >
+              {slide.subtitle}
+            </div>
+          )}
+
+          <h1
+            key={`title-${i}`}
+            className={`max-w-[960px] font-display text-[44px] font-bold uppercase leading-[0.98] sm:text-[60px] md:text-[88px] ${fade}`}
+          >
+            {title(slide)}
+          </h1>
+
+          {/* CTA side is per-slide (ctaAlign), so it can dodge the artwork. */}
+          <div className={`mt-7 flex md:mt-8 ${ctaRight ? "justify-end" : "justify-start"}`}>
+            <CtaButton
+              key={`cta-${i}`}
+              href={url}
+              size="lg"
+              variant={slide.ctaVariant === "transparent" ? "transparent" : "solid"}
+              className={fade}
+            >
+              {ctaLabel(slide)}
+            </CtaButton>
+          </div>
         </div>
-      )}
-    </section>
+      </section>
+
+      {/* Pager lives BELOW the banner — same component and same setup as the
+          photo gallery — so nothing covers the 16:9 / 3:4 artwork. */}
+      <SlidePager
+        count={slides.length}
+        current={i}
+        onGo={go}
+        onSelect={setIndex}
+        tone="solid"
+        prevLabel="Slide anterior"
+        nextLabel="Próximo slide"
+        dotLabel={(k) => `Ir para o slide ${k + 1}`}
+        className="mt-5 w-full flex-wrap px-5 sm:px-8 md:px-14"
+      />
+    </div>
   );
 }

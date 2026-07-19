@@ -44,6 +44,11 @@ export interface HeroSlide {
   subtitle?: string;
   ctaLabel: string;
   ctaUrl: string;
+  /** Which side of the banner the CTA button sits on. Default "left". */
+  ctaAlign?: "left" | "right";
+  /** CTA style: "solid" = filled gold (default), "transparent" = translucent
+   *  gold over the media (same design language, lighter weight). */
+  ctaVariant?: "solid" | "transparent";
   /** Show the YouTube control bar (play/pause, fullscreen, share, logo). */
   videoControls?: boolean;
   /** Force closed captions on. */

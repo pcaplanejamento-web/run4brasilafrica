@@ -97,9 +97,6 @@ body {
 .clip-cta-lg {
   clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%);
 }
-.clip-hero {
-  clip-path: polygon(0 0, 100% 0, 100% 92%, 0 100%);
-}
 
 /* Image protection: deter drag/select/save; hide protected media when printing */
 img {
