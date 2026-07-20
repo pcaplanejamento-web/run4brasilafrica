@@ -51,9 +51,12 @@ export default function Hero({ hero }: { hero: HeroType }) {
     );
   }, [hero.reduceMotion]);
 
-  // Keep index/pos valid if the slide count changes (ADM edit).
+  // If the slide count changes, reset to the first slide with a consistent
+  // position (keeps the invariant pos === index + 1) and drop any in-flight
+  // settle timeout so a stale callback can't land on an out-of-range pos.
   useEffect(() => {
-    setIndex((i) => Math.min(i, Math.max(0, n - 1)));
+    if (timer.current) clearTimeout(timer.current);
+    setIndex(0);
     setPos(n > 1 ? 1 : 0);
     setInstant(false);
     setBusy(false);
@@ -98,17 +101,18 @@ export default function Hero({ hero }: { hero: HeroType }) {
     }, ANIM_MS + 30);
   };
 
+  const drag = useDragTrack({ enabled: multi && !busy, onGo: go });
+
   // Auto-advance (loops). Restarts on index change so a manual pick isn't
-  // overridden; paused while a settle animation is running.
+  // overridden; paused while a settle animation runs OR the user is dragging
+  // (so it can't fire mid-swipe and desync the track).
   useEffect(() => {
-    if (!multi || reduced || busy) return;
+    if (!multi || reduced || busy || drag.dragging) return;
     const ms = Math.max(2, hero.slideDurationSeconds || 6) * 1000;
     const id = setTimeout(() => go(1), ms);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, multi, reduced, busy, hero.slideDurationSeconds]);
-
-  const drag = useDragTrack({ enabled: multi && !busy, onGo: go });
+  }, [index, multi, reduced, busy, drag.dragging, hero.slideDurationSeconds]);
 
   if (n === 0) return null;
 

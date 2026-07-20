@@ -71,6 +71,8 @@ export function defaultCarousel(list: HeroCarousel[]): HeroCarousel {
  * schedule beats an unscheduled non-default beats the default. Never null when
  * the list is non-empty.
  */
+const hasSlides = (c: HeroCarousel): boolean => (c.slides?.length ?? 0) > 0;
+
 export function activeCarousel(list: HeroCarousel[], now: number): HeroCarousel | null {
   if (!list.length) return null;
   const score = (c: HeroCarousel): number => {
@@ -81,7 +83,9 @@ export function activeCarousel(list: HeroCarousel[], now: number): HeroCarousel 
   let best: HeroCarousel | null = null;
   let bestScore = Number.NEGATIVE_INFINITY;
   for (const c of list) {
-    if (!c.isDefault && !inWindow(c, now)) continue;
+    // A scheduled carousel only takes over when it's in window AND has slides —
+    // an empty schedule must never blank out the (populated) default.
+    if (!c.isDefault && (!inWindow(c, now) || !hasSlides(c))) continue;
     const sc = score(c);
     if (best === null || sc >= bestScore) {
       best = c;
