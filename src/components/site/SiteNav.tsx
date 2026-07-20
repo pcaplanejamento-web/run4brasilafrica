@@ -114,10 +114,12 @@ export default function SiteNav({
         </button>
       </nav>
 
-      {/* Mobile dropdown */}
+      {/* Mobile dropdown. `max-h-[80vh] + overflow-y-auto` when open so it fits
+          any number of links (and scrolls if it ever exceeds the screen) instead
+          of clipping the last item; `max-h-0 overflow-hidden` drives the collapse. */}
       <div
-        className={`overflow-hidden border-t border-line bg-ink transition-[max-height] duration-300 ease-out lg:hidden ${
-          open ? "max-h-96" : "max-h-0"
+        className={`border-t border-line bg-ink transition-[max-height] duration-300 ease-out lg:hidden ${
+          open ? "max-h-[80vh] overflow-y-auto" : "max-h-0 overflow-hidden"
         }`}
       >
         <div className="flex flex-col px-5 py-2 sm:px-8">
