@@ -24,6 +24,7 @@ import {
   PageTitle,
   SaveBar,
   SectionLabel,
+  Select,
   TextArea,
   TextInput,
 } from "@/components/admin/ui";
@@ -82,6 +83,7 @@ function ConfiguracoesForm({
   const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
   const [privacy, setPrivacy] = useState<PrivacySection>(initialPrivacy);
   const [organizers, setOrganizers] = useState<OrganizersSection>({
+    enabled: initialOrganizers.enabled !== false,
     title: initialOrganizers.title ?? "",
     body: initialOrganizers.body ?? "",
     people: initialOrganizers.people ?? [],
@@ -392,6 +394,18 @@ function ConfiguracoesForm({
             rodapé. A foto de cada um leva ao perfil no Instagram.
           </p>
           <div className="flex flex-col gap-4">
+            <div>
+              <FieldLabel>Exibir &ldquo;Organizadores&rdquo; no rodapé?</FieldLabel>
+              <Select
+                value={organizers.enabled === false ? "nao" : "sim"}
+                onChange={(e) =>
+                  setOrganizers({ ...organizers, enabled: e.target.value === "sim" })
+                }
+              >
+                <option value="sim">Sim, exibir</option>
+                <option value="nao">Não, ocultar</option>
+              </Select>
+            </div>
             <div>
               <FieldLabel>Título da dedicatória</FieldLabel>
               <TextInput

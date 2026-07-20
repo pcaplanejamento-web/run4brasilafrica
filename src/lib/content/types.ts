@@ -263,6 +263,8 @@ export interface Organizer {
 /** "Organizadores" section — a dedication + the people, shown in a floating card
  *  opened from the footer link (URL hash `#organizadores`). */
 export interface OrganizersSection {
+  /** Show the "Organizadores" footer link + modal. Default on (undefined = on). */
+  enabled?: boolean;
   /** Dedication title. */
   title?: string;
   /** Dedication text (line breaks kept). */

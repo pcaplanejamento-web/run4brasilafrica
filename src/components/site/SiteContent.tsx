@@ -113,7 +113,11 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
             ))}
         </main>
       </AudioBusProvider>
-      <SiteFooter contact={c.contact} logo={c.branding?.logo} />
+      <SiteFooter
+        contact={c.contact}
+        logo={c.branding?.logo}
+        showOrganizers={c.organizers?.enabled !== false}
+      />
       <WhatsAppFloat contact={c.contact} />
       <PrivacyModal privacy={c.privacy} />
       <OrganizersModal organizers={c.organizers} />

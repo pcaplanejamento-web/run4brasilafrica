@@ -217,6 +217,7 @@ Em caso de dúvidas jurídicas, consulte um advogado antes de usar este texto co
   ],
 
   organizers: {
+    enabled: true,
     title: "Organizadores",
     body: "Com gratidão a quem faz o Run4BrasilAfrica acontecer.",
     people: [],

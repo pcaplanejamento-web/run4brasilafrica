@@ -63,7 +63,8 @@ export default function OrganizersModal({
     };
   }, [open, close]);
 
-  if (!open) return null;
+  // Disabled in ADM → never opens (even from an old #organizadores link).
+  if (!open || organizers?.enabled === false) return null;
 
   const title = organizers?.title?.trim() || "Organizadores";
   const body = organizers?.body?.trim() || "";

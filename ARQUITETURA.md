@@ -618,8 +618,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ## Organizadores (banner flutuante no rodapé)
 
-- **Modelo** `content.organizers` = `{ title, body, people: Organizer[] }`; cada
-  `Organizer` = `{ name, username?, instagram?, photo? }`.
+- **Modelo** `content.organizers` = `{ enabled?, title, body, people: Organizer[] }`; cada
+  `Organizer` = `{ name, username?, instagram?, photo? }`. `enabled` (padrão on) liga/desliga o
+  link no rodapé e o modal (com `enabled:false`, o link some e o modal não abre nem via hash).
 - **`OrganizersModal`** (`components/site/OrganizersModal.tsx`, client): mesmo padrão do
   `PrivacyModal` — abre **sem sair da página** quando a URL fica com `#organizadores` (o link
   **"Organizadores"** no rodapé é só `href="#organizadores"`). Mostra a dedicatória (título +
@@ -627,9 +628,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   **@usuário do Instagram** abaixo do nome); **clicar na foto abre o perfil no Instagram**
   (`instaHref` aceita @handle, handle puro ou URL). Fecha no X / backdrop / Esc, trava o scroll,
   responsivo. Renderizado uma vez no `SiteContent`.
-- **ADM** em **Configurações**: card "Organizadores" — título e texto da dedicatória + lista de
-  pessoas (foto via `ImageUpload`, nome, usuário do Instagram, link do Instagram,
-  adicionar/remover). Salva `organizers`.
+- **ADM** em **Configurações**: card "Organizadores" — **"Exibir Organizadores no rodapé?"**
+  (Sim/Não → `enabled`), título e texto da dedicatória + lista de pessoas (foto via
+  `ImageUpload`, nome, usuário do Instagram, link do Instagram, adicionar/remover). Salva
+  `organizers`.
 
 ## Cache da home (ISR) e o Error 1102
 

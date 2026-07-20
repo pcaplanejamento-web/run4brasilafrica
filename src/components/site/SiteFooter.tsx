@@ -10,9 +10,12 @@ function ext(url?: string) {
 export default function SiteFooter({
   contact,
   logo,
+  showOrganizers = true,
 }: {
   contact: ContactLinks;
   logo?: string;
+  /** Show the "Organizadores" link (opens the floating card). */
+  showOrganizers?: boolean;
 }) {
   const socials = [
     { label: "Instagram", href: ext(contact.instagram) },
@@ -51,12 +54,14 @@ export default function SiteFooter({
 
       <div className="flex flex-wrap items-center gap-4">
         <span className="text-[12px] opacity-60">{contact.copyright}</span>
-        <a
-          href="#organizadores"
-          className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"
-        >
-          Organizadores
-        </a>
+        {showOrganizers && (
+          <a
+            href="#organizadores"
+            className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"
+          >
+            Organizadores
+          </a>
+        )}
         <a
           href="#privacidade"
           className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"
