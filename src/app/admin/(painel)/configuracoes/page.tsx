@@ -105,7 +105,7 @@ function ConfiguracoesForm({
   function addOrg() {
     setOrganizers((o) => ({
       ...o,
-      people: [...(o.people ?? []), { name: "Novo organizador", username: "", instagram: "" }],
+      people: [...(o.people ?? []), { name: "Novo organizador", username: "" }],
     }));
   }
 
@@ -446,19 +446,13 @@ function ConfiguracoesForm({
                       />
                     </div>
                     <div>
-                      <FieldLabel>Usuário do Instagram (aparece abaixo do nome)</FieldLabel>
+                      <FieldLabel>
+                        Usuário do Instagram (aparece abaixo do nome e leva ao perfil ao clicar na foto)
+                      </FieldLabel>
                       <TextInput
                         value={p.username ?? ""}
                         onChange={(e) => setOrg(i, { username: e.target.value })}
                         placeholder="@fulano"
-                      />
-                    </div>
-                    <div>
-                      <FieldLabel>Link do Instagram (destino ao clicar na foto)</FieldLabel>
-                      <TextInput
-                        value={p.instagram ?? ""}
-                        onChange={(e) => setOrg(i, { instagram: e.target.value })}
-                        placeholder="@fulano ou instagram.com/fulano"
                       />
                     </div>
                     <div>

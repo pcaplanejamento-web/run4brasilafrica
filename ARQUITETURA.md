@@ -625,13 +625,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `PrivacyModal` — abre **sem sair da página** quando a URL fica com `#organizadores` (o link
   **"Organizadores"** no rodapé é só `href="#organizadores"`). Mostra a dedicatória (título +
   texto) e uma **grade no estilo dos cards de Parceiros** (foto quadrada, nome abaixo e o
-  **@usuário do Instagram** abaixo do nome); **clicar na foto abre o perfil no Instagram**
-  (`instaHref` aceita @handle, handle puro ou URL). Fecha no X / backdrop / Esc, trava o scroll,
+  **@usuário do Instagram** abaixo do nome); **clicar na foto abre o perfil no Instagram**,
+  montado a partir do **próprio `username`** (`instaHref` aceita @handle/handle; `instagram`
+  legado é só fallback). Fecha no X / backdrop / Esc, trava o scroll,
   responsivo. Renderizado uma vez no `SiteContent`.
 - **ADM** em **Configurações**: card "Organizadores" — **"Exibir Organizadores no rodapé?"**
   (Sim/Não → `enabled`), título e texto da dedicatória + lista de pessoas (foto via
-  `ImageUpload`, nome, usuário do Instagram, link do Instagram, adicionar/remover). Salva
-  `organizers`.
+  `ImageUpload`, nome e **usuário do Instagram** — que também é o destino ao clicar na foto;
+  adicionar/remover). Salva `organizers`.
 
 ## Cache da home (ISR) e o Error 1102
 

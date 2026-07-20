@@ -110,7 +110,9 @@ export default function OrganizersModal({
           {people.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4">
               {people.map((p, i) => {
-                const href = instaHref(p.instagram);
+                // The Instagram redirect is built from the username (legacy
+                // `instagram` link kept only as a fallback for old data).
+                const href = instaHref(p.username || p.instagram);
                 const handle = atHandle(p.username, p.instagram);
                 const inner = (
                   <>

@@ -253,9 +253,10 @@ export interface Sponsor {
 /** One person in the "Organizadores" floating card. */
 export interface Organizer {
   name: string;
-  /** Instagram username/handle (shown under the name, e.g. "@fulano"). */
+  /** Instagram username/handle: shown under the name AND used to build the
+   *  profile link the photo opens (e.g. "@fulano"). */
   username?: string;
-  /** Instagram profile link (@handle, bare handle, or full URL). Photo links here. */
+  /** Legacy — old explicit Instagram link; read only as a fallback for `username`. */
   instagram?: string;
   photo?: string;
 }
