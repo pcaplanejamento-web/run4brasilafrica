@@ -1,91 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-
-/**
- * Downscale + re-encode an image in the browser before upload, to cut file size
- * (lighter site, faster mobile). Exports **WebP** so logo transparency is kept
- * (JPEG would fill it black). SVG/GIF are left untouched (vector/animated), and
- * if compression doesn't actually shrink the file the original is used.
- */
-async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise<File> {
-  if (
-    !file.type.startsWith("image/") ||
-    file.type === "image/svg+xml" ||
-    file.type === "image/gif"
-  ) {
-    return file;
-  }
-  try {
-    const bitmap = await createImageBitmap(file);
-    let { width, height } = bitmap;
-    const scale = Math.min(1, maxDim / Math.max(width, height));
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close?.();
-    const blob = await new Promise<Blob | null>((res) =>
-      canvas.toBlob(res, "image/webp", quality),
-    );
-    if (!blob || blob.size >= file.size) return file; // no real gain
-    const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
-    return new File([blob], name, { type: "image/webp" });
-  } catch {
-    return file; // any failure → upload the original untouched
-  }
-}
-
-/* Inline icons (no text labels on the controls). */
-const svg = "h-[18px] w-[18px]";
-const stroke = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 2,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
-function UploadIcon({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} {...stroke} aria-hidden="true">
-      <path d="M12 15V4" />
-      <path d="m7 9 5-5 5 5" />
-      <path d="M4 20h16" />
-    </svg>
-  );
-}
-function SwapIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className={svg} {...stroke} aria-hidden="true">
-      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-      <path d="M21 3v5h-5" />
-      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-      <path d="M3 21v-5h5" />
-    </svg>
-  );
-}
-function TrashIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className={svg} {...stroke} aria-hidden="true">
-      <path d="M3 6h18" />
-      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-      <path d="M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-    </svg>
-  );
-}
-function SpinnerIcon({ className = "h-6 w-6" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={`animate-spin ${className}`} {...stroke} aria-hidden="true">
-      <path d="M21 12a9 9 0 1 1-6.2-8.5" />
-    </svg>
-  );
-}
+import { uploadMedia } from "@/lib/uploadMedia";
+import {
+  SpinnerIcon,
+  SwapIcon,
+  TrashIcon,
+  UploadIcon,
+  iconSm as svg,
+} from "./mediaIcons";
 
 interface ImageUploadProps {
   value?: string;
@@ -123,49 +46,15 @@ export default function ImageUpload({
   async function handleFile(rawFile: File) {
     setError(null);
     setBusy(true);
-    try {
-      // Images are compressed client-side first; videos upload as-is.
-      const file = video ? rawFile : await compressImage(rawFile);
-
-      // Cloudinary path (unsigned, direct from the browser) when configured.
-      if (cloudinary?.cloudName && cloudinary?.uploadPreset) {
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("upload_preset", cloudinary.uploadPreset);
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudinary.cloudName}/${video ? "video" : "image"}/upload`,
-          { method: "POST", body: fd },
-        );
-        const data = (await res.json()) as {
-          secure_url?: string;
-          error?: { message?: string };
-        };
-        if (data.secure_url) {
-          onChange(data.secure_url);
-        } else {
-          setError(data.error?.message ?? "Falha no upload (Cloudinary).");
-        }
-        return;
-      }
-
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/media", { method: "POST", body: fd });
-      const data = (await res.json()) as { ok: boolean; url?: string; code?: string; error?: string };
-      if (data.code === "not_configured") {
-        setError("Upload disponível apenas no site publicado.");
-        return;
-      }
-      if (!data.ok || !data.url) {
-        setError(data.error ?? "Falha no upload.");
-        return;
-      }
-      onChange(data.url);
-    } catch {
-      setError("Falha de conexão no upload.");
-    } finally {
-      setBusy(false);
+    const r = await uploadMedia(rawFile, { video, cloudinary });
+    if (r.code === "not_configured") {
+      setError("Upload disponível apenas no site publicado.");
+    } else if (r.url) {
+      onChange(r.url);
+    } else {
+      setError(r.error ?? "Falha no upload.");
     }
+    setBusy(false);
   }
 
   return (

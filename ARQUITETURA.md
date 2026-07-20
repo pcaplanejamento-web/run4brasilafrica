@@ -123,7 +123,8 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   ≤ 8 MB) e **vídeo** (MP4/WebM/MOV, ≤ 25 MB — limite do KV). Devolve `{ url }`.
 - **Servir**: `GET /api/media/[key]` com cache imutável e **suporte a Range**
   (206) para tocar/seek de vídeo. `DELETE` remove (admin).
-- Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload.
+- Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload; a lógica de
+  compressão/envio vive em `lib/uploadMedia.ts` (reusada por `ImageUpload` e `HeroImageField`).
 - Campos no conteúdo: mídia por slide (`hero.slides[].image`), mídia da seção A Causa
   (`about.image`), `sponsors[].logo`, `galleryPhotos[]`. O público mostra as fotos reais
   quando existem; senão, o placeholder.
@@ -238,11 +239,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   (`pointer-events:auto`) e o botão de som próprio é ocultado.
 - **ADM** (`/admin/banner`): editor de slides (tipo Foto|Vídeo, selo/título/botão/destino,
   reordenar/remover; normaliza slides legados no load — incluindo `imageMobile`, `focusX/Y`,
-  `focusXm/Ym`). Para **Foto**: dois uploads — **desktop (16:9)** (`image`) e **mobile (3:4)**
-  (`imageMobile`) — e um bloco **"Pré-visualização e enquadramento"** com duas caixas na mesma
-  proporção do site (16:9 e 3:4) usando o **mesmo `HeroMedia`**; cada caixa é um `FocusPicker`:
-  clicar/tocar define o **ponto focal** (`getBoundingClientRect` → x%/y%, com marcador
-  cruzeta), guardado por breakpoint. Ainda por slide: **"Exibir botão no slide?"**
+  `focusXm/Ym`). Para **Foto**: duas caixas **`HeroImageField`** (desktop 16:9 e mobile 3:4)
+  que **unificam importar + reimportar + excluir + enquadrar** num só componente, na proporção
+  real do site: mostram a foto exatamente como aparece (via `HeroMedia`, sem corte), com botões
+  de trocar/remover no canto; **clicar/tocar na imagem** define o **ponto focal**
+  (`getBoundingClientRect` → x%/y%, marcador cruzeta), guardado por breakpoint. Sem foto, a caixa
+  vira um botão de envio. A lógica de upload (compressão WebP + Cloudinary/KV) fica em
+  **`lib/uploadMedia.ts`** e os ícones em **`components/admin/mediaIcons.tsx`**, ambos reusados
+  também pelo `ImageUpload` (sem duplicação). Ainda por slide: **"Exibir botão no slide?"**
   (Sim/Não → `ctaEnabled`; quando "Não", os campos do botão ficam ocultos e aparece **"Link ao
   clicar no banner (opcional)"** → `slideLink`, que torna o banner inteiro clicável), **"Posição
   do botão"** (Esquerda/Direita → `ctaAlign`) e **"Estilo do botão"** (Colorido/Transparente →
