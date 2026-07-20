@@ -130,6 +130,27 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ## Hero: carrossel com mídia por slide + seção "A Causa"
 
+- **Múltiplos carrosséis agendados** (`content.heroCarousels: HeroCarousel[]`, cada um é um
+  `Hero` + `{ id, name, startAt?, endAt?, isDefault? }`): **só um aparece por vez**, escolhido
+  por data/hora em **`lib/content/carousels.ts`**. `activeCarousel(list, now)`: o **padrão**
+  (`isDefault`, perpétuo, sem datas) é sempre elegível (nunca fica vazio); um **agendado** só
+  vai ao ar entre `startAt` e `endAt` (sem `startAt` não aparece; sem `endAt` = perpétuo a
+  partir do início); entre os elegíveis vence o de **início mais recente** (a "troca" de um
+  pelo outro). `carouselsOf(content)` normaliza a lista garantindo **exatamente um padrão** e,
+  por compatibilidade, quando `heroCarousels` está ausente sintetiza um único padrão a partir
+  do `content.hero` legado (nada quebra). `nextBoundary` dá o próximo instante de troca.
+  **`HeroCarousels`** (`components/site/HeroCarousels.tsx`, client) escolhe o ativo **no
+  cliente** (exato, troca sozinho no horário via `setTimeout` até o próximo boundary — sem
+  reload/lag); `initialId` é o palpite do servidor (1ª pintura = SSR, sem flash) e o cliente
+  reconcilia no mount; `<Hero key={id}>` remonta limpo na troca. O `SiteContent` (servidor)
+  monta `<HeroCarousels>` no slot `hero`. O preload em `layout.tsx` usa `content.hero`
+  (espelho do padrão). O ADM salva `heroCarousels` + espelha o padrão em `hero`.
+- **ADM** (`/admin/banner`): card **"Carrosséis do banner"** — seletor do carrossel em edição
+  + "Novo carrossel"; por carrossel: nome, **"Entra no ar em"**/**"Sai do ar em"**
+  (`datetime-local`), "Tornar padrão (perpétuo)" e "Remover" (o padrão não some nem pode ser
+  removido; sempre resta ≥1). Os slides e as configurações gerais editados abaixo são do
+  **carrossel selecionado**.
+
 - **`YouTubePlayer`** (`components/site/YouTubePlayer.tsx`, client) — player reutilizável
   via **YouTube IFrame API**. Autoplay sempre mudo (regra do navegador); botão de som
   (mute/unMute) por ser gesto do usuário; `startMuted=false` liga o som na 1ª interação

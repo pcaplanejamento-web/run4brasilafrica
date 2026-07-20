@@ -2,7 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useContent } from "@/lib/content/store";
-import type { AboutSection, Hero, HeroSlide, MediaType } from "@/lib/content/types";
+import type {
+  AboutSection,
+  HeroCarousel,
+  HeroSlide,
+  MediaType,
+} from "@/lib/content/types";
+import { carouselsOf, defaultCarousel, heroOf } from "@/lib/content/carousels";
 import HeroMedia from "@/components/site/HeroMedia";
 import {
   AdmLoading,
@@ -111,58 +117,98 @@ const ASPECT_OPTIONS = [
   { value: "21/9", label: "21:9 (cinema)" },
 ];
 
+function newSlide(): HeroSlide {
+  return {
+    id: `slide-${Date.now()}`,
+    mediaType: "image",
+    videoStartMuted: true,
+    title: "Novo slide",
+    subtitle: "",
+    ctaLabel: "Inscreva-se",
+    ctaUrl: "#inscricao",
+  };
+}
+
 function BannerForm({
-  initialHero,
+  initialCarousels,
   initialAbout,
   editionLabel,
   cloudinary,
 }: {
-  initialHero: Hero;
+  initialCarousels: HeroCarousel[];
   initialAbout: AboutSection;
   editionLabel: string;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save } = useContent();
-  const [hero, setHero] = useState<Hero>({
-    ...initialHero,
-    slides: (initialHero.slides ?? []).map(normalizeSlide),
-  });
+  const [carousels, setCarousels] = useState<HeroCarousel[]>(() =>
+    initialCarousels.map((c) => ({
+      ...c,
+      slides: (c.slides ?? []).map(normalizeSlide),
+    })),
+  );
+  const [selId, setSelId] = useState<string>(
+    () => (initialCarousels.find((c) => c.isDefault) ?? initialCarousels[0])?.id,
+  );
   const [about, setAbout] = useState<AboutSection>(initialAbout);
 
+  const sel = carousels.find((c) => c.id === selId) ?? carousels[0];
+
+  function patchSel(patch: Partial<HeroCarousel>) {
+    setCarousels((cs) => cs.map((c) => (c.id === sel.id ? { ...c, ...patch } : c)));
+  }
+
+  // ---- Slides of the SELECTED carousel ----
   function setSlide(i: number, patch: Partial<HeroSlide>) {
-    setHero((h) => ({
-      ...h,
-      slides: h.slides.map((s, idx) => (idx === i ? { ...s, ...patch } : s)),
-    }));
+    patchSel({ slides: sel.slides.map((s, idx) => (idx === i ? { ...s, ...patch } : s)) });
   }
   function move(i: number, dir: -1 | 1) {
-    setHero((h) => {
-      const next = [...h.slides];
-      const j = i + dir;
-      if (j < 0 || j >= next.length) return h;
-      [next[i], next[j]] = [next[j], next[i]];
-      return { ...h, slides: next };
-    });
+    const next = [...sel.slides];
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    patchSel({ slides: next });
   }
   function remove(i: number) {
-    setHero((h) => ({ ...h, slides: h.slides.filter((_, idx) => idx !== i) }));
+    patchSel({ slides: sel.slides.filter((_, idx) => idx !== i) });
   }
   function add() {
-    setHero((h) => ({
-      ...h,
-      slides: [
-        ...h.slides,
-        {
-          id: `slide-${Date.now()}`,
-          mediaType: "image",
-          videoStartMuted: true,
-          title: "Novo slide",
-          subtitle: "",
-          ctaLabel: "Inscreva-se",
-          ctaUrl: "#inscricao",
-        },
-      ],
-    }));
+    patchSel({ slides: [...sel.slides, newSlide()] });
+  }
+
+  // ---- Carousels (only one on air at a time; one perpetual default) ----
+  function addCarousel() {
+    const id = `carousel-${Date.now()}`;
+    const nc: HeroCarousel = {
+      id,
+      name: `Carrossel ${carousels.length + 1}`,
+      isDefault: false,
+      startAt: "",
+      endAt: "",
+      slides: [newSlide()],
+      slideDurationSeconds: 6,
+      reduceMotion: true,
+    };
+    setCarousels((cs) => [...cs, nc]);
+    setSelId(id);
+  }
+  function removeCarousel(id: string) {
+    const target = carousels.find((c) => c.id === id);
+    if (!target || target.isDefault || carousels.length <= 1) return;
+    setCarousels((cs) => cs.filter((c) => c.id !== id));
+    if (selId === id) {
+      setSelId((defaultCarousel(carousels) ?? carousels[0]).id);
+    }
+  }
+  function makeDefault(id: string) {
+    // Exactly one default; the default is perpetual (no schedule).
+    setCarousels((cs) =>
+      cs.map((c) =>
+        c.id === id
+          ? { ...c, isDefault: true, startAt: "", endAt: "" }
+          : { ...c, isDefault: false },
+      ),
+    );
   }
 
   return (
@@ -173,15 +219,95 @@ function BannerForm({
       </div>
 
       <Card dashed className="mb-7">
-        <SectionLabel>Slides do carrossel (use as setas para reordenar)</SectionLabel>
+        <SectionLabel>Carrosséis do banner</SectionLabel>
         <p className="-mt-2 mb-4 text-[12px] text-adm-muted">
-          Só os slides criados aqui aparecem no site. Cada slide tem sua própria
-          mídia (foto ou vídeo do YouTube), textos e botão. Sem slides, o banner
-          não é exibido.
+          Só um carrossel aparece por vez. O <strong>padrão</strong> é perpétuo
+          (fica sempre no ar como base — nunca deixa o banner vazio). Os
+          <strong> agendados</strong> entram no ar no dia/horário marcado e
+          substituem o que estava; ao sair (ou sem data de saída = perpétuo),
+          volta o padrão (ou outro agendado ativo).
+        </p>
+
+        <div className="mb-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-[220px] flex-1">
+            <FieldLabel>Carrossel em edição</FieldLabel>
+            <Select value={sel.id} onChange={(e) => setSelId(e.target.value)}>
+              {carousels.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.isDefault ? " · padrão (perpétuo)" : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <GhostButton onClick={addCarousel}>+ Novo carrossel</GhostButton>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 rounded-lg border border-adm-border bg-[#fbfbfa] p-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <FieldLabel>Nome do carrossel</FieldLabel>
+            <TextInput
+              value={sel.name}
+              onChange={(e) => patchSel({ name: e.target.value })}
+              placeholder="Ex.: Campanha de lançamento"
+            />
+          </div>
+
+          {sel.isDefault ? (
+            <div className="sm:col-span-2 rounded border border-[#cfe3d4] bg-[#f3faf4] px-3 py-2.5 text-[12px] text-[#2f7a45]">
+              Este é o <strong>carrossel padrão (perpétuo)</strong>: fica no ar
+              sempre que nenhum agendado estiver ativo. Não tem datas e não pode
+              ser removido.
+            </div>
+          ) : (
+            <>
+              <div>
+                <FieldLabel>Entra no ar em</FieldLabel>
+                <TextInput
+                  type="datetime-local"
+                  value={sel.startAt ?? ""}
+                  onChange={(e) => patchSel({ startAt: e.target.value })}
+                />
+                <p className="mt-1 text-[11px] text-adm-muted">
+                  Obrigatório: sem data de entrada, o carrossel não vai ao ar.
+                </p>
+              </div>
+              <div>
+                <FieldLabel>Sai do ar em</FieldLabel>
+                <TextInput
+                  type="datetime-local"
+                  value={sel.endAt ?? ""}
+                  onChange={(e) => patchSel({ endAt: e.target.value })}
+                />
+                <p className="mt-1 text-[11px] text-adm-muted">
+                  Vazio = fica no ar por tempo indeterminado (perpétuo).
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:col-span-2">
+                <GhostButton onClick={() => makeDefault(sel.id)}>
+                  Tornar padrão (perpétuo)
+                </GhostButton>
+                <GhostButton onClick={() => removeCarousel(sel.id)}>
+                  Remover carrossel
+                </GhostButton>
+              </div>
+            </>
+          )}
+        </div>
+      </Card>
+
+      <Card dashed className="mb-7">
+        <SectionLabel>
+          Slides do carrossel «{sel.name}» (use as setas para reordenar)
+        </SectionLabel>
+        <p className="-mt-2 mb-4 text-[12px] text-adm-muted">
+          Estes slides são do carrossel selecionado acima. Só os slides criados
+          aqui aparecem no site. Cada slide tem sua própria mídia (foto ou vídeo
+          do YouTube), textos e botão. Sem slides, o carrossel não é exibido.
         </p>
 
         <div className="flex flex-col gap-4">
-          {hero.slides.map((sl, i) => (
+          {sel.slides.map((sl, i) => (
             <div
               key={sl.id}
               className="rounded-lg border border-[#e2e2dc] bg-[#fbfbfa] p-4"
@@ -196,7 +322,7 @@ function BannerForm({
                   </GhostButton>
                   <GhostButton
                     onClick={() => move(i, 1)}
-                    disabled={i === hero.slides.length - 1}
+                    disabled={i === sel.slides.length - 1}
                   >
                     ↓
                   </GhostButton>
@@ -447,22 +573,17 @@ function BannerForm({
               type="number"
               min={2}
               max={30}
-              value={hero.slideDurationSeconds}
+              value={sel.slideDurationSeconds}
               onChange={(e) =>
-                setHero({
-                  ...hero,
-                  slideDurationSeconds: Number(e.target.value) || 0,
-                })
+                patchSel({ slideDurationSeconds: Number(e.target.value) || 0 })
               }
             />
           </div>
           <div>
             <FieldLabel>Reduzir movimento (acessibilidade)</FieldLabel>
             <Select
-              value={hero.reduceMotion ? "sim" : "nao"}
-              onChange={(e) =>
-                setHero({ ...hero, reduceMotion: e.target.value === "sim" })
-              }
+              value={sel.reduceMotion ? "sim" : "nao"}
+              onChange={(e) => patchSel({ reduceMotion: e.target.value === "sim" })}
             >
               <option value="sim">Respeitar preferência do usuário</option>
               <option value="nao">Sempre animar</option>
@@ -647,7 +768,18 @@ function BannerForm({
       </Card>
 
       <SaveBar
-        onSave={() => save({ hero, about }, "Atualizou o banner / hero e a seção A Causa")}
+        onSave={() =>
+          save(
+            {
+              heroCarousels: carousels,
+              // Mirror the default carousel into `hero` for the image preload and
+              // legacy readers.
+              hero: heroOf(defaultCarousel(carousels)),
+              about,
+            },
+            "Atualizou os carrosséis do banner e a seção A Causa",
+          )
+        }
       />
     </>
   );
@@ -658,7 +790,7 @@ export default function BannerPage() {
   if (!hydrated) return <AdmLoading />;
   return (
     <BannerForm
-      initialHero={content.hero}
+      initialCarousels={carouselsOf(content)}
       initialAbout={content.about}
       editionLabel={`${content.event.brandName} ${content.event.editionYear}`}
       cloudinary={content.cloudinary}

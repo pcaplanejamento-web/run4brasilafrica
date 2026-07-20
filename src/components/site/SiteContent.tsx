@@ -1,8 +1,9 @@
 import { Fragment, type ReactNode } from "react";
 import type { SiteContent as SiteContentType } from "@/lib/content/types";
-import { resolveLayout } from "@/lib/content/sections";
+import { resolveLayout, customKey } from "@/lib/content/sections";
+import { carouselsOf, activeCarousel } from "@/lib/content/carousels";
 import SiteNav from "./SiteNav";
-import Hero from "./Hero";
+import HeroCarousels from "./HeroCarousels";
 import StatsBar from "./StatsBar";
 import Sobre from "./Sobre";
 import Playlist from "./Playlist";
@@ -23,6 +24,7 @@ import Faq from "./Faq";
 import KitAtleta from "./KitAtleta";
 import Premiacao from "./Premiacao";
 import ShareEvent from "./ShareEvent";
+import CustomSectionView from "./CustomSectionView";
 import SiteFooter from "./SiteFooter";
 import PrivacyModal from "./PrivacyModal";
 
@@ -38,13 +40,23 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   // gallery reload). `force-dynamic` means every page load is already fresh.
   const c = initial;
 
-  const layout = resolveLayout(c.layout);
+  const customSections = c.customSections ?? [];
+  const layout = resolveLayout(
+    c.layout,
+    customSections.map((s) => s.id),
+  );
   // The "Seja um parceiro" CTA only works when its target section is enabled.
   const sejaAtiva = layout.some((li) => li.key === "sejaParceiro" && li.enabled);
 
+  // Banner: pick the carousel on air now (server pick for the first paint; the
+  // client re-evaluates live). `carouselsOf` guarantees a non-empty list with one
+  // perpetual default, so the banner is never empty.
+  const carousels = carouselsOf(c);
+  const initialCarousel = activeCarousel(carousels, Date.now()) ?? carousels[0];
+
   // Each homepage section keyed so the ADM dashboard can reorder / toggle them.
   const rendered: Record<string, ReactNode> = {
-    hero: <Hero hero={c.hero} />,
+    hero: <HeroCarousels carousels={carousels} initialId={initialCarousel.id} />,
     stats: <StatsBar stats={c.stats ?? []} />,
     about: <Sobre about={c.about} />,
     playlist: <Playlist playlist={c.playlist} />,
@@ -75,6 +87,10 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     premiacao: <Premiacao premiacao={c.premiacao} />,
     compartilhar: <ShareEvent share={c.share} event={c.event} />,
   };
+  // Custom "abas" built in the ADM, keyed as `custom:<id>`.
+  for (const cs of customSections) {
+    rendered[customKey(cs.id)] = <CustomSectionView section={cs} />;
+  }
 
   return (
     <>

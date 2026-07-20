@@ -77,6 +77,23 @@ export interface Hero {
   youtubeUrl?: string;
 }
 
+/**
+ * A scheduled banner/hero carousel. Several may exist but only ONE is on air at
+ * a time, chosen by date/time (`src/lib/content/carousels.ts`):
+ *  - `startAt` — when it goes live (empty = eligible from the start);
+ *  - `endAt` — when it leaves the air (empty = perpetual/no end);
+ *  - `isDefault` — the perpetual fallback that ignores the schedule and is always
+ *    eligible, so the banner is never empty. Exactly one carousel is the default.
+ * It extends `Hero`, so the public `<Hero>` renders a carousel unchanged.
+ */
+export interface HeroCarousel extends Hero {
+  id: string;
+  name: string;
+  startAt?: string; // datetime-local
+  endAt?: string; // datetime-local
+  isDefault?: boolean;
+}
+
 export interface Stat {
   value: string;
   label: string;
@@ -472,6 +489,10 @@ export interface SiteContent {
   /** Homepage section order + on/off (ADM dashboard). */
   layout: LayoutItem[];
   hero: Hero;
+  /** Multiple scheduled banner carousels (only one on air at a time). When
+   *  absent/empty the single `hero` above is used as the sole default carousel
+   *  (legacy). See `src/lib/content/carousels.ts`. */
+  heroCarousels?: HeroCarousel[];
   stats: Stat[];
   about: AboutSection;
   playlist: PlaylistSection;
