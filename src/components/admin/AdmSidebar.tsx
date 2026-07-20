@@ -5,7 +5,12 @@ import { usePathname } from "next/navigation";
 import { ADM_NAV, type AdmNavItem } from "./nav";
 import { useAuth } from "./AuthProvider";
 import { useContent } from "@/lib/content/store";
-import { resolveLayout, sectionMeta } from "@/lib/content/sections";
+import {
+  customIdFromKey,
+  isCustomKey,
+  resolveLayout,
+  sectionMeta,
+} from "@/lib/content/sections";
 
 function NavLink({
   item,
@@ -48,16 +53,33 @@ export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) 
   const dashboard = byHref("/admin/dashboard");
 
   // Section tabs in the dashboard's component order (deduped by ADM page, since
-  // a few sections share one page — e.g. Hero + A Causa → Banner).
-  const sectionHrefs: string[] = [];
-  for (const li of resolveLayout(content.layout)) {
-    const meta = sectionMeta(li.key);
-    if (meta && !sectionHrefs.includes(meta.href)) sectionHrefs.push(meta.href);
+  // a few sections share one page — e.g. Hero + A Causa → Banner). Custom "abas"
+  // are interleaved at their layout position, each linking to its own config page.
+  const customSections = content.customSections ?? [];
+  const sectionItems: AdmNavItem[] = [];
+  const seenHref = new Set<string>();
+  for (const li of resolveLayout(
+    content.layout,
+    customSections.map((s) => s.id),
+  )) {
+    if (isCustomKey(li.key)) {
+      const id = customIdFromKey(li.key);
+      const cs = customSections.find((s) => s.id === id);
+      if (!cs) continue;
+      const href = `/admin/custom/${id}`;
+      if (seenHref.has(href)) continue;
+      seenHref.add(href);
+      sectionItems.push({ key: li.key, label: cs.title?.trim() || "Aba sem título", href });
+    } else {
+      const meta = sectionMeta(li.key);
+      if (!meta || seenHref.has(meta.href)) continue;
+      const navItem = byHref(meta.href);
+      if (!navItem) continue;
+      seenHref.add(meta.href);
+      sectionItems.push(navItem);
+    }
   }
-  const sectionItems = sectionHrefs
-    .map(byHref)
-    .filter((n): n is AdmNavItem => !!n);
-  const sectionHrefSet = new Set(sectionItems.map((n) => n.href));
+  const sectionHrefSet = seenHref;
 
   // Everything else (not a home section, not the dashboard) sits at the bottom;
   // "Usuários" (administrator) goes last, just above the account block.
@@ -70,7 +92,7 @@ export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) 
   ];
 
   return (
-    <div className="flex h-full min-h-full w-[240px] flex-col bg-adm-sidebar py-7 text-[#ddd]">
+    <div className="flex min-h-full w-[240px] flex-col bg-adm-sidebar py-7 text-[#ddd]">
       <Link
         href="/admin/dashboard"
         onClick={onNavigate}
