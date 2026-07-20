@@ -166,6 +166,8 @@ export const seedContent: SiteContent = {
     subtitle: "Chame a galera para correr por uma causa maior.",
   },
 
+  customSections: [],
+
   privacy: {
     title: "Política de Privacidade",
     body: `Esta política explica como o Run4BrasilAfrica trata os dados pessoais informados no site, em conformidade com a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).
@@ -213,6 +215,12 @@ Em caso de dúvidas jurídicas, consulte um advogado antes de usar este texto co
     { name: "Café Raízes", tier: "Bronze", link: "cafeaizes.com.br", linkKind: "site" },
     { name: "Estúdio Aro", tier: "Bronze", link: "estudioaro.com", linkKind: "site" },
   ],
+
+  organizers: {
+    title: "Organizadores",
+    body: "Com gratidão a quem faz o Run4BrasilAfrica acontecer.",
+    people: [],
+  },
 
   sponsorsShowTier: false,
 

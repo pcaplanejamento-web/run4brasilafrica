@@ -616,6 +616,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   obrigatório** com link para a política. `created_at` de cada registro serve de data do
   consentimento.
 
+## Organizadores (banner flutuante no rodapé)
+
+- **Modelo** `content.organizers` = `{ title, body, people: Organizer[] }`; cada
+  `Organizer` = `{ name, username?, instagram?, photo? }`.
+- **`OrganizersModal`** (`components/site/OrganizersModal.tsx`, client): mesmo padrão do
+  `PrivacyModal` — abre **sem sair da página** quando a URL fica com `#organizadores` (o link
+  **"Organizadores"** no rodapé é só `href="#organizadores"`). Mostra a dedicatória (título +
+  texto) e uma **grade no estilo dos cards de Parceiros** (foto quadrada, nome abaixo e o
+  **@usuário do Instagram** abaixo do nome); **clicar na foto abre o perfil no Instagram**
+  (`instaHref` aceita @handle, handle puro ou URL). Fecha no X / backdrop / Esc, trava o scroll,
+  responsivo. Renderizado uma vez no `SiteContent`.
+- **ADM** em **Configurações**: card "Organizadores" — título e texto da dedicatória + lista de
+  pessoas (foto via `ImageUpload`, nome, usuário do Instagram, link do Instagram,
+  adicionar/remover). Salva `organizers`.
+
 ## Cache da home (ISR) e o Error 1102
 
 - **Problema:** a home era `force-dynamic` — SSR completo a cada requisição. Em cold start (comum

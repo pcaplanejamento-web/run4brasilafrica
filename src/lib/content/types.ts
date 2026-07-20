@@ -250,6 +250,26 @@ export interface Sponsor {
   logo?: string;
 }
 
+/** One person in the "Organizadores" floating card. */
+export interface Organizer {
+  name: string;
+  /** Instagram username/handle (shown under the name, e.g. "@fulano"). */
+  username?: string;
+  /** Instagram profile link (@handle, bare handle, or full URL). Photo links here. */
+  instagram?: string;
+  photo?: string;
+}
+
+/** "Organizadores" section — a dedication + the people, shown in a floating card
+ *  opened from the footer link (URL hash `#organizadores`). */
+export interface OrganizersSection {
+  /** Dedication title. */
+  title?: string;
+  /** Dedication text (line breaks kept). */
+  body?: string;
+  people?: Organizer[];
+}
+
 export interface GalleryPhoto {
   url: string;
   album: string;
@@ -506,6 +526,8 @@ export interface SiteContent {
   cloudinary: Cloudinary;
   analytics: Analytics;
   sponsors: Sponsor[];
+  /** Organizers shown in the footer's floating "Organizadores" card. */
+  organizers?: OrganizersSection;
   /** Show the tier badge (Ouro/Prata/Bronze) on the public partners grid. */
   sponsorsShowTier?: boolean;
   /** Optional caption shown under the "Parceiros" section title. */

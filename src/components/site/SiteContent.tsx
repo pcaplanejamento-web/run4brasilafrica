@@ -27,6 +27,7 @@ import ShareEvent from "./ShareEvent";
 import CustomSectionView from "./CustomSectionView";
 import SiteFooter from "./SiteFooter";
 import PrivacyModal from "./PrivacyModal";
+import OrganizersModal from "./OrganizersModal";
 
 /**
  * Renders the public site from the LIVE content already read on the server
@@ -115,6 +116,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
       <SiteFooter contact={c.contact} logo={c.branding?.logo} />
       <WhatsAppFloat contact={c.contact} />
       <PrivacyModal privacy={c.privacy} />
+      <OrganizersModal organizers={c.organizers} />
     </>
   );
 }

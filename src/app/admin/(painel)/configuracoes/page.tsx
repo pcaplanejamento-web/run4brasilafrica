@@ -10,6 +10,8 @@ import type {
   EventInfo,
   Hero,
   Metrics,
+  Organizer,
+  OrganizersSection,
   PrivacySection,
   ThemeColors,
 } from "@/lib/content/types";
@@ -56,6 +58,8 @@ function ConfiguracoesForm({
   initialCloudinary,
   initialAnalytics,
   initialPrivacy,
+  initialOrganizers,
+  cloudinaryUpload,
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
@@ -65,6 +69,8 @@ function ConfiguracoesForm({
   initialCloudinary: Cloudinary;
   initialAnalytics: Analytics;
   initialPrivacy: PrivacySection;
+  initialOrganizers: OrganizersSection;
+  cloudinaryUpload?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
@@ -75,6 +81,31 @@ function ConfiguracoesForm({
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
   const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
   const [privacy, setPrivacy] = useState<PrivacySection>(initialPrivacy);
+  const [organizers, setOrganizers] = useState<OrganizersSection>({
+    title: initialOrganizers.title ?? "",
+    body: initialOrganizers.body ?? "",
+    people: initialOrganizers.people ?? [],
+  });
+
+  const orgPeople = organizers.people ?? [];
+  function setOrg(i: number, patch: Partial<Organizer>) {
+    setOrganizers((o) => ({
+      ...o,
+      people: (o.people ?? []).map((p, idx) => (idx === i ? { ...p, ...patch } : p)),
+    }));
+  }
+  function removeOrg(i: number) {
+    setOrganizers((o) => ({
+      ...o,
+      people: (o.people ?? []).filter((_, idx) => idx !== i),
+    }));
+  }
+  function addOrg() {
+    setOrganizers((o) => ({
+      ...o,
+      people: [...(o.people ?? []), { name: "Novo organizador", username: "", instagram: "" }],
+    }));
+  }
 
   const b = BACKEND_LABEL[backend];
 
@@ -353,6 +384,83 @@ function ConfiguracoesForm({
           </p>
         </Card>
 
+        {/* Organizadores (footer floating card) */}
+        <Card>
+          <SectionLabel>Organizadores</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Abre num banner flutuante ao clicar em &ldquo;Organizadores&rdquo; no
+            rodapé. A foto de cada um leva ao perfil no Instagram.
+          </p>
+          <div className="flex flex-col gap-4">
+            <div>
+              <FieldLabel>Título da dedicatória</FieldLabel>
+              <TextInput
+                value={organizers.title ?? ""}
+                onChange={(e) => setOrganizers({ ...organizers, title: e.target.value })}
+                placeholder="Organizadores"
+              />
+            </div>
+            <div>
+              <FieldLabel>Texto da dedicatória</FieldLabel>
+              <TextArea
+                value={organizers.body ?? ""}
+                onChange={(e) => setOrganizers({ ...organizers, body: e.target.value })}
+                rows={4}
+              />
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {orgPeople.map((p, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-1 gap-3 rounded-lg border border-adm-border bg-[#fbfbfa] p-4 sm:grid-cols-[110px_1fr]"
+                >
+                  <ImageUpload
+                    value={p.photo}
+                    onChange={(url) => setOrg(i, { photo: url })}
+                    className="aspect-square w-full bg-white"
+                    fit="cover"
+                    label="foto"
+                    cloudinary={cloudinaryUpload}
+                  />
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <FieldLabel>Nome</FieldLabel>
+                      <TextInput
+                        value={p.name}
+                        onChange={(e) => setOrg(i, { name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Usuário do Instagram (aparece abaixo do nome)</FieldLabel>
+                      <TextInput
+                        value={p.username ?? ""}
+                        onChange={(e) => setOrg(i, { username: e.target.value })}
+                        placeholder="@fulano"
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Link do Instagram (destino ao clicar na foto)</FieldLabel>
+                      <TextInput
+                        value={p.instagram ?? ""}
+                        onChange={(e) => setOrg(i, { instagram: e.target.value })}
+                        placeholder="@fulano ou instagram.com/fulano"
+                      />
+                    </div>
+                    <div>
+                      <GhostButton onClick={() => removeOrg(i)}>Remover</GhostButton>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <GhostButton onClick={addOrg} className="self-start">
+              + Adicionar organizador
+            </GhostButton>
+          </div>
+        </Card>
+
         {/* Privacidade (LGPD) */}
         <Card>
           <SectionLabel>Política de privacidade</SectionLabel>
@@ -402,7 +510,17 @@ function ConfiguracoesForm({
         <SaveBar
           onSave={() =>
             save(
-              { event, hero, metrics, branding, theme, cloudinary, analytics, privacy },
+              {
+                event,
+                hero,
+                metrics,
+                branding,
+                theme,
+                cloudinary,
+                analytics,
+                privacy,
+                organizers,
+              },
               "Atualizou configurações do evento",
             )
           }
@@ -425,6 +543,8 @@ export default function ConfiguracoesPage() {
       initialCloudinary={content.cloudinary ?? {}}
       initialAnalytics={content.analytics ?? {}}
       initialPrivacy={content.privacy ?? {}}
+      initialOrganizers={content.organizers ?? {}}
+      cloudinaryUpload={content.cloudinary}
     />
   );
 }
