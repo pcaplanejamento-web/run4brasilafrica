@@ -23,9 +23,22 @@ function Wordmark({ className = "" }: { className?: string }) {
   );
 }
 
-export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[] }) {
+export default function SiteNav({
+  logo,
+  lotes,
+  showOrganizers = false,
+}: {
+  logo?: string;
+  lotes?: Lote[];
+  /** Add the "Organizadores" entry (opens the floating card via #organizadores). */
+  showOrganizers?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(0);
+
+  const links = showOrganizers
+    ? [...LINKS, { href: "#organizadores", label: "Organizadores" }]
+    : LINKS;
 
   // Lock body scroll while the mobile menu is open.
   useEffect(() => {
@@ -59,17 +72,21 @@ export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[]
 
         {/* Desktop links */}
         <div className="hidden items-center gap-8 text-[14px] uppercase tracking-[0.04em] text-muted lg:flex">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <a key={l.href} href={l.href} className="transition-colors hover:text-cream">
               {l.label}
             </a>
           ))}
         </div>
 
-        {/* Desktop CTA (adapts to the active lote) — standard CtaButton */}
-        <CtaButton href={cta.url} size="sm" className="hidden lg:inline-block">
-          {cta.label}
-        </CtaButton>
+        {/* Desktop CTA (adapts to the active lote). Wrapped so it's reliably
+            hidden below lg — putting `hidden` straight on CtaButton loses to its
+            own `inline-block` base class in the CSS cascade. */}
+        <div className="hidden lg:block">
+          <CtaButton href={cta.url} size="sm">
+            {cta.label}
+          </CtaButton>
+        </div>
 
         {/* Mobile menu button */}
         <button
@@ -104,7 +121,7 @@ export default function SiteNav({ logo, lotes }: { logo?: string; lotes?: Lote[]
         }`}
       >
         <div className="flex flex-col px-5 py-2 sm:px-8">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <a
               key={l.href}
               href={l.href}

@@ -101,7 +101,11 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         Pular para o conteúdo
       </a>
       <div className="sticky top-0 z-30">
-        <SiteNav logo={c.branding?.logo} lotes={c.lotes ?? []} />
+        <SiteNav
+          logo={c.branding?.logo}
+          lotes={c.lotes ?? []}
+          showOrganizers={c.organizers?.enabled !== false}
+        />
         <RaceCountdownBar inscricao={c.inscricao} />
       </div>
       <AudioBusProvider>

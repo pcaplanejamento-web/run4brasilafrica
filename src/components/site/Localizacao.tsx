@@ -54,7 +54,9 @@ export default async function Localizacao({ location }: { location?: LocationSec
 
       <div className={`mt-8 grid grid-cols-1 gap-8 ${hasText ? "md:grid-cols-2 md:items-center" : ""}`}>
         {hasMap && (
-          <div className="overflow-hidden rounded-2xl border border-line-soft bg-ink-panel">
+          // `isolate` confines the map's internal z-indexes (Leaflet panes/
+          // controls go up to ~1000) so they can't paint over the sticky header.
+          <div className="isolate overflow-hidden rounded-2xl border border-line-soft bg-ink-panel">
             {isGoogleEmbed ? (
               <iframe
                 src={link}

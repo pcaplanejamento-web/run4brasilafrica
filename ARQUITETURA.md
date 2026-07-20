@@ -312,6 +312,11 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   para o banner aparecer inteiro. Sem números cadastrados o componente não renderiza nada.
 - **SEO**: `EventJsonLd` injeta **schema.org/SportsEvent** (nome, data da corrida, local,
   oferta de inscrição) no HTML — o Google entende a corrida como evento.
+- **Header (`SiteNav`)**: logo + links (Sobre, Percurso, Galeria, Parceiros, FAQ e, quando
+  `organizers.enabled`, **Organizadores** → `#organizadores`) + CTA. No **mobile** os links viram
+  um menu sanfona (botão hambúrguer). O CTA de desktop fica num wrapper **`hidden lg:block`** —
+  pôr `hidden` direto no `CtaButton` perde para o `inline-block` da base dele no cascade do
+  Tailwind, o que fazia o CTA vazar no mobile e **empurrar o botão do menu para fora da tela**.
 - **CTA do header** (`SiteNav`): o botão adapta o texto ao lote ativo via `loteCtaLabel` —
   "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou "Inscrições encerradas".
 - **`WhatsAppFloat`** (canto inferior direito): botão flutuante que abre `wa.me/<número>`;
@@ -585,6 +590,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   ADM colar uma URL de **incorporação** real do Google (`/maps/embed?pb=…`), ela vira um iframe;
   um **link de compartilhamento** (`maps.app.goo.gl/…`) — que o Google recusa embutir — vira o
   destino do botão "Como chegar". Auto-oculta sem endereço/local. ADM em **/admin/localizacao**.
+  A caixa do mapa usa **`isolate`** (novo contexto de empilhamento) para **conter os z-index
+  internos do Leaflet** (panes/controles chegam a ~1000) — sem isso o mapa passava por cima do
+  header sticky (`z-30`) ao rolar.
 - **"Adicionar à agenda" (.ics)**: rota **`/api/agenda`** monta um `VEVENT` do conteúdo ao vivo
   (`inscricao.raceDate`, hora local −03:00 → UTC; nome/local do evento), servido como
   `text/calendar` (download `run4brasilafrica.ics`). Botão na faixa **Dia da Corrida**.
