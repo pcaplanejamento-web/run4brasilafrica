@@ -175,6 +175,9 @@ export default function YouTubePlayer({
           fs: showControls ? 1 : 0,
           cc_load_policy: showCaptions ? 1 : 0,
           iv_load_policy: 3,
+          // Casa a origem esperada pela IFrame API com a nossa — reduz os avisos
+          // "postMessage target origin does not match" do www-widgetapi do YouTube.
+          origin: window.location.origin,
         },
         events: {
           onReady: (e: { target: YTPlayer }) => {
