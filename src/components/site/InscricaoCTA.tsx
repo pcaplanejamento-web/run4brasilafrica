@@ -49,9 +49,11 @@ function DateRange({ l }: { l: Lote }) {
 export default function InscricaoCTA({
   inscricao,
   lotes,
+  title,
 }: {
   inscricao: Inscricao;
   lotes: Lote[];
+  title?: string;
 }) {
   const [now, setNow] = useState(0);
   const ready = now > 0; // 0 on SSR/first render → no hydration mismatch
@@ -68,9 +70,11 @@ export default function InscricaoCTA({
   if (sorted.length === 0) {
     return (
       <section id="inscricao" className="px-5 py-14 sm:px-8 md:px-14 md:py-20">
-        <SectionEyebrow as="h2" className="mb-8">
-          Inscrições e Lotes
-        </SectionEyebrow>
+        {title?.trim() && (
+          <SectionEyebrow as="h2" className="mb-8">
+            {title}
+          </SectionEyebrow>
+        )}
         <div className="flex flex-col items-start gap-6 bg-gold p-6 text-gold-ink md:flex-row md:items-center md:justify-between md:p-10">
           <div>
             <div className="font-display text-[30px] font-bold uppercase md:text-[36px]">
@@ -103,9 +107,11 @@ export default function InscricaoCTA({
 
   return (
     <section id="inscricao" className="px-5 py-14 sm:px-8 md:px-14 md:py-20">
-      <SectionEyebrow as="h2" className="mb-8">
-        Inscrições e Lotes
-      </SectionEyebrow>
+      {title?.trim() && (
+        <SectionEyebrow as="h2" className="mb-8">
+          {title}
+        </SectionEyebrow>
+      )}
       <div
         className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-10"
         style={{ background: active.colorBg, color: active.colorText }}

@@ -301,7 +301,7 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
     key: "inscricao",
     id: "sec-inscricao",
     kind: "inscricao",
-    title: (c) => c.inscricao?.title?.trim() || "Inscrição",
+    title: () => "Inscrições e Lotes",
     hasContent: () => true,
     build: (c) => ({ inscricao: c.inscricao, lotes: c.lotes ?? [] }),
     fallbackAfter: "galeria",

@@ -53,8 +53,14 @@ export interface SectionRenderCtx {
 
 /** Renders a section block (each `SectionKind` is a `CustomBlockType`) by
  *  delegating to its existing site component. Global-backed types read from
- *  `ctx` (single source of truth); the rest use the block's inline data. */
-function renderSection(block: CustomBlock, ctx: SectionRenderCtx): ReactNode {
+ *  `ctx` (single source of truth); the rest use the block's inline data.
+ *  `title` (o "Título da aba") é o tópico exibido nas seções que o usam
+ *  (raceday/inscricao) — mesma lógica das abas multi-bloco. */
+function renderSection(
+  block: CustomBlock,
+  ctx: SectionRenderCtx,
+  title?: string,
+): ReactNode {
   switch (block.type) {
     case "stats":
       return <StatsBar stats={block.stats ?? []} />;
@@ -89,6 +95,7 @@ function renderSection(block: CustomBlock, ctx: SectionRenderCtx): ReactNode {
       return (
         <RaceDay
           inscricao={{ ...ctx.inscricao, raceDate: block.raceDate ?? ctx.inscricao.raceDate }}
+          title={title}
         />
       );
     case "inscricao":
@@ -96,6 +103,7 @@ function renderSection(block: CustomBlock, ctx: SectionRenderCtx): ReactNode {
         <InscricaoCTA
           inscricao={block.inscricao ?? ctx.inscricao}
           lotes={block.lotes ?? ctx.lotes}
+          title={title}
         />
       );
     case "galeria":
@@ -314,7 +322,9 @@ export default function CustomSectionView({
   // wrapper `<section id="aba-…">` nem eyebrow), preservando o markup, o padding
   // e o anchor (#faq, #parceiros, …) idênticos aos de hoje.
   if (blocks.length === 1 && isSectionKind(blocks[0].type)) {
-    return <>{renderSection(blocks[0], ctx)}</>;
+    // Passa o "Título da aba" como tópico (usado por raceday/inscricao) — mesma
+    // lógica do eyebrow das abas multi-bloco.
+    return <>{renderSection(blocks[0], ctx, section.title)}</>;
   }
 
   return (

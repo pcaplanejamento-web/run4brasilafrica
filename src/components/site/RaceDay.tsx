@@ -17,7 +17,13 @@ function fmtDate(iso: string): string {
  * Shown right before the registration (lotes) section; hidden until the race
  * date is set in ADM > Links & inscrição.
  */
-export default function RaceDay({ inscricao }: { inscricao: Inscricao }) {
+export default function RaceDay({
+  inscricao,
+  title,
+}: {
+  inscricao: Inscricao;
+  title?: string;
+}) {
   const date = inscricao.raceDate;
   const [past, setPast] = useState(false);
 
@@ -31,9 +37,11 @@ export default function RaceDay({ inscricao }: { inscricao: Inscricao }) {
 
   return (
     <section id="dia-da-corrida" className="px-5 pt-14 sm:px-8 md:px-14 md:pt-20">
-      <SectionEyebrow as="h2" className="mb-6">
-        Dia da Corrida
-      </SectionEyebrow>
+      {title?.trim() && (
+        <SectionEyebrow as="h2" className="mb-6">
+          {title}
+        </SectionEyebrow>
+      )}
       <Reveal>
         <div className="flex flex-col gap-6 rounded-lg bg-gold p-6 text-gold-ink md:flex-row md:items-center md:justify-between md:p-10">
           <div>
