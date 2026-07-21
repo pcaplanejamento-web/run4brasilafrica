@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { Inscricao, Lote } from "@/lib/content/types";
 import { sortLotesDesc, validateLotes } from "@/lib/content/lotes";
 import { uid } from "@/lib/uid";
@@ -23,9 +22,10 @@ const EMPTY_INSCRICAO: Inscricao = {
 };
 
 /**
- * Editor controlado de "Inscrições e Lotes", embutido no bloco `inscricao` da
- * aba. Edita a plataforma/URL padrão e os lotes (CRUD, datas, cores, 1 aberto).
- * `raceDate` (dono: bloco "Dia da Corrida") entra só para validar as datas.
+ * Editor **controlado** de "Inscrições e Lotes", embutido no bloco `inscricao`
+ * da aba: deriva de `value` a cada render (fonte única = o bloco no pai) e emite
+ * via `onChange`, como os demais editores de seção. `raceDate` (dono: bloco "Dia
+ * da Corrida") entra só para validar as datas.
  */
 export function InscricaoLotesEditor({
   value,
@@ -36,14 +36,11 @@ export function InscricaoLotesEditor({
   onChange: (v: { inscricao: Inscricao; lotes: Lote[] }) => void;
   raceDate?: string;
 }) {
-  const [inscricao, setInscricao] = useState<Inscricao>(value.inscricao ?? EMPTY_INSCRICAO);
-  const [lotes, setLotes] = useState<Lote[]>(value.lotes ?? []);
+  const inscricao = value.inscricao ?? EMPTY_INSCRICAO;
+  const lotes = value.lotes ?? [];
 
-  function emit(nextInscricao: Inscricao, nextLotes: Lote[]) {
-    setInscricao(nextInscricao);
-    setLotes(nextLotes);
+  const emit = (nextInscricao: Inscricao, nextLotes: Lote[]) =>
     onChange({ inscricao: nextInscricao, lotes: nextLotes });
-  }
   const setInsc = (patch: Partial<Inscricao>) => emit({ ...inscricao, ...patch }, lotes);
   const setLote = (i: number, patch: Partial<Lote>) =>
     emit(inscricao, lotes.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));

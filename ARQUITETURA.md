@@ -606,6 +606,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
   (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
   editor só aparece como fallback para blocos `secao` legados sem `kind`.
+- **Testes** (`tests/*.test.ts`, vitest): a lógica crítica tem cobertura unitária — `datetime`
+  (parser −03:00), `lotes` (status/ordem/ativo/validação/contagem), `carousels` (agendamento) e
+  `migrate` (flatten + backfill + espelho + posse do raceDate + idempotência), além de `sections`
+  (resolveLayout/abaAnchor) e `antispam`. 60 testes.
+- **Bloqueio de save de lotes**: o editor de aba (`custom/[id]`) desabilita o `SaveBar` quando
+  `validateLotes` acusa erro (sobreposição / abertura depois do encerramento / dia da corrida cedo
+  demais) — não grava configuração de inscrição quebrada. Editores de galeria/inscrição são
+  **totalmente controlados** (derivam de `value` a cada render), como os demais.
 - **Link de inscrição no SSR** (SEO / sem-JS): `SiteContent` passa `nowMs` (hora do servidor) no
   `SectionRenderCtx`; `InscricaoCTA` semeia o estado com esse valor (`initialNow`), então o HTML já
   renderiza o lote correto + o `<a>` de inscrição do lote aberto. Como é o **mesmo** valor no

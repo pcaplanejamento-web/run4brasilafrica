@@ -12,9 +12,10 @@ import {
 } from "@/components/admin/ui";
 
 /**
- * Editor controlado da Galeria (config + seções/álbuns), embutido no bloco
- * `galeria` da aba. As fotos são buscadas em runtime (Google Fotos/upload); aqui
- * edita-se apenas a configuração e os álbuns públicos.
+ * Editor **controlado** da Galeria (config + seções/álbuns), embutido no bloco
+ * `galeria` da aba: deriva de `value` a cada render (fonte única = o bloco no
+ * pai) e emite via `onChange`. O estado `test` (resultado do "testar link") é só
+ * de UI e fica local. As fotos são buscadas em runtime (Google Fotos/upload).
  */
 export function GalleryEditor({
   value,
@@ -23,16 +24,13 @@ export function GalleryEditor({
   value: { gallery?: GalleryConfig; albums?: Album[] };
   onChange: (v: { gallery: GalleryConfig; albums: Album[] }) => void;
 }) {
-  const [gallery, setGallery] = useState<GalleryConfig>(value.gallery ?? {});
-  const [albums, setAlbums] = useState<Album[]>(value.albums ?? []);
+  const gallery = value.gallery ?? {};
+  const albums = value.albums ?? [];
   const [test, setTest] = useState<Record<number, string>>({});
   const num = (v: number | undefined, fallback: number) => v ?? fallback;
 
-  function emit(nextGallery: GalleryConfig, nextAlbums: Album[]) {
-    setGallery(nextGallery);
-    setAlbums(nextAlbums);
+  const emit = (nextGallery: GalleryConfig, nextAlbums: Album[]) =>
     onChange({ gallery: nextGallery, albums: nextAlbums });
-  }
   const setCfg = (patch: Partial<GalleryConfig>) => emit({ ...gallery, ...patch }, albums);
   const setAlbum = (i: number, patch: Partial<Album>) =>
     emit(gallery, albums.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));

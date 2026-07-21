@@ -167,9 +167,15 @@ export function Badge({
 export function SaveBar({
   onSave,
   label = "Salvar alterações",
+  disabled = false,
+  blockedNote,
 }: {
   onSave: () => void;
   label?: string;
+  /** Bloqueia o save (ex.: validação com erros). */
+  disabled?: boolean;
+  /** Mensagem mostrada quando `disabled` por validação. */
+  blockedNote?: React.ReactNode;
 }) {
   const { status, error, localOnly } = useContent();
 
@@ -192,8 +198,12 @@ export function SaveBar({
 
   return (
     <div className="mt-6 flex items-center justify-end gap-3">
-      {note}
-      <PrimaryButton onClick={onSave} disabled={status === "saving"}>
+      {disabled && blockedNote ? (
+        <span className="text-[13px] font-semibold text-[#c0392b]">{blockedNote}</span>
+      ) : (
+        note
+      )}
+      <PrimaryButton onClick={onSave} disabled={status === "saving" || disabled}>
         {label}
       </PrimaryButton>
     </div>

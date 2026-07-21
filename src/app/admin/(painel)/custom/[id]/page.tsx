@@ -51,6 +51,7 @@ import {
   resolveLayout,
 } from "@/lib/content/sections";
 import { uid } from "@/lib/uid";
+import { validateLotes } from "@/lib/content/lotes";
 import type { Lote } from "@/lib/content/types";
 
 /** Editor de um bloco de seção — cada seção é um componente com seu dado inline
@@ -538,7 +539,15 @@ function CustomAbaForm({
     });
   const addBlock = () => setBlocks((bs) => [...bs, blockFromChoice(adding, uid())]);
 
+  // Bloqueio de save: datas de lote inválidas (sobreposição / abertura depois do
+  // encerramento / dia da corrida cedo demais) impedem salvar — não deixa gravar
+  // uma configuração de inscrição quebrada.
+  const loteErrors = blocks
+    .filter((b) => b.type === "inscricao")
+    .flatMap((b) => validateLotes(b.lotes ?? [], raceDate));
+
   function onSave() {
+    if (loteErrors.length > 0) return;
     const list = content.customSections ?? [];
     const next = list.map((s) => (s.id === section.id ? { ...s, title, blocks } : s));
     return save({ customSections: next }, `Atualizou a aba "${title || "sem título"}"`);
@@ -635,7 +644,11 @@ function CustomAbaForm({
       </div>
 
       <div className="max-w-[820px]">
-        <SaveBar onSave={onSave} />
+        <SaveBar
+          onSave={onSave}
+          disabled={loteErrors.length > 0}
+          blockedNote="Corrija as datas dos lotes para salvar."
+        />
       </div>
     </>
   );
