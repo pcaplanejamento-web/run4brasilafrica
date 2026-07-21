@@ -420,17 +420,13 @@ export interface PartnerLead {
  * Custom home "aba" (section) the ADM builds from reusable blocks. Its layout key
  * is `custom:<id>`. Each block reuses an existing site component.
  */
-export type CustomBlockType =
-  | "subtitulo"
-  | "texto"
-  | "imagem"
-  | "video"
-  | "botao"
-  | "carrossel"
-  | "formulario"
-  | "secao"; // embute uma seção "pronta" do site (ver SectionBlock)
-
-/** Quais seções "prontas" um bloco `secao` pode conter. */
+/**
+ * Seções do site que são componentes de aba. Cada uma é um `CustomBlockType`
+ * de primeira classe (não há mais o invólucro "seção pronta"): o bloco carrega
+ * o próprio dado nos campos abaixo (`faq`, `stats`, …). `raceday`/`inscricao`/
+ * `galeria` são **marcadores** (sem dado próprio) — renderizam do conteúdo
+ * global (lotes/inscricao/fotos), fonte única, sem divergência.
+ */
 export type SectionKind =
   | "stats"
   | "playlist"
@@ -448,34 +444,18 @@ export type SectionKind =
   | "compartilhar";
 
 /**
- * Conteúdo de um bloco `secao` — união discriminada por `kind` que reusa os
- * modelos existentes. Duas famílias:
- *  - **Autocontidas**: embutem o próprio dado (editável dentro da aba).
- *  - **Globais (marcador)**: `raceday`/`inscricao`/`galeria` não copiam dado —
- *    renderizam do conteúdo global (lotes/inscricao/fotos), evitando divergência
- *    com os editores de Links/Galeria e inchaço da linha JSON.
+ * Tipo de um bloco de aba. Tudo é componente: blocos de conteúdo livre
+ * (texto/imagem/vídeo/…) e cada seção do site (`SectionKind`).
  */
-export type SectionBlock =
-  | { kind: "stats"; stats: Stat[] }
-  | { kind: "faq"; faq: FaqItem[] }
-  | { kind: "depoimentos"; testimonials: Testimonial[] }
-  | { kind: "playlist"; playlist: PlaylistSection }
-  | { kind: "percurso"; percurso: Percurso }
-  | { kind: "location"; location: LocationSection }
-  | { kind: "premiacao"; premiacao: PremiacaoSection }
-  | { kind: "sejaParceiro"; sejaParceiro: SejaParceiroSection }
-  | { kind: "compartilhar"; share: ShareSection }
-  | { kind: "kit"; kit: KitSection }
-  | {
-      kind: "parceiros";
-      sponsors: Sponsor[];
-      sponsorsShowTier?: boolean;
-      sponsorsSubtitle?: string;
-      sponsorsShowCta?: boolean;
-    }
-  | { kind: "raceday" }
-  | { kind: "inscricao" }
-  | { kind: "galeria" };
+export type CustomBlockType =
+  | "subtitulo"
+  | "texto"
+  | "imagem"
+  | "video"
+  | "botao"
+  | "carrossel"
+  | "formulario"
+  | SectionKind;
 
 /** Posição do bloco na seção: largura total, coluna esquerda ou direita
  *  (2 colunas no desktop; sempre empilhado no mobile). Ausente = "full". */
@@ -517,8 +497,34 @@ export interface CustomBlock {
   images?: string[];
   /** formulário: qual formulário existente embutir. */
   formKind?: "email";
-  /** seção "pronta" embutida (presente só quando `type === "secao"`). */
-  section?: SectionBlock;
+
+  /* Dados das seções do site (presentes conforme o `type` de seção). Marcadores
+   * — raceday/inscricao/galeria — não carregam dado (leem do conteúdo global). */
+  /** type "stats". */
+  stats?: Stat[];
+  /** type "faq". */
+  faq?: FaqItem[];
+  /** type "depoimentos". */
+  testimonials?: Testimonial[];
+  /** type "playlist". */
+  playlist?: PlaylistSection;
+  /** type "percurso". */
+  percurso?: Percurso;
+  /** type "location". */
+  location?: LocationSection;
+  /** type "premiacao". */
+  premiacao?: PremiacaoSection;
+  /** type "sejaParceiro". */
+  sejaParceiro?: SejaParceiroSection;
+  /** type "compartilhar". */
+  share?: ShareSection;
+  /** type "kit". */
+  kit?: KitSection;
+  /** type "parceiros". */
+  sponsors?: Sponsor[];
+  sponsorsShowTier?: boolean;
+  sponsorsSubtitle?: string;
+  sponsorsShowCta?: boolean;
 }
 
 export interface CustomSection {

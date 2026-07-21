@@ -1,4 +1,4 @@
-import type { SectionBlock, SectionKind } from "./types";
+import type { CustomBlock, CustomBlockType, SectionKind } from "./types";
 
 /** PT label per section kind (used in the aba block picker). */
 export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
@@ -18,20 +18,31 @@ export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
   compartilhar: "Compartilhar",
 };
 
-/** Empty-but-valid `SectionBlock` for a freshly-created section of `kind`. */
-export function sectionDefaults(kind: SectionKind): SectionBlock {
+/** Every section kind, as a Set for O(1) `isSectionKind` checks. */
+const SECTION_KIND_SET = new Set<string>(Object.keys(SECTION_KIND_LABEL));
+
+/** True when a block type is one of the site sections (not a free-content block). */
+export function isSectionKind(type: CustomBlockType): type is SectionKind {
+  return SECTION_KIND_SET.has(type);
+}
+
+/**
+ * Empty-but-valid section data for a freshly-created section block of `kind`.
+ * Flat (merged onto the `CustomBlock`), since sections are first-class block
+ * types now. Markers (raceday/inscricao/galeria) carry no data.
+ */
+export function sectionDefaults(kind: SectionKind): Partial<CustomBlock> {
   switch (kind) {
     case "stats":
-      return { kind: "stats", stats: [] };
+      return { stats: [] };
     case "faq":
-      return { kind: "faq", faq: [] };
+      return { faq: [] };
     case "depoimentos":
-      return { kind: "depoimentos", testimonials: [] };
+      return { testimonials: [] };
     case "playlist":
-      return { kind: "playlist", playlist: { enabled: true, visible: "both" } };
+      return { playlist: { enabled: true, visible: "both" } };
     case "percurso":
       return {
-        kind: "percurso",
         percurso: {
           eyebrow: "O PERCURSO",
           title: "",
@@ -44,25 +55,20 @@ export function sectionDefaults(kind: SectionKind): SectionBlock {
         },
       };
     case "location":
-      return { kind: "location", location: {} };
+      return { location: {} };
     case "premiacao":
-      return { kind: "premiacao", premiacao: { title: "Premiação", places: [] } };
+      return { premiacao: { title: "Premiação", places: [] } };
     case "sejaParceiro":
-      return { kind: "sejaParceiro", sejaParceiro: {} };
+      return { sejaParceiro: {} };
     case "compartilhar":
-      return { kind: "compartilhar", share: {} };
+      return { share: {} };
     case "kit":
-      return {
-        kind: "kit",
-        kit: { title: "Kit do atleta", subtitle: "", regulamentoLabel: "Regulamento" },
-      };
+      return { kit: { title: "Kit do atleta", subtitle: "", regulamentoLabel: "Regulamento" } };
     case "parceiros":
-      return { kind: "parceiros", sponsors: [] };
+      return { sponsors: [] };
     case "raceday":
-      return { kind: "raceday" };
     case "inscricao":
-      return { kind: "inscricao" };
     case "galeria":
-      return { kind: "galeria" };
+      return {};
   }
 }

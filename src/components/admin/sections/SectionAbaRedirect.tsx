@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useContent } from "@/lib/content/store";
 import { AdmLoading } from "@/components/admin/ui";
 import { customKey } from "@/lib/content/sections";
-import { sectionDefaults } from "@/lib/content/sectionKinds";
+import { blockFromChoice } from "@/lib/content/blockChoices";
 import type { CustomSection, SectionKind } from "@/lib/content/types";
 
 /**
@@ -35,7 +35,7 @@ export default function SectionAbaRedirect({
       const aba: CustomSection = {
         id,
         title,
-        blocks: [{ id: `${id}-b`, type: "secao", section: sectionDefaults(kind) }],
+        blocks: [blockFromChoice(kind, `${id}-b`)],
       };
       const list = content.customSections ?? [];
       const layout = [...(content.layout ?? []), { key: customKey(id), enabled: true }];

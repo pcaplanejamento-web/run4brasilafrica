@@ -558,24 +558,28 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 - O ADM pode **criar novas abas (seções)** da tela inicial montando-as com os componentes já
   existentes no sistema. Modelo em `types.ts`: `CustomSection { id, title, blocks: CustomBlock[] }`
-  e `CustomBlock { id, type, ... }`, com `type` ∈ `subtitulo | texto | imagem | video | botao |
-  carrossel | formulario | secao`. Persistido em `content.customSections: CustomSection[]`.
-- **Toda seção é (ou vira) uma aba** — unificação em andamento (faseada). Bloco **`secao`**:
-  `CustomBlock.section?: SectionBlock` (união discriminada por `kind`) embute uma "seção pronta".
-  Kinds **autocontidos** (faq, depoimentos, stats, playlist, percurso, location, premiacao,
-  sejaParceiro, compartilhar, kit, parceiros) carregam o próprio dado; kinds **globais/marcador**
-  (raceday, inscricao, galeria) renderizam do conteúdo global via `SectionRenderCtx` (lotes,
-  inscricao, event, fotos, `sejaParceiroEnabled`) — fonte única, sem divergência. Render:
-  `renderSection(sb, ctx)` em `CustomSectionView` **delega ao componente original** (reuso 100%);
-  uma aba com **um único** bloco `secao` faz **short-circuit** (renderiza o componente direto, sem
+  e `CustomBlock { id, type, ... }`. **Tudo é componente**: `CustomBlockType` = blocos de conteúdo
+  livre (`subtitulo | texto | imagem | video | botao | carrossel | formulario`) **+ cada seção do
+  site** (`SectionKind` = `faq | depoimentos | stats | playlist | percurso | location | premiacao |
+  compartilhar | sejaParceiro | parceiros | kit | galeria | raceday | inscricao`). Persistido em
+  `content.customSections: CustomSection[]`.
+- **Sem "seção pronta"** — cada seção é um `CustomBlockType` de primeira classe (não há mais o
+  invólucro `secao`/`SectionBlock`). O bloco carrega o próprio dado **inline** (`block.faq`,
+  `block.stats`, `block.percurso`, `block.sponsors`+flags, …); os **marcadores** globais
+  (raceday/inscricao/galeria) não carregam dado e renderizam do conteúdo global via
+  `SectionRenderCtx` (lotes, inscricao, event, fotos, `sejaParceiroEnabled`) — fonte única, sem
+  divergência. `isSectionKind(type)` (sectionKinds.ts) distingue seção de bloco livre. Render:
+  `renderSection(block, ctx)` em `CustomSectionView` **delega ao componente original** (reuso 100%);
+  uma aba com **um único** bloco de seção faz **short-circuit** (renderiza o componente direto, sem
   o wrapper `<section id="aba-…">`) — markup, padding e **anchor** (`#faq`, `#parceiros`, …)
-  idênticos aos de hoje. Editor: `SectionKind` picker + editores controlados reutilizados
-  (`src/components/admin/sections/*Editor.tsx`) tanto na aba quanto (via redirect) nas páginas
-  legadas. Migração idempotente: `SECTION_MIGRATIONS` (`migrate.ts`) troca cada chave built-in por
-  `custom:sec-<key>` **na posição**, preservando `enabled`; campos top-level ficam intactos (nada
-  se perde). Ao converter uma seção, as 3 edições atômicas (entrada em `SECTION_MIGRATIONS` +
-  remover de `SECTIONS` + remover do mapa `rendered`) vão **juntas no mesmo deploy** (senão
-  renderiza 2×). **Unificação concluída** — todas as 15 seções viraram abas: **Fase 1**
+  idênticos aos de hoje. Editor: cada seção é uma escolha direta do picker (`blockChoices.ts`) e usa
+  seu editor controlado (`src/components/admin/sections/*Editor.tsx`) ligado aos campos do bloco.
+- **Migração idempotente** (`migrate.ts`): `SECTION_MIGRATIONS` troca cada chave built-in por
+  `custom:sec-<key>` **na posição** (preserva `enabled`), criando um bloco flat `{type: kind,
+  ...dados}`; campos top-level ficam intactos (nada se perde). `flattenLegacySecao` converte os
+  blocos `secao` aninhados gravados por deploys anteriores para o formato flat (idempotente, sem
+  perda — descarta só `secao` órfão que nunca renderizou). **Unificação concluída** — todas as 15
+  seções viraram abas: **Fase 1**
   `faq`/`depoimentos`/`stats` (+ `about`/"A Causa"); **Fase 2**
   `playlist`/`percurso`/`location`/`premiacao`/`sejaParceiro`/`compartilhar`; **Fase 3** (acopladas/
   globais) `parceiros`, `kit`, `galeria`, `raceday`, `inscricao`. `SECTIONS` agora tem só `hero`;

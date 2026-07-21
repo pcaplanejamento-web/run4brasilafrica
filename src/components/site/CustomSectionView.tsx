@@ -8,8 +8,8 @@ import type {
   GalleryPhoto,
   Inscricao,
   Lote,
-  SectionBlock,
 } from "@/lib/content/types";
+import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
 import SectionEyebrow from "./SectionEyebrow";
 import CtaButton from "./CtaButton";
 import YouTubePlayer from "./YouTubePlayer";
@@ -51,36 +51,38 @@ export interface SectionRenderCtx {
   sejaParceiroEnabled: boolean;
 }
 
-/** Renders a "seção pronta" by delegating to its existing site component. */
-function renderSection(sb: SectionBlock, ctx: SectionRenderCtx): ReactNode {
-  switch (sb.kind) {
+/** Renders a section block (each `SectionKind` is a `CustomBlockType`) by
+ *  delegating to its existing site component. Global-backed types read from
+ *  `ctx` (single source of truth); the rest use the block's inline data. */
+function renderSection(block: CustomBlock, ctx: SectionRenderCtx): ReactNode {
+  switch (block.type) {
     case "stats":
-      return <StatsBar stats={sb.stats} />;
+      return <StatsBar stats={block.stats ?? []} />;
     case "faq":
-      return <Faq items={sb.faq} />;
+      return <Faq items={block.faq ?? []} />;
     case "depoimentos":
-      return <Depoimentos testimonials={sb.testimonials} />;
+      return <Depoimentos testimonials={block.testimonials ?? []} />;
     case "playlist":
-      return <Playlist playlist={sb.playlist} />;
+      return <Playlist playlist={block.playlist} />;
     case "percurso":
-      return <Percurso percurso={sb.percurso} />;
+      return <Percurso percurso={block.percurso ?? sectionDefaults("percurso").percurso!} />;
     case "location":
-      return <Localizacao location={sb.location} />;
+      return <Localizacao location={block.location} />;
     case "premiacao":
-      return <Premiacao premiacao={sb.premiacao} />;
+      return <Premiacao premiacao={block.premiacao} />;
     case "sejaParceiro":
-      return <SejaParceiro config={sb.sejaParceiro} />;
+      return <SejaParceiro config={block.sejaParceiro ?? {}} />;
     case "compartilhar":
-      return <ShareEvent share={sb.share} event={ctx.event} />;
+      return <ShareEvent share={block.share} event={ctx.event} />;
     case "kit":
-      return <KitAtleta kit={sb.kit} lotes={ctx.lotes} />;
+      return <KitAtleta kit={block.kit ?? sectionDefaults("kit").kit!} lotes={ctx.lotes} />;
     case "parceiros":
       return (
         <Parceiros
-          sponsors={sb.sponsors}
-          showTier={sb.sponsorsShowTier}
-          subtitle={sb.sponsorsSubtitle}
-          showCta={(sb.sponsorsShowCta ?? false) && ctx.sejaParceiroEnabled}
+          sponsors={block.sponsors ?? []}
+          showTier={block.sponsorsShowTier}
+          subtitle={block.sponsorsSubtitle}
+          showCta={(block.sponsorsShowCta ?? false) && ctx.sejaParceiroEnabled}
         />
       );
     case "raceday":
@@ -96,6 +98,8 @@ function renderSection(sb: SectionBlock, ctx: SectionRenderCtx): ReactNode {
           gallery={ctx.gallery}
         />
       );
+    default:
+      return null;
   }
 }
 
@@ -110,6 +114,9 @@ function alignTextClass(a?: string): string {
 
 /** True when a block has something worth rendering (used to hide empty blocks). */
 function hasContent(b: CustomBlock): boolean {
+  // Section blocks always "have content" (the component self-hides if empty,
+  // e.g. Playlist/Localizacao/RaceDay return null) — same as the old behavior.
+  if (isSectionKind(b.type)) return true;
   switch (b.type) {
     case "subtitulo":
     case "texto":
@@ -124,14 +131,14 @@ function hasContent(b: CustomBlock): boolean {
       return !!b.images?.some(Boolean);
     case "formulario":
       return true;
-    case "secao":
-      return !!b.section;
     default:
       return false;
   }
 }
 
 function Block({ block, ctx }: { block: CustomBlock; ctx: SectionRenderCtx }) {
+  // Section components (faq, parceiros, …) delegate to renderSection.
+  if (isSectionKind(block.type)) return renderSection(block, ctx);
   switch (block.type) {
     case "subtitulo":
       return (
@@ -204,8 +211,6 @@ function Block({ block, ctx }: { block: CustomBlock; ctx: SectionRenderCtx }) {
           <NotifyForm />
         </div>
       );
-    case "secao":
-      return block.section ? renderSection(block.section, ctx) : null;
     default:
       return null;
   }
@@ -288,11 +293,11 @@ export default function CustomSectionView({
   const blocks = (section.blocks ?? []).filter(hasContent);
   if (!section.title?.trim() && blocks.length === 0) return null;
 
-  // Aba com um único bloco de "seção pronta": delega direto ao componente
-  // original (sem o wrapper `<section id="aba-…">` nem eyebrow), preservando o
-  // markup, o padding e o anchor (#faq, #parceiros, …) idênticos aos de hoje.
-  if (blocks.length === 1 && blocks[0].type === "secao" && blocks[0].section) {
-    return <>{renderSection(blocks[0].section, ctx)}</>;
+  // Aba com um único bloco de seção: delega direto ao componente original (sem o
+  // wrapper `<section id="aba-…">` nem eyebrow), preservando o markup, o padding
+  // e o anchor (#faq, #parceiros, …) idênticos aos de hoje.
+  if (blocks.length === 1 && isSectionKind(blocks[0].type)) {
+    return <>{renderSection(blocks[0], ctx)}</>;
   }
 
   return (

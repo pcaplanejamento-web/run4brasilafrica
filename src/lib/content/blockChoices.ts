@@ -1,20 +1,16 @@
 import type { CustomBlock, CustomBlockType, SectionKind } from "./types";
-import { SECTION_KIND_LABEL, sectionDefaults } from "./sectionKinds";
+import { isSectionKind, SECTION_KIND_LABEL, sectionDefaults } from "./sectionKinds";
 
 /**
  * "Criar aba" component picker — single source of truth shared by the Dashboard
  * (create-aba chips) and the aba editor ("Adicionar componente").
  *
- * Every homepage section is a first-class component here: instead of one generic
- * "Seção pronta" entry with a nested kind dropdown, each `SectionKind` is picked
- * directly. Underneath they're still `secao` blocks (`block.section.kind`) — the
- * data model, render (`renderSection` + short-circuit) and migration are
- * unchanged, so the public site is byte-for-byte identical and fully moldable.
- *
- * A pick value is either a generic block type (`"texto"`, `"imagem"`, …) or a
- * ready-made section encoded as `"secao:<kind>"`.
+ * Everything is a component: each block is picked by its `CustomBlockType`,
+ * whether a free-content block (`"texto"`, `"imagem"`, …) or a site section
+ * (`"faq"`, `"parceiros"`, …). There is no "seção pronta" wrapper — section
+ * blocks carry their own data inline on the `CustomBlock`.
  */
-export type BlockChoiceValue = Exclude<CustomBlockType, "secao"> | `secao:${SectionKind}`;
+export type BlockChoiceValue = CustomBlockType;
 
 export interface BlockChoice {
   value: BlockChoiceValue;
@@ -23,8 +19,8 @@ export interface BlockChoice {
   group: "conteudo" | "secao";
 }
 
-/** Generic content blocks (everything except the internal `secao` wrapper). */
-const GENERIC: { value: Exclude<CustomBlockType, "secao">; label: string }[] = [
+/** Free-content blocks. */
+const GENERIC: { value: CustomBlockType; label: string }[] = [
   { value: "subtitulo", label: "Subtítulo" },
   { value: "texto", label: "Texto" },
   { value: "imagem", label: "Imagem" },
@@ -61,35 +57,25 @@ export const CONTEUDO_CHOICES: BlockChoice[] = GENERIC.map((g) => ({
 }));
 
 export const SECAO_CHOICES: BlockChoice[] = SECTION_KIND_ORDER.map((k) => ({
-  value: `secao:${k}` as BlockChoiceValue,
+  value: k,
   label: SECTION_KIND_LABEL[k],
   group: "secao" as const,
 }));
 
 export const BLOCK_CHOICES: BlockChoice[] = [...CONTEUDO_CHOICES, ...SECAO_CHOICES];
 
-/** True for a ready-made-section pick value (`"secao:<kind>"`). */
-export function isSecaoChoice(value: BlockChoiceValue): value is `secao:${SectionKind}` {
-  return value.startsWith("secao:");
-}
-
 /** Build a fresh `CustomBlock` from a picker choice. */
 export function blockFromChoice(value: BlockChoiceValue, id: string): CustomBlock {
-  if (isSecaoChoice(value)) {
-    const kind = value.slice("secao:".length) as SectionKind;
-    return { id, type: "secao", section: sectionDefaults(kind) };
+  if (isSectionKind(value)) {
+    return { id, type: value, ...sectionDefaults(value) };
   }
-  return { id, type: value as CustomBlockType };
+  return { id, type: value };
 }
 
 /** Human label for an existing block (headers, picked lists). */
-export function blockLabel(block: Pick<CustomBlock, "type" | "section">): string {
-  if (block.type === "secao") {
-    return block.section
-      ? SECTION_KIND_LABEL[block.section.kind]
-      : "Seção pronta (escolha o tipo)";
-  }
-  const c = BLOCK_CHOICES.find((c) => c.value === block.type);
+export function blockLabel(block: Pick<CustomBlock, "type">): string {
+  if (isSectionKind(block.type)) return SECTION_KIND_LABEL[block.type];
+  const c = CONTEUDO_CHOICES.find((c) => c.value === block.type);
   return c?.label ?? block.type;
 }
 

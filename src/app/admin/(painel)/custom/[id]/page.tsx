@@ -9,7 +9,6 @@ import type {
   CustomBlockAlign,
   CustomBlockColumn,
   CustomSection,
-  SectionBlock,
   SectionKind,
 } from "@/lib/content/types";
 import {
@@ -36,14 +35,13 @@ import { ShareEditor } from "@/components/admin/sections/ShareEditor";
 import { SejaParceiroEditor } from "@/components/admin/sections/SejaParceiroEditor";
 import { ParceirosEditor } from "@/components/admin/sections/ParceirosEditor";
 import { KitEditor } from "@/components/admin/sections/KitEditor";
-import { SECTION_KIND_LABEL, sectionDefaults } from "@/lib/content/sectionKinds";
+import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
 import {
   type BlockChoiceValue,
   blockFromChoice,
   blockLabel,
   CONTEUDO_CHOICES,
   SECAO_CHOICES,
-  SECTION_KIND_ORDER,
 } from "@/lib/content/blockChoices";
 import { resolveLayout } from "@/lib/content/sections";
 import type { Lote } from "@/lib/content/types";
@@ -55,122 +53,91 @@ const GLOBAL_KIND_HINT: Partial<Record<SectionKind, { label: string; href: strin
   inscricao: { label: "Lotes de inscrição", href: "/admin/links" },
 };
 
-/** Renders the editor for a `secao` block's chosen kind. */
-function SectionFields({
-  section,
+/** Editor de um bloco de seção — cada seção é um componente com seu dado inline
+ *  no bloco. O tipo é fixado ao adicionar (escolha direta no picker). */
+function SectionEditor({
+  block,
   set,
   cloudinary,
   lotes,
   sejaAtiva,
 }: {
-  section?: SectionBlock;
-  set: (section: SectionBlock) => void;
+  block: CustomBlock;
+  set: (patch: Partial<CustomBlock>) => void;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
   lotes: Lote[];
   sejaAtiva: boolean;
 }) {
+  const hint = GLOBAL_KIND_HINT[block.type as SectionKind];
   return (
     <div className="flex flex-col gap-3">
-      {/* O tipo é fixado ao adicionar o componente (cada seção é uma escolha
-          direta no picker). Só blocos "secao" legados (sem tipo) mostram o
-          seletor abaixo para se tornarem válidos. */}
-      {!section?.kind && (
-        <div className="w-[260px] max-w-full">
-          <FieldLabel>Tipo de seção</FieldLabel>
-          <Select
-            value=""
-            onChange={(e) => set(sectionDefaults(e.target.value as SectionKind))}
-          >
-            <option value="" disabled>
-              Escolha…
-            </option>
-            {SECTION_KIND_ORDER.map((k) => (
-              <option key={k} value={k}>
-                {SECTION_KIND_LABEL[k]}
-              </option>
-            ))}
-          </Select>
-        </div>
+      {block.type === "faq" && (
+        <FaqEditor value={block.faq ?? []} onChange={(faq) => set({ faq })} />
       )}
-      {section?.kind === "faq" && (
-        <FaqEditor value={section.faq} onChange={(faq) => set({ kind: "faq", faq })} />
+      {block.type === "stats" && (
+        <StatsEditor value={block.stats ?? []} onChange={(stats) => set({ stats })} />
       )}
-      {section?.kind === "stats" && (
-        <StatsEditor value={section.stats} onChange={(stats) => set({ kind: "stats", stats })} />
-      )}
-      {section?.kind === "depoimentos" && (
+      {block.type === "depoimentos" && (
         <DepoimentosEditor
-          value={section.testimonials}
-          onChange={(testimonials) => set({ kind: "depoimentos", testimonials })}
+          value={block.testimonials ?? []}
+          onChange={(testimonials) => set({ testimonials })}
           cloudinary={cloudinary}
         />
       )}
-      {section?.kind === "playlist" && (
-        <PlaylistEditor
-          value={section.playlist}
-          onChange={(playlist) => set({ kind: "playlist", playlist })}
-        />
+      {block.type === "playlist" && (
+        <PlaylistEditor value={block.playlist ?? {}} onChange={(playlist) => set({ playlist })} />
       )}
-      {section?.kind === "percurso" && (
+      {block.type === "percurso" && (
         <PercursoEditor
-          value={section.percurso}
-          onChange={(percurso) => set({ kind: "percurso", percurso })}
+          value={block.percurso ?? sectionDefaults("percurso").percurso!}
+          onChange={(percurso) => set({ percurso })}
           cloudinary={cloudinary}
         />
       )}
-      {section?.kind === "location" && (
-        <LocationEditor
-          value={section.location}
-          onChange={(location) => set({ kind: "location", location })}
-        />
+      {block.type === "location" && (
+        <LocationEditor value={block.location ?? {}} onChange={(location) => set({ location })} />
       )}
-      {section?.kind === "premiacao" && (
+      {block.type === "premiacao" && (
         <PremiacaoEditor
-          value={section.premiacao}
-          onChange={(premiacao) => set({ kind: "premiacao", premiacao })}
+          value={block.premiacao ?? sectionDefaults("premiacao").premiacao!}
+          onChange={(premiacao) => set({ premiacao })}
         />
       )}
-      {section?.kind === "compartilhar" && (
-        <ShareEditor
-          value={section.share}
-          onChange={(share) => set({ kind: "compartilhar", share })}
-        />
+      {block.type === "compartilhar" && (
+        <ShareEditor value={block.share ?? {}} onChange={(share) => set({ share })} />
       )}
-      {section?.kind === "sejaParceiro" && (
+      {block.type === "sejaParceiro" && (
         <SejaParceiroEditor
-          value={section.sejaParceiro}
-          onChange={(sejaParceiro) => set({ kind: "sejaParceiro", sejaParceiro })}
+          value={block.sejaParceiro ?? {}}
+          onChange={(sejaParceiro) => set({ sejaParceiro })}
         />
       )}
-      {section?.kind === "parceiros" && (
+      {block.type === "parceiros" && (
         <ParceirosEditor
           value={{
-            sponsors: section.sponsors,
-            sponsorsShowTier: section.sponsorsShowTier,
-            sponsorsSubtitle: section.sponsorsSubtitle,
-            sponsorsShowCta: section.sponsorsShowCta,
+            sponsors: block.sponsors ?? [],
+            sponsorsShowTier: block.sponsorsShowTier,
+            sponsorsSubtitle: block.sponsorsSubtitle,
+            sponsorsShowCta: block.sponsorsShowCta,
           }}
-          onChange={(v) => set({ kind: "parceiros", ...v })}
+          onChange={(v) => set(v)}
           sejaAtiva={sejaAtiva}
           cloudinary={cloudinary}
         />
       )}
-      {section?.kind === "kit" && (
+      {block.type === "kit" && (
         <KitEditor
-          value={section.kit}
-          onChange={(kit) => set({ kind: "kit", kit })}
+          value={block.kit ?? sectionDefaults("kit").kit!}
+          onChange={(kit) => set({ kit })}
           lotes={lotes}
           cloudinary={cloudinary}
         />
       )}
-      {section && GLOBAL_KIND_HINT[section.kind] && (
+      {hint && (
         <div className="rounded-lg border border-adm-border bg-[#faf9f7] p-4 text-[13px] text-adm-muted">
           Esta seção usa o conteúdo global do site. Edite em{" "}
-          <Link
-            href={GLOBAL_KIND_HINT[section.kind]!.href}
-            className="font-semibold text-terracotta underline"
-          >
-            {GLOBAL_KIND_HINT[section.kind]!.label}
+          <Link href={hint.href} className="font-semibold text-terracotta underline">
+            {hint.label}
           </Link>
           . Aqui você controla a <strong>posição</strong> e o <strong>ativo/oculto</strong> pela
           Dashboard.
@@ -302,6 +269,18 @@ function BlockFields({
   lotes: Lote[];
   sejaAtiva: boolean;
 }) {
+  // Seções são componentes de primeira classe — seu editor específico.
+  if (isSectionKind(block.type)) {
+    return (
+      <SectionEditor
+        block={block}
+        set={set}
+        cloudinary={cloudinary}
+        lotes={lotes}
+        sejaAtiva={sejaAtiva}
+      />
+    );
+  }
   switch (block.type) {
     case "subtitulo":
       return (
@@ -437,16 +416,6 @@ function BlockFields({
           Formulário de captura de e-mail (&ldquo;avise-me&rdquo;). Os e-mails aparecem em
           Avisos (e-mails). Sem configuração adicional.
         </p>
-      );
-    case "secao":
-      return (
-        <SectionFields
-          section={block.section}
-          set={(section) => set({ section })}
-          cloudinary={cloudinary}
-          lotes={lotes}
-          sejaAtiva={sejaAtiva}
-        />
       );
     default:
       return null;

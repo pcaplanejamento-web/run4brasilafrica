@@ -2,11 +2,48 @@ import type {
   AboutSection,
   CustomBlock,
   CustomSection,
+  FaqItem,
+  KitSection,
   LayoutItem,
-  SectionBlock,
+  LocationSection,
+  Percurso,
+  PlaylistSection,
+  PremiacaoSection,
+  SectionKind,
+  SejaParceiroSection,
+  ShareSection,
   SiteContent,
+  Sponsor,
+  Stat,
+  Testimonial,
 } from "./types";
 import { customKey } from "./sections";
+
+/**
+ * Legacy nested "seção pronta" shape (pre-flatten: `{ type:"secao", section }`).
+ * Kept only to read blocks stored by earlier deploys and flatten them in place.
+ */
+type LegacySectionBlock =
+  | { kind: "stats"; stats: Stat[] }
+  | { kind: "faq"; faq: FaqItem[] }
+  | { kind: "depoimentos"; testimonials: Testimonial[] }
+  | { kind: "playlist"; playlist: PlaylistSection }
+  | { kind: "percurso"; percurso: Percurso }
+  | { kind: "location"; location: LocationSection }
+  | { kind: "premiacao"; premiacao: PremiacaoSection }
+  | { kind: "sejaParceiro"; sejaParceiro: SejaParceiroSection }
+  | { kind: "compartilhar"; share: ShareSection }
+  | { kind: "kit"; kit: KitSection }
+  | {
+      kind: "parceiros";
+      sponsors: Sponsor[];
+      sponsorsShowTier?: boolean;
+      sponsorsSubtitle?: string;
+      sponsorsShowCta?: boolean;
+    }
+  | { kind: "raceday" }
+  | { kind: "inscricao" }
+  | { kind: "galeria" };
 
 /**
  * Fixed id of the "A Causa" section once it becomes a custom "aba". Deterministic
@@ -106,18 +143,20 @@ function applyAbout(c: SiteContent): SiteContent {
 
 /**
  * Uma seção built-in que vira aba: chave de layout `key` → aba `id` com um único
- * bloco `secao`. Determinística e idempotente (mesmo `id` a cada leitura).
+ * bloco do tipo `kind` (componente de seção). Determinística e idempotente.
  */
 interface SectionMigration {
   /** Chave da seção no layout (ex.: "faq"). */
   key: string;
   /** Id determinístico da aba (ex.: "sec-faq"). */
   id: string;
+  /** Tipo do bloco de seção (= CustomBlockType). */
+  kind: SectionKind;
   title: (c: SiteContent) => string;
   /** Só cria a aba quando há conteúdo (evita aba vazia). */
   hasContent: (c: SiteContent) => boolean;
-  /** Payload do bloco `secao`. */
-  build: (c: SiteContent) => SectionBlock;
+  /** Dados da seção mesclados no bloco (flat). Marcadores retornam {}. */
+  build: (c: SiteContent) => Partial<CustomBlock>;
   /** Posição natural quando a chave não está no layout (seed sem a chave). */
   fallbackAfter?: string;
 }
@@ -132,30 +171,34 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
   {
     key: "faq",
     id: "sec-faq",
+    kind: "faq",
     title: () => "Perguntas frequentes",
     hasContent: (c) => (c.faq ?? []).length > 0,
-    build: (c) => ({ kind: "faq", faq: c.faq ?? [] }),
+    build: (c) => ({ faq: c.faq ?? [] }),
     fallbackAfter: "kit",
   },
   {
     key: "depoimentos",
     id: "sec-depoimentos",
+    kind: "depoimentos",
     title: () => "Quem já correu",
     hasContent: (c) => (c.testimonials ?? []).length > 0,
-    build: (c) => ({ kind: "depoimentos", testimonials: c.testimonials ?? [] }),
+    build: (c) => ({ testimonials: c.testimonials ?? [] }),
     fallbackAfter: "galeria",
   },
   {
     key: "stats",
     id: "sec-stats",
+    kind: "stats",
     title: () => "Números em destaque",
     hasContent: (c) => (c.stats ?? []).length > 0,
-    build: (c) => ({ kind: "stats", stats: c.stats ?? [] }),
+    build: (c) => ({ stats: c.stats ?? [] }),
     fallbackAfter: "hero",
   },
   {
     key: "playlist",
     id: "sec-playlist",
+    kind: "playlist",
     title: (c) => c.playlist?.title?.trim() || "Playlist do evento",
     hasContent: (c) =>
       !!(
@@ -164,57 +207,62 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
         c.playlist?.youtubeUrl?.trim() ||
         c.playlist?.spotifyUrl?.trim()
       ),
-    build: (c) => ({ kind: "playlist", playlist: c.playlist ?? {} }),
+    build: (c) => ({ playlist: c.playlist ?? {} }),
     fallbackAfter: "hero",
   },
   {
     key: "percurso",
     id: "sec-percurso",
+    kind: "percurso",
     title: () => "O Percurso",
     hasContent: (c) =>
       !!(c.percurso?.title?.trim() || (c.percurso?.routes ?? []).length || c.percurso?.stravaRouteRef?.trim()),
-    build: (c) => ({ kind: "percurso", percurso: c.percurso }),
+    build: (c) => ({ percurso: c.percurso }),
     fallbackAfter: "playlist",
   },
   {
     key: "location",
     id: "sec-location",
+    kind: "location",
     title: (c) => c.location?.title?.trim() || "Localização",
     hasContent: (c) => !!(c.location?.address?.trim() || c.location?.venueName?.trim()),
-    build: (c) => ({ kind: "location", location: c.location ?? {} }),
+    build: (c) => ({ location: c.location ?? {} }),
     fallbackAfter: "percurso",
   },
   {
     key: "premiacao",
     id: "sec-premiacao",
+    kind: "premiacao",
     title: (c) => c.premiacao?.title?.trim() || "Premiação",
     hasContent: (c) => (c.premiacao?.places ?? []).length > 0,
-    build: (c) => ({ kind: "premiacao", premiacao: c.premiacao }),
+    build: (c) => ({ premiacao: c.premiacao }),
     fallbackAfter: "galeria",
   },
   {
     key: "sejaParceiro",
     id: "sec-sejaParceiro",
+    kind: "sejaParceiro",
     title: (c) => c.sejaParceiro?.title?.trim() || "Seja um Parceiro",
     hasContent: () => true,
-    build: (c) => ({ kind: "sejaParceiro", sejaParceiro: c.sejaParceiro ?? {} }),
+    build: (c) => ({ sejaParceiro: c.sejaParceiro ?? {} }),
     fallbackAfter: "parceiros",
   },
   {
     key: "compartilhar",
     id: "sec-compartilhar",
+    kind: "compartilhar",
     title: (c) => c.share?.title?.trim() || "Compartilhar",
     hasContent: () => true,
-    build: (c) => ({ kind: "compartilhar", share: c.share ?? {} }),
+    build: (c) => ({ share: c.share ?? {} }),
     fallbackAfter: "kit",
   },
   {
     key: "parceiros",
     id: "sec-parceiros",
+    kind: "parceiros",
     title: () => "Parceiros",
     hasContent: (c) => (c.sponsors ?? []).length > 0,
     build: (c) => ({
-      kind: "parceiros",
       sponsors: c.sponsors ?? [],
       sponsorsShowTier: c.sponsorsShowTier,
       sponsorsSubtitle: c.sponsorsSubtitle,
@@ -225,33 +273,37 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
   {
     key: "kit",
     id: "sec-kit",
+    kind: "kit",
     title: (c) => c.kit?.title?.trim() || "Kit do atleta",
     hasContent: () => true,
-    build: (c) => ({ kind: "kit", kit: c.kit }),
+    build: (c) => ({ kit: c.kit }),
     fallbackAfter: "compartilhar",
   },
   {
     key: "galeria",
     id: "sec-galeria",
+    kind: "galeria",
     title: () => "Galeria",
     hasContent: (c) => (c.galleryPhotos ?? []).length > 0 || (c.albums ?? []).length > 0,
-    build: () => ({ kind: "galeria" }),
+    build: () => ({}),
     fallbackAfter: "inscricao",
   },
   {
     key: "raceday",
     id: "sec-raceday",
+    kind: "raceday",
     title: () => "Dia da Corrida",
     hasContent: (c) => !!c.inscricao?.raceDate,
-    build: () => ({ kind: "raceday" }),
+    build: () => ({}),
     fallbackAfter: "inscricao",
   },
   {
     key: "inscricao",
     id: "sec-inscricao",
+    kind: "inscricao",
     title: (c) => c.inscricao?.title?.trim() || "Inscrição",
     hasContent: () => true,
-    build: () => ({ kind: "inscricao" }),
+    build: () => ({}),
     fallbackAfter: "galeria",
   },
 ];
@@ -267,7 +319,7 @@ function applyMigration(c: SiteContent, m: SectionMigration): SiteContent {
   // perde um slot existente nem se cria aba vazia numa instalação nova.
   if (idx < 0 && !m.hasContent(c)) return c;
 
-  const block: CustomBlock = { id: `${m.id}-b`, type: "secao", section: m.build(c) };
+  const block: CustomBlock = { id: `${m.id}-b`, type: m.kind, ...m.build(c) };
   const aba: CustomSection = { id: m.id, title: m.title(c), blocks: [block] };
   const key = customKey(m.id);
   if (idx >= 0) {
@@ -279,13 +331,86 @@ function applyMigration(c: SiteContent, m: SectionMigration): SiteContent {
   return { ...c, customSections: [...secs, aba], layout };
 }
 
+/** Achata um bloco `secao` legado (`{type,section:{kind,...}}`) no novo formato
+ *  flat (`{type: kind, ...dados}`). Marcadores não têm dado. */
+function flattenLegacyBlock(block: CustomBlock): CustomBlock | null {
+  const legacy = block as CustomBlock & { section?: LegacySectionBlock };
+  const sb = legacy.section;
+  if (!sb) return null; // secao sem seção (nunca renderizou) → descarta
+  // Mantém id/column/align e adiciona os dados da seção sob o tipo `kind`.
+  const base: CustomBlock = {
+    id: block.id,
+    type: sb.kind,
+    column: block.column,
+    align: block.align,
+  };
+  switch (sb.kind) {
+    case "stats":
+      return { ...base, stats: sb.stats };
+    case "faq":
+      return { ...base, faq: sb.faq };
+    case "depoimentos":
+      return { ...base, testimonials: sb.testimonials };
+    case "playlist":
+      return { ...base, playlist: sb.playlist };
+    case "percurso":
+      return { ...base, percurso: sb.percurso };
+    case "location":
+      return { ...base, location: sb.location };
+    case "premiacao":
+      return { ...base, premiacao: sb.premiacao };
+    case "sejaParceiro":
+      return { ...base, sejaParceiro: sb.sejaParceiro };
+    case "compartilhar":
+      return { ...base, share: sb.share };
+    case "kit":
+      return { ...base, kit: sb.kit };
+    case "parceiros":
+      return {
+        ...base,
+        sponsors: sb.sponsors,
+        sponsorsShowTier: sb.sponsorsShowTier,
+        sponsorsSubtitle: sb.sponsorsSubtitle,
+        sponsorsShowCta: sb.sponsorsShowCta,
+      };
+    case "raceday":
+    case "inscricao":
+    case "galeria":
+      return base;
+  }
+}
+
+/**
+ * Converte blocos `secao` já gravados no D1 (deploys anteriores) para o formato
+ * flat (cada seção é um `CustomBlockType`). Idempotente: blocos já flat não têm
+ * `type === "secao"`, então viram no-op. Nada se perde — os dados da seção são
+ * preservados no bloco.
+ */
+function flattenLegacySecao(c: SiteContent): SiteContent {
+  const secs = c.customSections;
+  if (!secs?.length) return c;
+  let changed = false;
+  const next = secs.map((s) => {
+    const blocks = (s.blocks ?? []).flatMap((b) => {
+      if ((b.type as string) !== "secao") return [b];
+      changed = true;
+      const flat = flattenLegacyBlock(b);
+      return flat ? [flat] : [];
+    });
+    return changed ? { ...s, blocks } : s;
+  });
+  return changed ? { ...c, customSections: next } : c;
+}
+
 /**
  * Normalização idempotente aplicada a cada leitura (db.ts): converte seções
- * built-in em abas editáveis. Pura (retorna novo objeto, nunca muta). Ordem:
- * "A Causa" primeiro (histórico), depois o registro `SECTION_MIGRATIONS`.
+ * built-in em abas editáveis e achata blocos `secao` legados. Pura (retorna novo
+ * objeto, nunca muta). Ordem: "A Causa" (histórico), `SECTION_MIGRATIONS`, e por
+ * fim o flatten dos blocos `secao` gravados por deploys anteriores.
  */
 export function normalizeContent(c: SiteContent): SiteContent {
   let out = applyAbout(c);
   for (const m of SECTION_MIGRATIONS) out = applyMigration(out, m);
+  out = flattenLegacySecao(out);
   return out;
 }
