@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useContent } from "@/lib/content/store";
-import type { ContactLinks, Inscricao, Lote } from "@/lib/content/types";
+import type { Inscricao, Lote } from "@/lib/content/types";
 import { sortLotesDesc, validateLotes } from "@/lib/content/lotes";
 import {
   AdmLoading,
@@ -13,22 +14,24 @@ import {
   PrimaryButton,
   SaveBar,
   SectionLabel,
-  Select,
   TextInput,
 } from "@/components/admin/ui";
 
-function LinksForm({
-  initialInscricao,
-  initialContact,
+/**
+ * "Lotes de inscrição" — CRUD dos lotes (conteúdo global usado pela seção
+ * "Inscrições e Lotes" e pela barra fixa de contagem). Plataforma/URL/dia da
+ * corrida e redes sociais/doações agora ficam em Configurações; aqui só os
+ * lotes. `inscricao` é lido (não editado) para validar as datas e sugerir a URL
+ * padrão de um novo lote.
+ */
+function LotesForm({
+  inscricao,
   initialLotes,
 }: {
-  initialInscricao: Inscricao;
-  initialContact: ContactLinks;
+  inscricao: Inscricao;
   initialLotes: Lote[];
 }) {
   const { save } = useContent();
-  const [inscricao, setInscricao] = useState(initialInscricao);
-  const [contact, setContact] = useState(initialContact);
   const [lotes, setLotes] = useState<Lote[]>(initialLotes);
 
   function setLote(i: number, patch: Partial<Lote>) {
@@ -68,39 +71,10 @@ function LinksForm({
   return (
     <>
       <div className="mb-7">
-        <PageTitle>Links & inscrição</PageTitle>
+        <PageTitle>Lotes de inscrição</PageTitle>
       </div>
 
       <div className="flex max-w-[820px] flex-col gap-5">
-        <Card>
-          <SectionLabel>Inscrição (plataforma)</SectionLabel>
-          <FieldLabel>Plataforma</FieldLabel>
-          <div className="mb-3.5">
-            <TextInput
-              value={inscricao.platform}
-              onChange={(e) => setInscricao({ ...inscricao, platform: e.target.value })}
-            />
-          </div>
-          <FieldLabel>URL de inscrição padrão</FieldLabel>
-          <div className="mb-3.5">
-            <TextInput
-              value={inscricao.url}
-              onChange={(e) => setInscricao({ ...inscricao, url: e.target.value })}
-            />
-          </div>
-          <FieldLabel>Dia da corrida</FieldLabel>
-          <TextInput
-            type="datetime-local"
-            value={inscricao.raceDate ?? ""}
-            onChange={(e) => setInscricao({ ...inscricao, raceDate: e.target.value })}
-          />
-          <p className="mt-2 text-[12px] text-adm-muted">
-            Aparece na tela inicial como a faixa &ldquo;Dia da Corrida&rdquo; com contagem
-            regressiva. Deve ser depois do encerramento do último lote.
-          </p>
-        </Card>
-
-        {/* Lotes */}
         <Card>
           <div className="mb-3 flex items-center justify-between">
             <SectionLabel>Lotes de inscrição</SectionLabel>
@@ -113,7 +87,12 @@ function LinksForm({
             decide sozinho qual está aberto pelas datas e mostra a contagem regressiva{" "}
             <strong>para a abertura</strong> (se ainda não abriu) ou{" "}
             <strong>para o encerramento</strong> (se já abriu). Os períodos não podem se
-            sobrepor — um lote de cada vez.
+            sobrepor — um lote de cada vez. A plataforma, a URL padrão e o dia da corrida ficam
+            em{" "}
+            <Link href="/admin/configuracoes" className="font-semibold text-terracotta underline">
+              Configurações
+            </Link>
+            .
           </p>
 
           {errors.length > 0 && (
@@ -222,49 +201,6 @@ function LinksForm({
             )}
           </div>
         </Card>
-
-        <Card>
-          <SectionLabel>Redes sociais</SectionLabel>
-          {(
-            [
-              ["Instagram", "instagram"],
-              ["WhatsApp", "whatsapp"],
-              ["YouTube", "youtube"],
-              ["E-mail de contato", "email"],
-            ] as const
-          ).map(([label, key]) => (
-            <div
-              key={key}
-              className="mb-3 grid grid-cols-1 items-center gap-2 sm:grid-cols-[130px_1fr]"
-            >
-              <FieldLabel>{label}</FieldLabel>
-              <TextInput
-                value={contact[key]}
-                onChange={(e) => setContact({ ...contact, [key]: e.target.value })}
-              />
-            </div>
-          ))}
-          <div className="mt-1 grid grid-cols-1 items-center gap-2 sm:grid-cols-[130px_1fr]">
-            <FieldLabel>Botão flutuante do WhatsApp</FieldLabel>
-            <Select
-              value={contact.whatsappFloat ? "sim" : "nao"}
-              onChange={(e) =>
-                setContact({ ...contact, whatsappFloat: e.target.value === "sim" })
-              }
-            >
-              <option value="nao">Desativado</option>
-              <option value="sim">Ativado (canto inferior direito)</option>
-            </Select>
-          </div>
-        </Card>
-
-        <Card>
-          <SectionLabel>Doações</SectionLabel>
-          <TextInput
-            value={contact.donationsUrl}
-            onChange={(e) => setContact({ ...contact, donationsUrl: e.target.value })}
-          />
-        </Card>
       </div>
 
       <div className="max-w-[820px]">
@@ -276,25 +212,15 @@ function LinksForm({
             <PrimaryButton disabled>Salvar alterações</PrimaryButton>
           </div>
         ) : (
-          <SaveBar
-            onSave={() =>
-              save({ inscricao, contact, lotes }, "Atualizou links, lotes & inscrição")
-            }
-          />
+          <SaveBar onSave={() => save({ lotes }, "Atualizou lotes de inscrição")} />
         )}
       </div>
     </>
   );
 }
 
-export default function LinksPage() {
+export default function LotesPage() {
   const { hydrated, content } = useContent();
   if (!hydrated) return <AdmLoading />;
-  return (
-    <LinksForm
-      initialInscricao={content.inscricao}
-      initialContact={content.contact}
-      initialLotes={content.lotes ?? []}
-    />
-  );
+  return <LotesForm inscricao={content.inscricao} initialLotes={content.lotes ?? []} />;
 }

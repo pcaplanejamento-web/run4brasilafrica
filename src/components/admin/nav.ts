@@ -16,7 +16,7 @@ export const ADM_NAV: AdmNavItem[] = [
   // que as abas-marcador de galeria/raceday/inscricao usam como conteúdo global;
   // e "Cadastros de parceiros" (o CRM de leads do "Seja um Parceiro").
   { key: "galeria", label: "Galeria (fotos)", href: "/admin/galeria" },
-  { key: "links", label: "Links & inscrição", href: "/admin/links" },
+  { key: "links", label: "Lotes de inscrição", href: "/admin/links" },
   { key: "seja-parceiro", label: "Cadastros de parceiros", href: "/admin/seja-parceiro" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },

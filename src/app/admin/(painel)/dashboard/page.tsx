@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useContent } from "@/lib/content/store";
-import type { CustomBlockType, CustomSection, LayoutItem } from "@/lib/content/types";
+import type { CustomSection, LayoutItem } from "@/lib/content/types";
 import {
   customIdFromKey,
   customKey,
@@ -12,18 +12,14 @@ import {
   resolveLayout,
   sectionMeta,
 } from "@/lib/content/sections";
+import {
+  type BlockChoiceValue,
+  blockFromChoice,
+  choiceLabel,
+  CONTEUDO_CHOICES,
+  SECAO_CHOICES,
+} from "@/lib/content/blockChoices";
 import { AdmLoading, Card, PageTitle, PrimaryButton } from "@/components/admin/ui";
-
-const BLOCK_CHOICES: { type: CustomBlockType; label: string }[] = [
-  { type: "subtitulo", label: "Subtítulo" },
-  { type: "texto", label: "Texto" },
-  { type: "imagem", label: "Imagem" },
-  { type: "video", label: "Vídeo (YouTube)" },
-  { type: "botao", label: "Botão" },
-  { type: "carrossel", label: "Carrossel de imagens" },
-  { type: "formulario", label: "Formulário (e-mail)" },
-  { type: "secao", label: "Seção pronta (FAQ, Números…)" },
-];
 
 function uid(): string {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -69,7 +65,7 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
   const [layout, setLayout] = useState<LayoutItem[]>(initial);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [picked, setPicked] = useState<{ id: string; type: CustomBlockType }[]>([]);
+  const [picked, setPicked] = useState<{ id: string; value: BlockChoiceValue }[]>([]);
 
   const customSections = content.customSections ?? [];
   const sectionTitle = (key: string) => {
@@ -89,8 +85,8 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
   const toggle = (i: number) =>
     setLayout((l) => l.map((x, idx) => (idx === i ? { ...x, enabled: !x.enabled } : x)));
 
-  const addPick = (t: CustomBlockType) =>
-    setPicked((p) => [...p, { id: uid(), type: t }]);
+  const addPick = (value: BlockChoiceValue) =>
+    setPicked((p) => [...p, { id: uid(), value }]);
   const removePick = (id: string) =>
     setPicked((p) => p.filter((x) => x.id !== id));
   const movePick = (i: number, dir: -1 | 1) =>
@@ -109,7 +105,7 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
     const section: CustomSection = {
       id,
       title,
-      blocks: picked.map((x) => ({ id: x.id, type: x.type })),
+      blocks: picked.map((x) => blockFromChoice(x.value, x.id)),
     };
     const nextLayout = [...layout, { key: customKey(id), enabled: true }];
     setLayout(nextLayout);
@@ -221,12 +217,30 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
           <div className="mb-1 text-[12px] font-semibold text-adm-muted">
             Componentes desta aba (opcional — clique para adicionar; pode reordenar abaixo)
           </div>
+          <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.04em] text-adm-muted">
+            Conteúdo
+          </div>
           <div className="mb-3 flex flex-wrap gap-2">
-            {BLOCK_CHOICES.map((c) => (
+            {CONTEUDO_CHOICES.map((c) => (
               <button
-                key={c.type}
+                key={c.value}
                 type="button"
-                onClick={() => addPick(c.type)}
+                onClick={() => addPick(c.value)}
+                className="rounded-full border border-adm-border px-3 py-1.5 text-[12px] font-semibold text-[#666] transition-colors hover:border-terracotta hover:text-terracotta"
+              >
+                + {c.label}
+              </button>
+            ))}
+          </div>
+          <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.04em] text-adm-muted">
+            Seções do site
+          </div>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {SECAO_CHOICES.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => addPick(c.value)}
                 className="rounded-full border border-adm-border px-3 py-1.5 text-[12px] font-semibold text-[#666] transition-colors hover:border-terracotta hover:text-terracotta"
               >
                 + {c.label}
@@ -245,7 +259,7 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
                     {i + 1}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-adm-ink">
-                    {BLOCK_CHOICES.find((c) => c.type === p.type)?.label ?? p.type}
+                    {choiceLabel(p.value)}
                   </span>
                   <ArrowBtn dir="up" onClick={() => movePick(i, -1)} disabled={i === 0} />
                   <ArrowBtn

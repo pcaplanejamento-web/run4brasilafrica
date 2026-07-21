@@ -588,6 +588,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   posicioná-las in-place também numa instalação nova. **Páginas legadas convertidas redirecionam**
   para a aba (`SectionAbaRedirect`, cria a aba se faltar); exceção: `/admin/seja-parceiro` vira o
   **CRM de cadastros** (leads), com link para editar a seção na aba.
+- **Picker de componentes = fonte única** (`src/lib/content/blockChoices.ts`): o Dashboard
+  ("criar aba") e o editor de aba compartilham `BLOCK_CHOICES` (`CONTEUDO_CHOICES` + `SECAO_CHOICES`).
+  Cada seção do site é uma **escolha direta** (grupo "Seções do site"), em vez de um único item
+  "Seção pronta" com dropdown de tipo. O valor do pick é `CustomBlockType` (genérico) ou
+  `secao:<kind>`; `blockFromChoice(value,id)` monta o `CustomBlock` já com `section =
+  sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
+  (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
+  editor só aparece como fallback para blocos `secao` legados sem `kind`.
+- **Inscrição/redes/doações em Configurações**: os campos de `content.inscricao` (plataforma, URL,
+  dia da corrida) e `content.contact` (Instagram, WhatsApp, YouTube, e-mail, WhatsApp flutuante,
+  doações) são editados em **Configurações**. `/admin/links` ("Lotes de inscrição") edita **só** o
+  array global `content.lotes` (usado pela seção "Inscrições e Lotes" e pela `RaceCountdownBar`); lê
+  `inscricao.raceDate`/`url` para validação e URL-padrão de novo lote, sem gravá-los (evita dois
+  donos do mesmo objeto). Como `save()` faz merge shallow no topo, cada página grava o objeto
+  completo que detém e não perde campos.
 - **Chave de layout**: cada aba entra no `content.layout` com a chave `custom:<id>` (helpers
   `customKey`/`customIdFromKey`/`isCustomKey` em `sections.ts`). O `resolveLayout(stored,
   customIds?)` **preserva** as chaves `custom:*` que ainda existem e **descarta órfãs** (abas

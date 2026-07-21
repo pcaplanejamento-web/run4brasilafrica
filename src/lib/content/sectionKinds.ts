@@ -7,7 +7,7 @@ export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
   percurso: "O Percurso",
   location: "Localização",
   raceday: "Dia da Corrida",
-  inscricao: "Inscrição / Lotes",
+  inscricao: "Inscrições e Lotes",
   galeria: "Galeria",
   premiacao: "Premiação",
   parceiros: "Parceiros",

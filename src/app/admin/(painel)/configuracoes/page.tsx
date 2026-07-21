@@ -7,8 +7,10 @@ import type {
   Analytics,
   Branding,
   Cloudinary,
+  ContactLinks,
   EventInfo,
   Hero,
+  Inscricao,
   Metrics,
   Organizer,
   OrganizersSection,
@@ -60,6 +62,8 @@ function ConfiguracoesForm({
   initialAnalytics,
   initialPrivacy,
   initialOrganizers,
+  initialInscricao,
+  initialContact,
   cloudinaryUpload,
 }: {
   initialEvent: EventInfo;
@@ -71,6 +75,8 @@ function ConfiguracoesForm({
   initialAnalytics: Analytics;
   initialPrivacy: PrivacySection;
   initialOrganizers: OrganizersSection;
+  initialInscricao: Inscricao;
+  initialContact: ContactLinks;
   cloudinaryUpload?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save, reset, reload, backend, status } = useContent();
@@ -82,6 +88,8 @@ function ConfiguracoesForm({
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
   const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
   const [privacy, setPrivacy] = useState<PrivacySection>(initialPrivacy);
+  const [inscricao, setInscricao] = useState<Inscricao>(initialInscricao);
+  const [contact, setContact] = useState<ContactLinks>(initialContact);
   const [organizers, setOrganizers] = useState<OrganizersSection>({
     enabled: initialOrganizers.enabled !== false,
     title: initialOrganizers.title ?? "",
@@ -470,6 +478,81 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
+        {/* Inscrição (plataforma) — os lotes ficam em "Lotes de inscrição". */}
+        <Card>
+          <SectionLabel>Inscrição (plataforma)</SectionLabel>
+          <FieldLabel>Plataforma</FieldLabel>
+          <div className="mb-3.5">
+            <TextInput
+              value={inscricao.platform}
+              onChange={(e) => setInscricao({ ...inscricao, platform: e.target.value })}
+            />
+          </div>
+          <FieldLabel>URL de inscrição padrão</FieldLabel>
+          <div className="mb-3.5">
+            <TextInput
+              value={inscricao.url}
+              onChange={(e) => setInscricao({ ...inscricao, url: e.target.value })}
+            />
+          </div>
+          <FieldLabel>Dia da corrida</FieldLabel>
+          <TextInput
+            type="datetime-local"
+            value={inscricao.raceDate ?? ""}
+            onChange={(e) => setInscricao({ ...inscricao, raceDate: e.target.value })}
+          />
+          <p className="mt-2 text-[12px] text-adm-muted">
+            Aparece na tela inicial como a faixa &ldquo;Dia da Corrida&rdquo; com contagem
+            regressiva. Deve ser depois do encerramento do último lote (configurado em
+            &ldquo;Lotes de inscrição&rdquo;).
+          </p>
+        </Card>
+
+        {/* Redes sociais */}
+        <Card>
+          <SectionLabel>Redes sociais</SectionLabel>
+          {(
+            [
+              ["Instagram", "instagram"],
+              ["WhatsApp", "whatsapp"],
+              ["YouTube", "youtube"],
+              ["E-mail de contato", "email"],
+            ] as const
+          ).map(([label, key]) => (
+            <div
+              key={key}
+              className="mb-3 grid grid-cols-1 items-center gap-2 sm:grid-cols-[130px_1fr]"
+            >
+              <FieldLabel>{label}</FieldLabel>
+              <TextInput
+                value={contact[key]}
+                onChange={(e) => setContact({ ...contact, [key]: e.target.value })}
+              />
+            </div>
+          ))}
+          <div className="mt-1 grid grid-cols-1 items-center gap-2 sm:grid-cols-[130px_1fr]">
+            <FieldLabel>Botão flutuante do WhatsApp</FieldLabel>
+            <Select
+              value={contact.whatsappFloat ? "sim" : "nao"}
+              onChange={(e) =>
+                setContact({ ...contact, whatsappFloat: e.target.value === "sim" })
+              }
+            >
+              <option value="nao">Desativado</option>
+              <option value="sim">Ativado (canto inferior direito)</option>
+            </Select>
+          </div>
+        </Card>
+
+        {/* Doações */}
+        <Card>
+          <SectionLabel>Doações</SectionLabel>
+          <TextInput
+            value={contact.donationsUrl}
+            onChange={(e) => setContact({ ...contact, donationsUrl: e.target.value })}
+          />
+        </Card>
+
         {/* Privacidade (LGPD) */}
         <Card>
           <SectionLabel>Política de privacidade</SectionLabel>
@@ -529,6 +612,8 @@ function ConfiguracoesForm({
                 analytics,
                 privacy,
                 organizers,
+                inscricao,
+                contact,
               },
               "Atualizou configurações do evento",
             )
@@ -553,6 +638,8 @@ export default function ConfiguracoesPage() {
       initialAnalytics={content.analytics ?? {}}
       initialPrivacy={content.privacy ?? {}}
       initialOrganizers={content.organizers ?? {}}
+      initialInscricao={content.inscricao}
+      initialContact={content.contact}
       cloudinaryUpload={content.cloudinary}
     />
   );

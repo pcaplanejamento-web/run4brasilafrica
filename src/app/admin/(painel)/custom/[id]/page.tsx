@@ -8,7 +8,6 @@ import type {
   CustomBlock,
   CustomBlockAlign,
   CustomBlockColumn,
-  CustomBlockType,
   CustomSection,
   SectionBlock,
   SectionKind,
@@ -38,45 +37,22 @@ import { SejaParceiroEditor } from "@/components/admin/sections/SejaParceiroEdit
 import { ParceirosEditor } from "@/components/admin/sections/ParceirosEditor";
 import { KitEditor } from "@/components/admin/sections/KitEditor";
 import { SECTION_KIND_LABEL, sectionDefaults } from "@/lib/content/sectionKinds";
+import {
+  type BlockChoiceValue,
+  blockFromChoice,
+  blockLabel,
+  CONTEUDO_CHOICES,
+  SECAO_CHOICES,
+  SECTION_KIND_ORDER,
+} from "@/lib/content/blockChoices";
 import { resolveLayout } from "@/lib/content/sections";
 import type { Lote } from "@/lib/content/types";
-
-export const BLOCK_LABEL: Record<CustomBlockType, string> = {
-  subtitulo: "Subtítulo",
-  texto: "Texto",
-  imagem: "Imagem",
-  video: "Vídeo (YouTube)",
-  botao: "Botão",
-  carrossel: "Carrossel de imagens",
-  formulario: "Formulário (captura de e-mail)",
-  secao: "Seção pronta",
-};
-
-const BLOCK_TYPES = Object.keys(BLOCK_LABEL) as CustomBlockType[];
-
-/** Section kinds whose in-aba editor is available (grows per rollout phase). */
-const AVAILABLE_SECTION_KINDS: SectionKind[] = [
-  "faq",
-  "depoimentos",
-  "stats",
-  "playlist",
-  "percurso",
-  "location",
-  "premiacao",
-  "compartilhar",
-  "sejaParceiro",
-  "parceiros",
-  "kit",
-  "galeria",
-  "raceday",
-  "inscricao",
-];
 
 /** Kinds "globais" — editados nas suas páginas próprias (o bloco é só marcador). */
 const GLOBAL_KIND_HINT: Partial<Record<SectionKind, { label: string; href: string }>> = {
   galeria: { label: "Galeria (fotos e álbuns)", href: "/admin/galeria" },
-  raceday: { label: "Links & inscrição (data da corrida)", href: "/admin/links" },
-  inscricao: { label: "Links & inscrição (lotes)", href: "/admin/links" },
+  raceday: { label: "Configurações (dia da corrida)", href: "/admin/configuracoes" },
+  inscricao: { label: "Lotes de inscrição", href: "/admin/links" },
 };
 
 /** Renders the editor for a `secao` block's chosen kind. */
@@ -93,25 +69,29 @@ function SectionFields({
   lotes: Lote[];
   sejaAtiva: boolean;
 }) {
-  const kind = section?.kind;
   return (
     <div className="flex flex-col gap-3">
-      <div className="w-[260px] max-w-full">
-        <FieldLabel>Tipo de seção</FieldLabel>
-        <Select
-          value={kind ?? ""}
-          onChange={(e) => set(sectionDefaults(e.target.value as SectionKind))}
-        >
-          <option value="" disabled>
-            Escolha…
-          </option>
-          {AVAILABLE_SECTION_KINDS.map((k) => (
-            <option key={k} value={k}>
-              {SECTION_KIND_LABEL[k]}
+      {/* O tipo é fixado ao adicionar o componente (cada seção é uma escolha
+          direta no picker). Só blocos "secao" legados (sem tipo) mostram o
+          seletor abaixo para se tornarem válidos. */}
+      {!section?.kind && (
+        <div className="w-[260px] max-w-full">
+          <FieldLabel>Tipo de seção</FieldLabel>
+          <Select
+            value=""
+            onChange={(e) => set(sectionDefaults(e.target.value as SectionKind))}
+          >
+            <option value="" disabled>
+              Escolha…
             </option>
-          ))}
-        </Select>
-      </div>
+            {SECTION_KIND_ORDER.map((k) => (
+              <option key={k} value={k}>
+                {SECTION_KIND_LABEL[k]}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
       {section?.kind === "faq" && (
         <FaqEditor value={section.faq} onChange={(faq) => set({ kind: "faq", faq })} />
       )}
@@ -483,7 +463,7 @@ function CustomAbaForm({
   const { save, content } = useContent();
   const [title, setTitle] = useState(section.title);
   const [blocks, setBlocks] = useState<CustomBlock[]>(section.blocks ?? []);
-  const [adding, setAdding] = useState<CustomBlockType>("texto");
+  const [adding, setAdding] = useState<BlockChoiceValue>("texto");
 
   // Dados globais que alguns blocos `secao` precisam (Parceiros/Kit).
   const lotes = content.lotes ?? [];
@@ -506,7 +486,7 @@ function CustomAbaForm({
       [next[i], next[j]] = [next[j], next[i]];
       return next;
     });
-  const addBlock = () => setBlocks((bs) => [...bs, { id: uid(), type: adding }]);
+  const addBlock = () => setBlocks((bs) => [...bs, blockFromChoice(adding, uid())]);
 
   function onSave() {
     const list = content.customSections ?? [];
@@ -535,7 +515,7 @@ function CustomAbaForm({
           <Card key={b.id}>
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-[13px] font-bold text-adm-ink">
-                {i + 1}. {BLOCK_LABEL[b.type]}
+                {i + 1}. {blockLabel(b)}
               </span>
               <div className="flex items-center gap-1.5">
                 <button
@@ -580,11 +560,18 @@ function CustomAbaForm({
         <Card>
           <FieldLabel>Adicionar componente</FieldLabel>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="w-[220px]">
-              <Select value={adding} onChange={(e) => setAdding(e.target.value as CustomBlockType)}>
-                {BLOCK_TYPES.map((t) => (
-                  <option key={t} value={t}>{BLOCK_LABEL[t]}</option>
-                ))}
+            <div className="w-[240px]">
+              <Select value={adding} onChange={(e) => setAdding(e.target.value as BlockChoiceValue)}>
+                <optgroup label="Conteúdo">
+                  {CONTEUDO_CHOICES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Seções do site">
+                  {SECAO_CHOICES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </optgroup>
               </Select>
             </div>
             <PrimaryButton onClick={addBlock}>+ Adicionar</PrimaryButton>
