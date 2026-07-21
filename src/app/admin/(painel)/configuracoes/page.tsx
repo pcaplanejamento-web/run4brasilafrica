@@ -10,7 +10,6 @@ import type {
   ContactLinks,
   EventInfo,
   Hero,
-  Inscricao,
   Metrics,
   Organizer,
   OrganizersSection,
@@ -62,7 +61,6 @@ function ConfiguracoesForm({
   initialAnalytics,
   initialPrivacy,
   initialOrganizers,
-  initialInscricao,
   initialContact,
   cloudinaryUpload,
 }: {
@@ -75,7 +73,6 @@ function ConfiguracoesForm({
   initialAnalytics: Analytics;
   initialPrivacy: PrivacySection;
   initialOrganizers: OrganizersSection;
-  initialInscricao: Inscricao;
   initialContact: ContactLinks;
   cloudinaryUpload?: { cloudName?: string; uploadPreset?: string };
 }) {
@@ -88,7 +85,6 @@ function ConfiguracoesForm({
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
   const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
   const [privacy, setPrivacy] = useState<PrivacySection>(initialPrivacy);
-  const [inscricao, setInscricao] = useState<Inscricao>(initialInscricao);
   const [contact, setContact] = useState<ContactLinks>(initialContact);
   const [organizers, setOrganizers] = useState<OrganizersSection>({
     enabled: initialOrganizers.enabled !== false,
@@ -478,36 +474,6 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
-        {/* Inscrição (plataforma) — os lotes ficam em "Lotes de inscrição". */}
-        <Card>
-          <SectionLabel>Inscrição (plataforma)</SectionLabel>
-          <FieldLabel>Plataforma</FieldLabel>
-          <div className="mb-3.5">
-            <TextInput
-              value={inscricao.platform}
-              onChange={(e) => setInscricao({ ...inscricao, platform: e.target.value })}
-            />
-          </div>
-          <FieldLabel>URL de inscrição padrão</FieldLabel>
-          <div className="mb-3.5">
-            <TextInput
-              value={inscricao.url}
-              onChange={(e) => setInscricao({ ...inscricao, url: e.target.value })}
-            />
-          </div>
-          <FieldLabel>Dia da corrida</FieldLabel>
-          <TextInput
-            type="datetime-local"
-            value={inscricao.raceDate ?? ""}
-            onChange={(e) => setInscricao({ ...inscricao, raceDate: e.target.value })}
-          />
-          <p className="mt-2 text-[12px] text-adm-muted">
-            Aparece na tela inicial como a faixa &ldquo;Dia da Corrida&rdquo; com contagem
-            regressiva. Deve ser depois do encerramento do último lote (configurado em
-            &ldquo;Lotes de inscrição&rdquo;).
-          </p>
-        </Card>
-
         {/* Redes sociais */}
         <Card>
           <SectionLabel>Redes sociais</SectionLabel>
@@ -612,7 +578,6 @@ function ConfiguracoesForm({
                 analytics,
                 privacy,
                 organizers,
-                inscricao,
                 contact,
               },
               "Atualizou configurações do evento",
@@ -638,7 +603,6 @@ export default function ConfiguracoesPage() {
       initialAnalytics={content.analytics ?? {}}
       initialPrivacy={content.privacy ?? {}}
       initialOrganizers={content.organizers ?? {}}
-      initialInscricao={content.inscricao}
       initialContact={content.contact}
       cloudinaryUpload={content.cloudinary}
     />

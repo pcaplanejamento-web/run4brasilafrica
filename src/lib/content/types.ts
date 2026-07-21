@@ -525,6 +525,14 @@ export interface CustomBlock {
   sponsorsShowTier?: boolean;
   sponsorsSubtitle?: string;
   sponsorsShowCta?: boolean;
+  /** type "galeria" (config + seções/álbuns; as fotos são buscadas em runtime). */
+  gallery?: GalleryConfig;
+  albums?: Album[];
+  /** type "inscricao" (plataforma/URL + lotes). */
+  inscricao?: Inscricao;
+  lotes?: Lote[];
+  /** type "raceday" (dia da corrida). */
+  raceDate?: string;
 }
 
 export interface CustomSection {

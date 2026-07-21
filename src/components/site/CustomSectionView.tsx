@@ -86,16 +86,25 @@ function renderSection(block: CustomBlock, ctx: SectionRenderCtx): ReactNode {
         />
       );
     case "raceday":
-      return <RaceDay inscricao={ctx.inscricao} />;
+      return (
+        <RaceDay
+          inscricao={{ ...ctx.inscricao, raceDate: block.raceDate ?? ctx.inscricao.raceDate }}
+        />
+      );
     case "inscricao":
-      return <InscricaoCTA inscricao={ctx.inscricao} lotes={ctx.lotes} />;
+      return (
+        <InscricaoCTA
+          inscricao={block.inscricao ?? ctx.inscricao}
+          lotes={block.lotes ?? ctx.lotes}
+        />
+      );
     case "galeria":
       return (
         <Galeria
-          albums={ctx.albums}
+          albums={block.albums ?? ctx.albums}
           tiles={ctx.galleryTiles}
           photos={ctx.galleryPhotos}
-          gallery={ctx.gallery}
+          gallery={block.gallery ?? ctx.gallery}
         />
       );
     default:

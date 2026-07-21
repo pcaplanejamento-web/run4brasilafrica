@@ -11,12 +11,9 @@ export const ADM_NAV: AdmNavItem[] = [
   // "Textos do site" foi removida: os textos são editados nas respectivas abas
   // ("A Causa", "Perguntas frequentes") e na config geral (contato/rodapé em
   // "Links & inscrição"). Cada texto tem uma única fonte de verdade.
-  // Quase todas as seções viraram abas (editadas via /admin/custom/sec-*). Ficam
-  // páginas próprias só: Galeria (fotos/álbuns) e Links & inscrição (lotes+data),
-  // que as abas-marcador de galeria/raceday/inscricao usam como conteúdo global;
-  // e "Cadastros de parceiros" (o CRM de leads do "Seja um Parceiro").
-  { key: "galeria", label: "Galeria (fotos)", href: "/admin/galeria" },
-  { key: "links", label: "Lotes de inscrição", href: "/admin/links" },
+  // TODAS as seções (inclusive galeria, inscrição/lotes e dia da corrida) são
+  // abas autocontidas, editadas em /admin/custom/sec-*. Sobra aqui só o CRM de
+  // leads do "Seja um Parceiro" (cadastros).
   { key: "seja-parceiro", label: "Cadastros de parceiros", href: "/admin/seja-parceiro" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },

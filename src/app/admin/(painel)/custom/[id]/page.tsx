@@ -9,7 +9,6 @@ import type {
   CustomBlockAlign,
   CustomBlockColumn,
   CustomSection,
-  SectionKind,
 } from "@/lib/content/types";
 import {
   AdmLoading,
@@ -35,6 +34,8 @@ import { ShareEditor } from "@/components/admin/sections/ShareEditor";
 import { SejaParceiroEditor } from "@/components/admin/sections/SejaParceiroEditor";
 import { ParceirosEditor } from "@/components/admin/sections/ParceirosEditor";
 import { KitEditor } from "@/components/admin/sections/KitEditor";
+import { GalleryEditor } from "@/components/admin/sections/GalleryEditor";
+import { InscricaoLotesEditor } from "@/components/admin/sections/InscricaoLotesEditor";
 import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
 import {
   type BlockChoiceValue,
@@ -46,13 +47,6 @@ import {
 import { resolveLayout } from "@/lib/content/sections";
 import type { Lote } from "@/lib/content/types";
 
-/** Kinds "globais" — editados nas suas páginas próprias (o bloco é só marcador). */
-const GLOBAL_KIND_HINT: Partial<Record<SectionKind, { label: string; href: string }>> = {
-  galeria: { label: "Galeria (fotos e álbuns)", href: "/admin/galeria" },
-  raceday: { label: "Configurações (dia da corrida)", href: "/admin/configuracoes" },
-  inscricao: { label: "Lotes de inscrição", href: "/admin/links" },
-};
-
 /** Editor de um bloco de seção — cada seção é um componente com seu dado inline
  *  no bloco. O tipo é fixado ao adicionar (escolha direta no picker). */
 function SectionEditor({
@@ -61,14 +55,15 @@ function SectionEditor({
   cloudinary,
   lotes,
   sejaAtiva,
+  raceDate,
 }: {
   block: CustomBlock;
   set: (patch: Partial<CustomBlock>) => void;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
   lotes: Lote[];
   sejaAtiva: boolean;
+  raceDate?: string;
 }) {
-  const hint = GLOBAL_KIND_HINT[block.type as SectionKind];
   return (
     <div className="flex flex-col gap-3">
       {block.type === "faq" && (
@@ -133,14 +128,31 @@ function SectionEditor({
           cloudinary={cloudinary}
         />
       )}
-      {hint && (
-        <div className="rounded-lg border border-adm-border bg-[#faf9f7] p-4 text-[13px] text-adm-muted">
-          Esta seção usa o conteúdo global do site. Edite em{" "}
-          <Link href={hint.href} className="font-semibold text-terracotta underline">
-            {hint.label}
-          </Link>
-          . Aqui você controla a <strong>posição</strong> e o <strong>ativo/oculto</strong> pela
-          Dashboard.
+      {block.type === "galeria" && (
+        <GalleryEditor
+          value={{ gallery: block.gallery, albums: block.albums }}
+          onChange={(v) => set(v)}
+        />
+      )}
+      {block.type === "inscricao" && (
+        <InscricaoLotesEditor
+          value={{ inscricao: block.inscricao, lotes: block.lotes }}
+          onChange={(v) => set(v)}
+          raceDate={raceDate}
+        />
+      )}
+      {block.type === "raceday" && (
+        <div className="w-[280px] max-w-full">
+          <FieldLabel>Dia da corrida</FieldLabel>
+          <TextInput
+            type="datetime-local"
+            value={block.raceDate ?? ""}
+            onChange={(e) => set({ raceDate: e.target.value })}
+          />
+          <p className="mt-2 text-[12px] text-adm-muted">
+            Aparece como a faixa &ldquo;Dia da Corrida&rdquo; e na barra fixa de contagem
+            regressiva. Deve ser depois do encerramento do último lote.
+          </p>
         </div>
       )}
     </div>
@@ -262,12 +274,14 @@ function BlockFields({
   cloudinary,
   lotes,
   sejaAtiva,
+  raceDate,
 }: {
   block: CustomBlock;
   set: (patch: Partial<CustomBlock>) => void;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
   lotes: Lote[];
   sejaAtiva: boolean;
+  raceDate?: string;
 }) {
   // Seções são componentes de primeira classe — seu editor específico.
   if (isSectionKind(block.type)) {
@@ -278,6 +292,7 @@ function BlockFields({
         cloudinary={cloudinary}
         lotes={lotes}
         sejaAtiva={sejaAtiva}
+        raceDate={raceDate}
       />
     );
   }
@@ -434,8 +449,10 @@ function CustomAbaForm({
   const [blocks, setBlocks] = useState<CustomBlock[]>(section.blocks ?? []);
   const [adding, setAdding] = useState<BlockChoiceValue>("texto");
 
-  // Dados globais que alguns blocos `secao` precisam (Parceiros/Kit).
+  // Dados globais que alguns blocos de seção precisam (Parceiros/Kit; a data da
+  // corrida — dona: bloco "Dia da Corrida" — só para validar as datas dos lotes).
   const lotes = content.lotes ?? [];
+  const raceDate = content.inscricao?.raceDate;
   const sejaAtiva = resolveLayout(
     content.layout,
     (content.customSections ?? []).map((s) => s.id),
@@ -522,6 +539,7 @@ function CustomAbaForm({
               cloudinary={cloudinary}
               lotes={lotes}
               sejaAtiva={sejaAtiva}
+              raceDate={raceDate}
             />
           </Card>
         ))}

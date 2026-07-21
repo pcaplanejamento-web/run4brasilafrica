@@ -565,10 +565,10 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `content.customSections: CustomSection[]`.
 - **Sem "seção pronta"** — cada seção é um `CustomBlockType` de primeira classe (não há mais o
   invólucro `secao`/`SectionBlock`). O bloco carrega o próprio dado **inline** (`block.faq`,
-  `block.stats`, `block.percurso`, `block.sponsors`+flags, …); os **marcadores** globais
-  (raceday/inscricao/galeria) não carregam dado e renderizam do conteúdo global via
-  `SectionRenderCtx` (lotes, inscricao, event, fotos, `sejaParceiroEnabled`) — fonte única, sem
-  divergência. `isSectionKind(type)` (sectionKinds.ts) distingue seção de bloco livre. Render:
+  `block.stats`, `block.percurso`, `block.sponsors`+flags, …). **Todas as seções são autocontidas**,
+  inclusive galeria (`block.gallery`+`block.albums`), inscrição/lotes (`block.inscricao`+`block.lotes`)
+  e dia da corrida (`block.raceDate`) — antes marcadores globais, agora editadas na aba. `isSectionKind(type)`
+  (sectionKinds.ts) distingue seção de bloco livre. Render:
   `renderSection(block, ctx)` em `CustomSectionView` **delega ao componente original** (reuso 100%);
   uma aba com **um único** bloco de seção faz **short-circuit** (renderiza o componente direto, sem
   o wrapper `<section id="aba-…">`) — markup, padding e **anchor** (`#faq`, `#parceiros`, …)
@@ -578,8 +578,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `custom:sec-<key>` **na posição** (preserva `enabled`), criando um bloco flat `{type: kind,
   ...dados}`; campos top-level ficam intactos (nada se perde). `flattenLegacySecao` converte os
   blocos `secao` aninhados gravados por deploys anteriores para o formato flat (idempotente, sem
-  perda — descarta só `secao` órfão que nunca renderizou). **Unificação concluída** — todas as 15
-  seções viraram abas: **Fase 1**
+  perda — descarta só `secao` órfão que nunca renderizou). `backfillSectionData` preenche os blocos
+  galeria/inscricao/raceday (marcadores criados por deploys antigos) com os dados globais quando o
+  bloco ainda não os tem (idempotente). `syncGlobalsFromBlocks` **espelha bloco→global** a cada
+  leitura: o bloco é a fonte; `content.inscricao`/`lotes`/`gallery`/`albums` viram cópia derivada
+  para os leitores legados do topo — `RaceCountdownBar` (barra fixa), `EventJsonLd` (SEO),
+  `/api/agenda` e o `SectionRenderCtx` — seguirem corretos sem alteração. A data da corrida é dona
+  do bloco **"Dia da Corrida"** (`raceDate`). **Unificação concluída** — todas as 15 seções viraram
+  abas: **Fase 1**
   `faq`/`depoimentos`/`stats` (+ `about`/"A Causa"); **Fase 2**
   `playlist`/`percurso`/`location`/`premiacao`/`sejaParceiro`/`compartilhar`; **Fase 3** (acopladas/
   globais) `parceiros`, `kit`, `galeria`, `raceday`, `inscricao`. `SECTIONS` agora tem só `hero`;

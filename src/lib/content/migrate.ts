@@ -285,7 +285,7 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
     kind: "galeria",
     title: () => "Galeria",
     hasContent: (c) => (c.galleryPhotos ?? []).length > 0 || (c.albums ?? []).length > 0,
-    build: () => ({}),
+    build: (c) => ({ gallery: c.gallery ?? {}, albums: c.albums ?? [] }),
     fallbackAfter: "inscricao",
   },
   {
@@ -294,7 +294,7 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
     kind: "raceday",
     title: () => "Dia da Corrida",
     hasContent: (c) => !!c.inscricao?.raceDate,
-    build: () => ({}),
+    build: (c) => ({ raceDate: c.inscricao?.raceDate ?? "" }),
     fallbackAfter: "inscricao",
   },
   {
@@ -303,7 +303,7 @@ const SECTION_MIGRATIONS: SectionMigration[] = [
     kind: "inscricao",
     title: (c) => c.inscricao?.title?.trim() || "Inscrição",
     hasContent: () => true,
-    build: () => ({}),
+    build: (c) => ({ inscricao: c.inscricao, lotes: c.lotes ?? [] }),
     fallbackAfter: "galeria",
   },
 ];
@@ -403,14 +403,80 @@ function flattenLegacySecao(c: SiteContent): SiteContent {
 }
 
 /**
+ * Preenche os dados dos blocos de seção **autocontida global** (galeria /
+ * inscricao / raceday) a partir do conteúdo global, quando o bloco ainda não os
+ * tem (marcadores criados por deploys anteriores). Idempotente: só preenche
+ * campos ausentes (`undefined`), então uma vez preenchidos vira no-op — o bloco
+ * passa a ser a fonte de verdade.
+ */
+function backfillSectionData(c: SiteContent): SiteContent {
+  const secs = c.customSections;
+  if (!secs?.length) return c;
+  let changed = false;
+  const next = secs.map((s) => {
+    const blocks = (s.blocks ?? []).map((b) => {
+      if (b.type === "galeria" && b.albums === undefined && b.gallery === undefined) {
+        changed = true;
+        return { ...b, gallery: c.gallery ?? {}, albums: c.albums ?? [] };
+      }
+      if (b.type === "inscricao" && b.inscricao === undefined && b.lotes === undefined) {
+        changed = true;
+        return { ...b, inscricao: c.inscricao, lotes: c.lotes ?? [] };
+      }
+      if (b.type === "raceday" && b.raceDate === undefined) {
+        changed = true;
+        return { ...b, raceDate: c.inscricao?.raceDate ?? "" };
+      }
+      return b;
+    });
+    return blocks === s.blocks ? s : { ...s, blocks };
+  });
+  return changed ? { ...c, customSections: next } : c;
+}
+
+/**
+ * Espelha os dados dos blocos autocontidos globais de volta para os campos
+ * top-level (`content.inscricao`, `content.lotes`, `content.gallery`,
+ * `content.albums`). O **bloco é a fonte**; o global é uma cópia derivada para os
+ * consumidores legados que leem o topo — `RaceCountdownBar`, `EventJsonLd`,
+ * `/api/agenda` e o `SectionRenderCtx` — seguirem corretos sem alteração. Usa o
+ * primeiro bloco de cada tipo encontrado nas abas.
+ */
+function syncGlobalsFromBlocks(c: SiteContent): SiteContent {
+  const blocks = (c.customSections ?? []).flatMap((s) => s.blocks ?? []);
+  const insc = blocks.find((b) => b.type === "inscricao");
+  const race = blocks.find((b) => b.type === "raceday");
+  const gal = blocks.find((b) => b.type === "galeria");
+  if (!insc && !race && !gal) return c;
+
+  let inscricao = c.inscricao;
+  let lotes = c.lotes;
+  if (insc?.inscricao) inscricao = insc.inscricao;
+  if (insc?.lotes) lotes = insc.lotes;
+  // A "Dia da Corrida" é a dona da data exibida (banner + barra fixa + SEO).
+  if (race && race.raceDate !== undefined) {
+    inscricao = { ...inscricao, raceDate: race.raceDate };
+  }
+  return {
+    ...c,
+    inscricao,
+    lotes,
+    ...(gal?.gallery !== undefined ? { gallery: gal.gallery } : {}),
+    ...(gal?.albums !== undefined ? { albums: gal.albums } : {}),
+  };
+}
+
+/**
  * Normalização idempotente aplicada a cada leitura (db.ts): converte seções
- * built-in em abas editáveis e achata blocos `secao` legados. Pura (retorna novo
- * objeto, nunca muta). Ordem: "A Causa" (histórico), `SECTION_MIGRATIONS`, e por
- * fim o flatten dos blocos `secao` gravados por deploys anteriores.
+ * built-in em abas editáveis, achata blocos `secao` legados, preenche os blocos
+ * autocontidos globais e espelha-os de volta ao topo. Pura (retorna novo objeto,
+ * nunca muta).
  */
 export function normalizeContent(c: SiteContent): SiteContent {
   let out = applyAbout(c);
   for (const m of SECTION_MIGRATIONS) out = applyMigration(out, m);
   out = flattenLegacySecao(out);
+  out = backfillSectionData(out);
+  out = syncGlobalsFromBlocks(out);
   return out;
 }

@@ -66,9 +66,21 @@ export function sectionDefaults(kind: SectionKind): Partial<CustomBlock> {
       return { kit: { title: "Kit do atleta", subtitle: "", regulamentoLabel: "Regulamento" } };
     case "parceiros":
       return { sponsors: [] };
-    case "raceday":
-    case "inscricao":
     case "galeria":
-      return {};
+      return { gallery: {}, albums: [] };
+    case "inscricao":
+      return {
+        inscricao: {
+          title: "",
+          subtitle: "",
+          ctaLabel: "Inscreva-se",
+          platform: "",
+          url: "",
+          raceDate: "",
+        },
+        lotes: [],
+      };
+    case "raceday":
+      return { raceDate: "" };
   }
 }
