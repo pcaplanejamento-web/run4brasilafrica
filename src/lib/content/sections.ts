@@ -1,4 +1,5 @@
-import type { LayoutItem } from "./types";
+import type { CustomSection, LayoutItem, SectionKind } from "./types";
+import { isSectionKind, SECTION_ANCHOR } from "./sectionKinds";
 
 /**
  * Registry of the homepage sections that the ADM can reorder / enable-disable
@@ -39,6 +40,19 @@ export function isCustomKey(key: string): boolean {
 }
 export function customIdFromKey(key: string): string | null {
   return isCustomKey(key) ? key.slice(CUSTOM_PREFIX.length) : null;
+}
+
+/**
+ * Âncora (id no DOM) de uma aba na tela inicial, para rolar até ela. Uma aba de
+ * um único bloco de seção usa a âncora da seção (`#faq`, `#inscricao`, …); as
+ * demais usam o wrapper `#aba-<id>`. Casa com o render em `CustomSectionView`.
+ */
+export function abaAnchor(section: CustomSection): string {
+  const blocks = section.blocks ?? [];
+  if (blocks.length === 1 && isSectionKind(blocks[0].type)) {
+    return SECTION_ANCHOR[blocks[0].type as SectionKind];
+  }
+  return `aba-${section.id}`;
 }
 
 /**

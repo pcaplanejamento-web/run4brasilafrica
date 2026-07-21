@@ -44,7 +44,12 @@ import {
   CONTEUDO_CHOICES,
   SECAO_CHOICES,
 } from "@/lib/content/blockChoices";
-import { resolveLayout } from "@/lib/content/sections";
+import {
+  abaAnchor,
+  customIdFromKey,
+  isCustomKey,
+  resolveLayout,
+} from "@/lib/content/sections";
 import type { Lote } from "@/lib/content/types";
 
 /** Editor de um bloco de seção — cada seção é um componente com seu dado inline
@@ -275,6 +280,7 @@ function BlockFields({
   lotes,
   sejaAtiva,
   raceDate,
+  homeTargets,
 }: {
   block: CustomBlock;
   set: (patch: Partial<CustomBlock>) => void;
@@ -282,6 +288,7 @@ function BlockFields({
   lotes: Lote[];
   sejaAtiva: boolean;
   raceDate?: string;
+  homeTargets: { label: string; anchor: string }[];
 }) {
   // Seções são componentes de primeira classe — seu editor específico.
   if (isSectionKind(block.type)) {
@@ -394,19 +401,55 @@ function BlockFields({
           </div>
         </div>
       );
-    case "botao":
+    case "botao": {
+      const target = block.buttonTarget ?? "link";
       return (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <FieldLabel>Texto do botão</FieldLabel>
-            <TextInput value={block.buttonLabel ?? ""} onChange={(e) => set({ buttonLabel: e.target.value })} placeholder="Inscreva-se" />
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Texto do botão</FieldLabel>
+              <TextInput value={block.buttonLabel ?? ""} onChange={(e) => set({ buttonLabel: e.target.value })} placeholder="Inscreva-se" />
+            </div>
+            <div>
+              <FieldLabel>Ação ao clicar</FieldLabel>
+              <Select
+                value={target}
+                onChange={(e) => set({ buttonTarget: e.target.value as "link" | "section" })}
+              >
+                <option value="link">Abrir um link</option>
+                <option value="section">Rolar até uma seção da tela inicial</option>
+              </Select>
+            </div>
           </div>
-          <div>
-            <FieldLabel>Link</FieldLabel>
-            <TextInput value={block.buttonUrl ?? ""} onChange={(e) => set({ buttonUrl: e.target.value })} placeholder="https://..." />
-          </div>
+          {target === "section" ? (
+            <div>
+              <FieldLabel>Seção de destino</FieldLabel>
+              <Select
+                value={block.buttonSection ?? ""}
+                onChange={(e) => set({ buttonSection: e.target.value })}
+              >
+                <option value="" disabled>
+                  Escolha a seção…
+                </option>
+                {homeTargets.map((t) => (
+                  <option key={t.anchor} value={t.anchor}>
+                    {t.label}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-[11px] text-adm-muted">
+                A página rola suavemente até o topo da seção escolhida (mesma lógica do menu).
+              </p>
+            </div>
+          ) : (
+            <div>
+              <FieldLabel>Link</FieldLabel>
+              <TextInput value={block.buttonUrl ?? ""} onChange={(e) => set({ buttonUrl: e.target.value })} placeholder="https://..." />
+            </div>
+          )}
         </div>
       );
+    }
     case "carrossel": {
       const images = block.images ?? [];
       const setImg = (i: number, url: string) =>
@@ -453,13 +496,29 @@ function CustomAbaForm({
   // corrida — dona: bloco "Dia da Corrida" — só para validar as datas dos lotes).
   const lotes = content.lotes ?? [];
   const raceDate = content.inscricao?.raceDate;
-  const sejaAtiva = resolveLayout(
+  const resolved = resolveLayout(
     content.layout,
     (content.customSections ?? []).map((s) => s.id),
-  ).some(
+  );
+  const sejaAtiva = resolved.some(
     (li) =>
       li.enabled && (li.key === "sejaParceiro" || li.key === "custom:sec-sejaParceiro"),
   );
+  // Abas ativas da tela inicial que o botão pode rolar até (âncora + rótulo).
+  const homeTargets: { label: string; anchor: string }[] = [
+    { label: "Topo da página", anchor: "top" },
+    ...resolved
+      .filter((li) => li.enabled && isCustomKey(li.key))
+      .map((li) => {
+        const s = (content.customSections ?? []).find(
+          (c) => c.id === customIdFromKey(li.key),
+        );
+        return s
+          ? { label: s.title?.trim() || "Aba sem título", anchor: abaAnchor(s) }
+          : null;
+      })
+      .filter((x): x is { label: string; anchor: string } => x !== null),
+  ];
 
   const setBlock = (i: number, patch: Partial<CustomBlock>) =>
     setBlocks((bs) => bs.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
@@ -540,6 +599,7 @@ function CustomAbaForm({
               lotes={lotes}
               sejaAtiva={sejaAtiva}
               raceDate={raceDate}
+              homeTargets={homeTargets}
             />
           </Card>
         ))}

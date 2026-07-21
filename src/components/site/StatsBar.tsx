@@ -11,7 +11,7 @@ import Counter from "./Counter";
 export default function StatsBar({ stats }: { stats: Stat[] }) {
   if (stats.length === 0) return null;
   return (
-    <div className="grid grid-cols-1 gap-4 px-5 pt-12 sm:grid-cols-3 sm:gap-0 sm:px-8 md:px-14 md:pt-14">
+    <div id="numeros" className="grid grid-cols-1 gap-4 px-5 pt-12 sm:grid-cols-3 sm:gap-0 sm:px-8 md:px-14 md:pt-14">
       {stats.map((s, i) => (
         <Reveal
           key={s.label}

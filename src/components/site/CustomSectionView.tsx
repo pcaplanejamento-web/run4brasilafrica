@@ -135,7 +135,10 @@ function hasContent(b: CustomBlock): boolean {
     case "video":
       return !!youtubeId(b.videoUrl);
     case "botao":
-      return !!(b.buttonUrl?.trim() && b.buttonLabel?.trim());
+      return !!(
+        b.buttonLabel?.trim() &&
+        (b.buttonTarget === "section" ? b.buttonSection : b.buttonUrl?.trim())
+      );
     case "carrossel":
       return !!b.images?.some(Boolean);
     case "formulario":
@@ -204,14 +207,19 @@ function Block({ block, ctx }: { block: CustomBlock; ctx: SectionRenderCtx }) {
         </div>
       );
     }
-    case "botao":
+    case "botao": {
+      const href =
+        block.buttonTarget === "section" && block.buttonSection
+          ? `#${block.buttonSection}`
+          : block.buttonUrl || "#";
       return (
         <div>
-          <CtaButton href={block.buttonUrl!} size="lg">
+          <CtaButton href={href} size="lg">
             {block.buttonLabel}
           </CtaButton>
         </div>
       );
+    }
     case "carrossel":
       return <CustomCarousel images={block.images ?? []} />;
     case "formulario":

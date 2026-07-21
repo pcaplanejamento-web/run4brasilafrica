@@ -493,6 +493,10 @@ export interface CustomBlock {
   /** botão. */
   buttonLabel?: string;
   buttonUrl?: string;
+  /** Ação do botão: link externo (`buttonUrl`) ou rolar até uma seção da home
+   *  (`buttonSection` = âncora, ex.: "inscricao"). Ausente = "link". */
+  buttonTarget?: "link" | "section";
+  buttonSection?: string;
   /** carrossel/banner (lista de imagens). */
   images?: string[];
   /** formulário: qual formulário existente embutir. */

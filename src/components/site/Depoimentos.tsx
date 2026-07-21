@@ -9,7 +9,7 @@ export default function Depoimentos({
   testimonials: Testimonial[];
 }) {
   return (
-    <section className="px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
+    <section id="depoimentos" className="px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
       <SectionEyebrow as="h2" className="mb-8 md:mb-10">
         Quem já correu
       </SectionEyebrow>

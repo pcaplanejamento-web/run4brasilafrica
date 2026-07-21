@@ -18,6 +18,28 @@ export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
   compartilhar: "Compartilhar",
 };
 
+/**
+ * Âncora (id no DOM) de cada seção quando renderizada — usada para rolar a
+ * página até ela (menu, botões). Deve casar com o `id` do `<section>` de cada
+ * componente.
+ */
+export const SECTION_ANCHOR: Record<SectionKind, string> = {
+  stats: "numeros",
+  playlist: "playlist",
+  percurso: "percurso",
+  location: "localizacao",
+  raceday: "dia-da-corrida",
+  inscricao: "inscricao",
+  galeria: "galeria",
+  premiacao: "premiacao",
+  parceiros: "parceiros",
+  sejaParceiro: "seja-parceiro",
+  depoimentos: "depoimentos",
+  faq: "faq",
+  kit: "kit",
+  compartilhar: "compartilhar",
+};
+
 /** Every section kind, as a Set for O(1) `isSectionKind` checks. */
 const SECTION_KIND_SET = new Set<string>(Object.keys(SECTION_KIND_LABEL));
 
