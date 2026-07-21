@@ -56,6 +56,9 @@ export default function Hero({ hero }: { hero: HeroType }) {
   // settle timeout so a stale callback can't land on an out-of-range pos.
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
+    // Reset intencional ao mudar o nº de slides (sincroniza estado ao input) —
+    // mesmo padrão do efeito de reduced-motion acima.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndex(0);
     setPos(n > 1 ? 1 : 0);
     setInstant(false);
@@ -101,18 +104,27 @@ export default function Hero({ hero }: { hero: HeroType }) {
     }, ANIM_MS + 30);
   };
 
-  const drag = useDragTrack({ enabled: multi && !busy, onGo: go });
+  // Desestruturado para o compilador rastrear a origem de cada valor: `dragPct`
+  // e `dragging` são STATE (ok ler no render); `dragRef`/`swiped` são refs
+  // (ref forwarding e mutação em handler, ambos permitidos).
+  const {
+    ref: dragRef,
+    dragPct,
+    dragging,
+    handlers: dragHandlers,
+    wasSwiped,
+  } = useDragTrack({ enabled: multi && !busy, onGo: go });
 
   // Auto-advance (loops). Restarts on index change so a manual pick isn't
   // overridden; paused while a settle animation runs OR the user is dragging
   // (so it can't fire mid-swipe and desync the track).
   useEffect(() => {
-    if (!multi || reduced || busy || drag.dragging) return;
+    if (!multi || reduced || busy || dragging) return;
     const ms = Math.max(2, hero.slideDurationSeconds || 6) * 1000;
     const id = setTimeout(() => go(1), ms);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, multi, reduced, busy, drag.dragging, hero.slideDurationSeconds]);
+  }, [index, multi, reduced, busy, dragging, hero.slideDurationSeconds]);
 
   if (n === 0) return null;
 
@@ -197,26 +209,25 @@ export default function Hero({ hero }: { hero: HeroType }) {
     <div>
       <section
         id="top"
-        ref={drag.ref}
+        ref={dragRef}
         className="relative aspect-[3/4] max-h-[92vh] w-full touch-pan-y select-none overflow-hidden md:aspect-video"
         style={{ background: "var(--color-ink)" }}
-        {...drag.handlers}
+        {...dragHandlers}
         onClickCapture={(e) => {
           // If the gesture was a swipe, cancel the click it may generate so it
           // doesn't also trigger the CTA button or the clickable-banner link.
-          if (drag.swiped.current) {
+          if (wasSwiped()) {
             e.preventDefault();
             e.stopPropagation();
-            drag.swiped.current = false;
           }
         }}
       >
         <div
           className="flex h-full"
           style={{
-            transform: `translateX(calc(-${pos * 100}% + ${drag.dragPct}%))`,
+            transform: `translateX(calc(-${pos * 100}% + ${dragPct}%))`,
             transition:
-              drag.dragging || instant || reduced
+              dragging || instant || reduced
                 ? "none"
                 : `transform ${ANIM_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)`,
           }}

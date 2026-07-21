@@ -44,6 +44,11 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   // client re-evaluates live). `carouselsOf` guarantees a non-empty list with one
   // perpetual default, so the banner is never empty.
   const carousels = carouselsOf(c);
+  // Server Component (1 render por request): capturar a hora do request é o
+  // comportamento desejado — escolhe o carrossel/lote no ar agora e semeia o
+  // `initialNow` dos clientes (o cliente refina ao vivo). Não é impuro no sentido
+  // de re-render instável (roda só no servidor).
+  // eslint-disable-next-line react-hooks/purity
   const nowMs = Date.now();
   const initialCarousel = activeCarousel(carousels, nowMs) ?? carousels[0];
 

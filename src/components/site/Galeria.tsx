@@ -123,8 +123,15 @@ export default function Galeria({
   const go = (dir: number) =>
     setPage((p) => (p + dir + pageCount) % pageCount);
 
-  // Finger-following swipe (same hook as the hero banner).
-  const drag = useDragTrack({
+  // Finger-following swipe (same hook as the hero banner). Desestruturado para o
+  // compilador rastrear a origem: `dragPct`/`dragging` são STATE (ok no render),
+  // `dragRef` é ref (ref forwarding).
+  const {
+    ref: dragRef,
+    dragPct,
+    dragging,
+    handlers: dragHandlers,
+  } = useDragTrack({
     enabled: pageCount > 1,
     onGo: go,
     atStart: current === 0,
@@ -155,15 +162,15 @@ export default function Galeria({
       {hasPhotos ? (
         <div className="relative">
           <div
-            ref={drag.ref}
+            ref={dragRef}
             className="gallery-slider touch-pan-y select-none overflow-hidden"
-            {...drag.handlers}
+            {...dragHandlers}
           >
             <div
               className="flex"
               style={{
-                transform: `translateX(calc(-${current * 100}% + ${drag.dragPct}%))`,
-                transition: drag.dragging
+                transform: `translateX(calc(-${current * 100}% + ${dragPct}%))`,
+                transition: dragging
                   ? "none"
                   : "transform 450ms cubic-bezier(0.22, 0.61, 0.36, 1)",
               }}

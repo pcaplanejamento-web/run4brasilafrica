@@ -70,5 +70,14 @@ export function useDragTrack({
       }
     : {};
 
-  return { ref, dragPct: dragging ? dragPct : 0, dragging, handlers, swiped };
+  /** Consome o flag de swipe (lê e zera). O consumidor chama isto no clique para
+   *  cancelar o clique que um arrasto geraria — a mutação do ref fica DENTRO do
+   *  hook (onde é permitida), não no render/handler do consumidor. */
+  const wasSwiped = () => {
+    const s = swiped.current;
+    swiped.current = false;
+    return s;
+  };
+
+  return { ref, dragPct: dragging ? dragPct : 0, dragging, handlers, wasSwiped };
 }
