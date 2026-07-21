@@ -606,6 +606,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
   (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
   editor só aparece como fallback para blocos `secao` legados sem `kind`.
+- **Edição ativa** (`src/lib/content/editions.ts`): a edição de `status: "Ativa"` em `content.editions`
+  é a fonte única de "qual edição está no ar". `activeEdition`/`editionLabel` derivam dela;
+  `syncActiveEdition` (migrate.ts) espelha o ano dela em `event.editionYear` a cada leitura (público
+  + SEO consistentes). O marcador é o **componente compartilhado `EditionBadge`** (Dashboard +
+  Banner). Edições é editável (ano/data/inscritos, tornar ativa, excluir, adicionar). O card "Visão
+  geral"/`Metrics` (números manuais) foi **removido** do Dashboard e de Configurações (sem uso).
 - **Testes** (`tests/*.test.ts`, vitest): a lógica crítica tem cobertura unitária — `datetime`
   (parser −03:00), `lotes` (status/ordem/ativo/validação/contagem), `carousels` (agendamento) e
   `migrate` (flatten + backfill + espelho + posse do raceDate + idempotência), além de `sections`

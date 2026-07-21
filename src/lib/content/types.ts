@@ -585,12 +585,6 @@ export interface LogEntry {
   user: string;
 }
 
-/** Manually-edited event numbers (the computed ones live in the dashboard). */
-export interface Metrics {
-  registered: string;
-  spotsLeft: string;
-}
-
 /** One homepage section in the ADM-controlled order + on/off state. */
 export interface LayoutItem {
   key: string;
@@ -643,6 +637,5 @@ export interface SiteContent {
   privacy?: PrivacySection;
   /* ADM-only content */
   editions: Edition[];
-  metrics: Metrics;
   log: LogEntry[];
 }

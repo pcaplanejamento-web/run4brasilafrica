@@ -10,7 +10,6 @@ import type {
   ContactLinks,
   EventInfo,
   Hero,
-  Metrics,
   Organizer,
   OrganizersSection,
   PrivacySection,
@@ -54,7 +53,6 @@ const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }
 function ConfiguracoesForm({
   initialEvent,
   initialHero,
-  initialMetrics,
   initialBranding,
   initialTheme,
   initialCloudinary,
@@ -66,7 +64,6 @@ function ConfiguracoesForm({
 }: {
   initialEvent: EventInfo;
   initialHero: Hero;
-  initialMetrics: Metrics;
   initialBranding: Branding;
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
@@ -79,7 +76,6 @@ function ConfiguracoesForm({
   const { save, reset, reload, backend, status } = useContent();
   const [event, setEvent] = useState(initialEvent);
   const [hero, setHero] = useState(initialHero);
-  const [metrics, setMetrics] = useState(initialMetrics);
   const [branding, setBranding] = useState(initialBranding);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
@@ -190,10 +186,12 @@ function ConfiguracoesForm({
             </div>
             <div>
               <FieldLabel>Ano da edição</FieldLabel>
-              <TextInput
-                value={event.editionYear}
-                onChange={(e) => setEv("editionYear", e.target.value)}
-              />
+              <div className="flex min-h-11 items-center rounded-md border border-adm-border bg-[#faf9f7] px-3 text-[13px] text-adm-muted">
+                {event.editionYear} — definido em{" "}
+                <a href="/admin/edicoes" className="ml-1 font-semibold text-terracotta underline">
+                  Edições
+                </a>
+              </div>
             </div>
             <div>
               <FieldLabel>Cidade</FieldLabel>
@@ -364,31 +362,6 @@ function ConfiguracoesForm({
               />
             </div>
           </div>
-        </Card>
-
-        {/* Números do evento (manuais) */}
-        <Card>
-          <SectionLabel>Números do evento</SectionLabel>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel>Inscritos ({event.editionYear})</FieldLabel>
-              <TextInput
-                value={metrics.registered}
-                onChange={(e) => setMetrics({ ...metrics, registered: e.target.value })}
-              />
-            </div>
-            <div>
-              <FieldLabel>Vagas restantes</FieldLabel>
-              <TextInput
-                value={metrics.spotsLeft}
-                onChange={(e) => setMetrics({ ...metrics, spotsLeft: e.target.value })}
-              />
-            </div>
-          </div>
-          <p className="mt-2 text-[12px] text-adm-muted">
-            No painel, &ldquo;Fotos na galeria&rdquo; e &ldquo;Patrocinadores&rdquo; são
-            contados automaticamente.
-          </p>
         </Card>
 
         {/* Organizadores (footer floating card) */}
@@ -571,7 +544,6 @@ function ConfiguracoesForm({
               {
                 event,
                 hero,
-                metrics,
                 branding,
                 theme,
                 cloudinary,
@@ -596,7 +568,6 @@ export default function ConfiguracoesPage() {
     <ConfiguracoesForm
       initialEvent={content.event}
       initialHero={content.hero}
-      initialMetrics={content.metrics}
       initialBranding={content.branding ?? {}}
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}

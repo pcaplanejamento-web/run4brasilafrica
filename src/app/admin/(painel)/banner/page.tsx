@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
+import EditionBadge from "@/components/admin/EditionBadge";
 import type { HeroCarousel, HeroSlide, MediaType } from "@/lib/content/types";
 import { carouselsOf, defaultCarousel, heroOf } from "@/lib/content/carousels";
 import HeroImageField from "@/components/admin/HeroImageField";
@@ -57,11 +58,9 @@ function newSlide(): HeroSlide {
 
 function BannerForm({
   initialCarousels,
-  editionLabel,
   cloudinary,
 }: {
   initialCarousels: HeroCarousel[];
-  editionLabel: string;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save } = useContent();
@@ -138,7 +137,7 @@ function BannerForm({
     <>
       <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <PageTitle>Gestão do Banner / Hero</PageTitle>
-        <span className="text-[13px] text-[#777]">Edição: {editionLabel}</span>
+        <EditionBadge />
       </div>
 
       <Card dashed className="mb-7">
@@ -519,10 +518,6 @@ export default function BannerPage() {
   const { hydrated, content } = useContent();
   if (!hydrated) return <AdmLoading />;
   return (
-    <BannerForm
-      initialCarousels={carouselsOf(content)}
-      editionLabel={`${content.event.brandName} ${content.event.editionYear}`}
-      cloudinary={content.cloudinary}
-    />
+    <BannerForm initialCarousels={carouselsOf(content)} cloudinary={content.cloudinary} />
   );
 }

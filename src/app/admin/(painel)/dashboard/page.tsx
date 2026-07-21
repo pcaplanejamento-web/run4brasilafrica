@@ -20,6 +20,7 @@ import {
   SECAO_CHOICES,
 } from "@/lib/content/blockChoices";
 import { AdmLoading, Card, PageTitle, PrimaryButton } from "@/components/admin/ui";
+import EditionBadge from "@/components/admin/EditionBadge";
 import { uid } from "@/lib/uid";
 
 function ArrowBtn({
@@ -322,32 +323,8 @@ export default function DashboardPage() {
   return (
     <>
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageTitle>Visão geral</PageTitle>
-        <div className="flex items-center gap-2.5">
-          <span className="text-[13px] text-[#777]">
-            Edição ativa: {content.event.brandName} {content.event.editionYear}
-          </span>
-          <span className="inline-block h-[34px] w-[34px] rounded-full bg-[#ccc]" />
-        </div>
-      </div>
-
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[
-          { label: `Inscritos (${content.event.editionYear})`, value: content.metrics.registered },
-          { label: "Vagas restantes", value: content.metrics.spotsLeft },
-          { label: "Fotos na galeria", value: String((content.galleryPhotos ?? []).length) },
-          { label: "Patrocinadores", value: String(content.sponsors.length) },
-        ].map((k) => (
-          <div
-            key={k.label}
-            className="rounded-[10px] border border-adm-border bg-adm-card p-5"
-          >
-            <div className="text-[13px] text-adm-muted">{k.label}</div>
-            <div className="mt-1.5 font-display text-[26px] font-bold text-terracotta md:text-[30px]">
-              {k.value}
-            </div>
-          </div>
-        ))}
+        <PageTitle>Painel</PageTitle>
+        <EditionBadge />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">

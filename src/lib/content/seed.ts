@@ -332,10 +332,6 @@ Em caso de dúvidas jurídicas, consulte um advogado antes de usar este texto co
     { year: "2024", date: "9 set 2024", participants: "2.480", status: "Encerrada" },
   ],
 
-  metrics: {
-    registered: "1.840",
-    spotsLeft: "660",
-  },
 
   log: [
     { time: "06/07 14:32", action: 'Atualizou texto da seção "Sobre a causa"', user: "Fernanda S." },

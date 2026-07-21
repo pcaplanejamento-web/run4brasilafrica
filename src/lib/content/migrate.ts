@@ -474,11 +474,30 @@ function syncGlobalsFromBlocks(c: SiteContent): SiteContent {
  * autocontidos globais e espelha-os de volta ao topo. Pura (retorna novo objeto,
  * nunca muta).
  */
+/** Espelha o ano da edição ATIVA em `event.editionYear`, para o site público e o
+ *  SEO (`EventJsonLd`) ficarem sempre consistentes com a lista de Edições. */
+function syncActiveEdition(c: SiteContent): SiteContent {
+  const active = (c.editions ?? []).find((e) => e.status === "Ativa");
+  if (!active || !c.event || c.event.editionYear === active.year) return c;
+  return { ...c, event: { ...c.event, editionYear: active.year } };
+}
+
+/** Remove o campo legado `metrics` (números manuais, descontinuado) do conteúdo
+ *  gravado por deploys anteriores — nada mais o lê; sai do D1 no próximo save. */
+function dropLegacyMetrics(c: SiteContent): SiteContent {
+  if (!("metrics" in c)) return c;
+  const rest = { ...(c as SiteContent & { metrics?: unknown }) };
+  delete rest.metrics;
+  return rest;
+}
+
 export function normalizeContent(c: SiteContent): SiteContent {
   let out = applyAbout(c);
   for (const m of SECTION_MIGRATIONS) out = applyMigration(out, m);
   out = flattenLegacySecao(out);
   out = backfillSectionData(out);
   out = syncGlobalsFromBlocks(out);
+  out = syncActiveEdition(out);
+  out = dropLegacyMetrics(out);
   return out;
 }
