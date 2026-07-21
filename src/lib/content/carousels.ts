@@ -1,10 +1,8 @@
 import type { Hero, HeroCarousel, SiteContent } from "./types";
+import { parseBR } from "./datetime";
 
-function ms(s: string | undefined): number | null {
-  if (!s) return null;
-  const t = new Date(s).getTime();
-  return Number.isNaN(t) ? null : t;
-}
+/** Época (ms) da string do ADM, em fuso de Brasília (−03:00). */
+const ms = (s: string | undefined): number | null => parseBR(s);
 
 /**
  * Whether a NON-default carousel is on air at `now`. A scheduled carousel needs

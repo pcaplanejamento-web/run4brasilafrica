@@ -50,6 +50,7 @@ import {
   isCustomKey,
   resolveLayout,
 } from "@/lib/content/sections";
+import { uid } from "@/lib/uid";
 import type { Lote } from "@/lib/content/types";
 
 /** Editor de um bloco de seção — cada seção é um componente com seu dado inline
@@ -174,12 +175,6 @@ const ASPECTS = [
 
 /** Image display scale (width as a % of the container). */
 const SCALES = [100, 75, 60, 50, 40, 30, 25];
-
-function uid(): string {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID().slice(0, 8)
-    : Math.random().toString(36).slice(2, 10);
-}
 
 const COLUMN_OPTIONS: { value: CustomBlockColumn; label: string }[] = [
   { value: "full", label: "Largura total" },
@@ -431,6 +426,12 @@ function BlockFields({
                 <option value="" disabled>
                   Escolha a seção…
                 </option>
+                {block.buttonSection &&
+                  !homeTargets.some((t) => t.anchor === block.buttonSection) && (
+                    <option value={block.buttonSection}>
+                      ⚠ Seção removida ou oculta (#{block.buttonSection})
+                    </option>
+                  )}
                 {homeTargets.map((t) => (
                   <option key={t.anchor} value={t.anchor}>
                     {t.label}
@@ -492,10 +493,14 @@ function CustomAbaForm({
   const [blocks, setBlocks] = useState<CustomBlock[]>(section.blocks ?? []);
   const [adding, setAdding] = useState<BlockChoiceValue>("texto");
 
-  // Dados globais que alguns blocos de seção precisam (Parceiros/Kit; a data da
-  // corrida — dona: bloco "Dia da Corrida" — só para validar as datas dos lotes).
-  const lotes = content.lotes ?? [];
-  const raceDate = content.inscricao?.raceDate;
+  // Dados que alguns blocos de seção precisam (Kit lê os lotes; a validação de
+  // lotes lê a data da corrida). Lê direto dos BLOCOS (fonte da verdade), não do
+  // espelho global no topo — que só é reidratado numa releitura do servidor, e
+  // ficaria velho após salvar outra aba nesta mesma sessão.
+  const allBlocks = (content.customSections ?? []).flatMap((s) => s.blocks ?? []);
+  const lotes = allBlocks.find((b) => b.type === "inscricao")?.lotes ?? content.lotes ?? [];
+  const raceDate =
+    allBlocks.find((b) => b.type === "raceday")?.raceDate ?? content.inscricao?.raceDate;
   const resolved = resolveLayout(
     content.layout,
     (content.customSections ?? []).map((s) => s.id),

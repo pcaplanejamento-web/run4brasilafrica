@@ -1,23 +1,10 @@
 import type { Lote } from "./types";
+import { fmtDate, fmtShort, parseBR } from "./datetime";
 
 export type LoteStatus = "upcoming" | "open" | "closed";
 
-function ms(s: string | undefined): number | null {
-  if (!s) return null;
-  const t = new Date(s).getTime();
-  return Number.isNaN(t) ? null : t;
-}
-
-function fmtDate(iso: string | undefined): string {
-  const p = (iso || "").slice(0, 10).split("-");
-  return p.length === 3 && p[0] ? `${p[2]}/${p[1]}/${p[0]}` : "";
-}
-
-/** Short DD/MM (for compact labels). */
-function fmtShort(iso: string | undefined): string {
-  const p = (iso || "").slice(0, 10).split("-");
-  return p.length === 3 && p[0] ? `${p[2]}/${p[1]}` : "";
-}
+/** Época (ms) da string do ADM, em fuso de Brasília (−03:00). */
+const ms = (s: string | undefined): number | null => parseBR(s);
 
 /** Number embedded in a lote name ("Lote 2" → 2); missing → Infinity (goes last). */
 function loteNum(l: Lote): number {

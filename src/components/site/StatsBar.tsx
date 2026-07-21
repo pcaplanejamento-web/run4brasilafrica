@@ -14,7 +14,7 @@ export default function StatsBar({ stats }: { stats: Stat[] }) {
     <div id="numeros" className="grid grid-cols-1 gap-4 px-5 pt-12 sm:grid-cols-3 sm:gap-0 sm:px-8 md:px-14 md:pt-14">
       {stats.map((s, i) => (
         <Reveal
-          key={s.label}
+          key={`${s.label}-${i}`}
           delay={i * 90}
           className="bg-gold px-6 py-7 text-gold-ink sm:mx-2"
         >

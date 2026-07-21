@@ -21,11 +21,6 @@ export const SECTIONS: SectionMeta[] = [
   { key: "hero", label: "Banner / Hero", href: "/admin/banner" },
 ];
 
-export const DEFAULT_LAYOUT: LayoutItem[] = SECTIONS.map((s) => ({
-  key: s.key,
-  enabled: true,
-}));
-
 export function sectionMeta(key: string): SectionMeta | undefined {
   return SECTIONS.find((s) => s.key === key);
 }

@@ -2,30 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { Inscricao } from "@/lib/content/types";
+import { countdown, type CountdownParts, fmtDate, parseBR } from "@/lib/content/datetime";
 
-interface Parts {
-  d: number;
-  h: number;
-  m: number;
-  s: number;
-}
-
-function compute(target: string): Parts | null {
-  const t = new Date(target).getTime() - Date.now();
-  if (Number.isNaN(t) || t <= 0) return null;
-  const s = Math.floor(t / 1000);
-  return {
-    d: Math.floor(s / 86400),
-    h: Math.floor((s % 86400) / 3600),
-    m: Math.floor((s % 3600) / 60),
-    s: s % 60,
-  };
-}
-
-function fmtDate(iso: string): string {
-  const p = (iso || "").slice(0, 10).split("-");
-  return p.length === 3 && p[0] ? `${p[2]}/${p[1]}/${p[0]}` : "";
-}
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /**
@@ -34,15 +12,15 @@ const pad = (n: number) => String(n).padStart(2, "0");
  */
 export default function RaceCountdownBar({ inscricao }: { inscricao: Inscricao }) {
   const date = inscricao.raceDate;
-  const [parts, setParts] = useState<Parts | null>(null);
+  const [parts, setParts] = useState<CountdownParts | null>(null);
   const [past, setPast] = useState(false);
 
   useEffect(() => {
     if (!date) return;
     const tick = () => {
-      const p = compute(date);
+      const p = countdown(date, Date.now());
       setParts(p);
-      if (!p) setPast(new Date(date).getTime() < Date.now());
+      if (!p) setPast((parseBR(date) ?? 0) < Date.now());
     };
     tick();
     const id = setInterval(tick, 1000);

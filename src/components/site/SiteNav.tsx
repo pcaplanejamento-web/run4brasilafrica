@@ -6,7 +6,7 @@ import { loteCtaLabel } from "@/lib/content/lotes";
 import CtaButton from "./CtaButton";
 
 const LINKS = [
-  { href: "#sobre", label: "Sobre" },
+  { href: "#aba-a-causa", label: "Sobre" },
   { href: "#percurso", label: "Percurso" },
   { href: "#galeria", label: "Galeria" },
   { href: "#parceiros", label: "Parceiros" },

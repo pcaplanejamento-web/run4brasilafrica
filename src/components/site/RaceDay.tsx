@@ -5,12 +5,7 @@ import type { Inscricao } from "@/lib/content/types";
 import Countdown from "./Countdown";
 import Reveal from "./Reveal";
 import SectionEyebrow from "./SectionEyebrow";
-
-/** Format an ISO/date-local string to DD/MM/YYYY (SSR-safe, no Date). */
-function fmtDate(iso: string): string {
-  const p = (iso || "").slice(0, 10).split("-");
-  return p.length === 3 && p[0] ? `${p[2]}/${p[1]}/${p[0]}` : "";
-}
+import { fmtDate, parseBR } from "@/lib/content/datetime";
 
 /**
  * "Dia da Corrida" band — the race date + a live countdown to the start line.
@@ -30,7 +25,7 @@ export default function RaceDay({
   useEffect(() => {
     if (!date) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPast(new Date(date).getTime() < Date.now());
+    setPast((parseBR(date) ?? 0) < Date.now());
   }, [date]);
 
   if (!date) return null;

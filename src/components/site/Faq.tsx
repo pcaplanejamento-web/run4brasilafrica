@@ -20,7 +20,7 @@ export default function Faq({ items }: { items: FaqItem[] }) {
         {items.map((f, i) => {
           const isOpen = open === i;
           return (
-            <div key={f.q} className="border-b border-line">
+            <div key={`${f.q}-${i}`} className="border-b border-line">
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? -1 : i)}

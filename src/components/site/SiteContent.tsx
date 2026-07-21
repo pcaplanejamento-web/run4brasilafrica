@@ -4,7 +4,6 @@ import { resolveLayout, customKey } from "@/lib/content/sections";
 import { carouselsOf, activeCarousel } from "@/lib/content/carousels";
 import SiteNav from "./SiteNav";
 import HeroCarousels from "./HeroCarousels";
-import Sobre from "./Sobre";
 import RaceCountdownBar from "./RaceCountdownBar";
 import WhatsAppFloat from "./WhatsAppFloat";
 import EventJsonLd from "./EventJsonLd";
@@ -23,9 +22,9 @@ import OrganizersModal from "./OrganizersModal";
  * banner, images and components are correct on the first paint.
  */
 export default function SiteContent({ initial }: { initial: SiteContentType }) {
-  // The server already rendered the live content (page.tsx reads D1 per request),
-  // so there is no client-side swap — this avoids flashes (colors, hero image,
-  // gallery reload). `force-dynamic` means every page load is already fresh.
+  // The server rendered the live content (page.tsx reads D1; the route uses ISR,
+  // `revalidate = 30`, so pages are regenerated in the background). No client-side
+  // content swap → no flash of seed/placeholder (colors, hero image, gallery).
   const c = initial;
 
   const customSections = c.customSections ?? [];
@@ -60,11 +59,11 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   };
 
   // Só o Banner/Hero permanece built-in; todas as demais seções renderizam via
-  // `custom:sec-*` (blocos `secao` em abas). `about` fica como fallback caso a
-  // migração de "A Causa" ainda não tenha rodado.
+  // `custom:sec-*` (abas). "A Causa" (`about`) é convertida em aba `custom:a-causa`
+  // pela migração (migrate.ts) a cada leitura, então não há chave `about` no
+  // layout — o render dela vem da aba, como as outras seções.
   const rendered: Record<string, ReactNode> = {
     hero: <HeroCarousels carousels={carousels} initialId={initialCarousel.id} />,
-    about: <Sobre about={c.about} />,
   };
   // Custom "abas" built in the ADM, keyed as `custom:<id>`.
   for (const cs of customSections) {

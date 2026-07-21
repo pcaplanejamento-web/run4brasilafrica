@@ -451,12 +451,14 @@ function syncGlobalsFromBlocks(c: SiteContent): SiteContent {
 
   let inscricao = c.inscricao;
   let lotes = c.lotes;
-  if (insc?.inscricao) inscricao = insc.inscricao;
+  // O bloco "Dia da Corrida" é o ÚNICO dono da data exibida (banner + barra fixa
+  // + SEO + agenda). O bloco de inscrição carrega uma cópia de `inscricao` que
+  // pode ter um `raceDate` herdado da migração; NÃO deixamos essa cópia vazar —
+  // a data vem sempre do raceday (ou some, se a aba "Dia da Corrida" não existe).
+  const raceDate = race?.raceDate;
+  if (insc?.inscricao) inscricao = { ...insc.inscricao, raceDate: raceDate ?? "" };
+  else if (raceDate !== undefined) inscricao = { ...inscricao, raceDate };
   if (insc?.lotes) lotes = insc.lotes;
-  // A "Dia da Corrida" é a dona da data exibida (banner + barra fixa + SEO).
-  if (race && race.raceDate !== undefined) {
-    inscricao = { ...inscricao, raceDate: race.raceDate };
-  }
   return {
     ...c,
     inscricao,

@@ -138,7 +138,7 @@ export default function Parceiros({
             "group flex flex-col overflow-hidden rounded-2xl border border-line-soft bg-ink-panel transition-all duration-300 hover:-translate-y-1 hover:border-gold/60 hover:shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)]";
 
           return (
-            <Reveal key={sp.name} delay={(i % 5) * 60} className={cardClass}>
+            <Reveal key={`${sp.name}-${i}`} delay={(i % 5) * 60} className={cardClass}>
               {href ? (
                 <a
                   href={href}

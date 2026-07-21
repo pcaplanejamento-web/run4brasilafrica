@@ -606,6 +606,16 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
   (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
   editor só aparece como fallback para blocos `secao` legados sem `kind`.
+- **Datas em fuso fixo −03:00** (`src/lib/content/datetime.ts`): os campos `datetime-local` do ADM
+  gravam sem fuso; `new Date(str)` os interpretava no fuso do runtime (UTC no Worker, local no
+  cliente), fazendo servidor/cliente/`.ics` discordarem ~3h nas viradas de lote/contagem/carrossel.
+  `parseBR` ancora tudo em Brasília (−03:00, sem horário de verão); usado por `lotes.ts`,
+  `carousels.ts`, `Countdown`, `RaceCountdownBar`, `RaceDay` (e o helper `fmtDate`/`fmtShort`/
+  `countdown` unifica o que estava duplicado). A data da corrida (`raceDate`) é **dona do bloco
+  "Dia da Corrida"**: `syncGlobalsFromBlocks` não deixa a cópia herdada no bloco de inscrição vazar
+  ao espelhar (excluir a aba "Dia da Corrida" limpa a data em vez de ressuscitar uma antiga). No
+  ADM, os editores leem `raceDate`/`lotes` **dos blocos** (não do espelho global, que só é
+  reidratado numa releitura do servidor).
 - **Inscrição/redes/doações em Configurações**: os campos de `content.inscricao` (plataforma, URL,
   dia da corrida) e `content.contact` (Instagram, WhatsApp, YouTube, e-mail, WhatsApp flutuante,
   doações) são editados em **Configurações**. `/admin/links` ("Lotes de inscrição") edita **só** o

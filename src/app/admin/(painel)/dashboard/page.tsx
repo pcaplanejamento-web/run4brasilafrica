@@ -20,12 +20,7 @@ import {
   SECAO_CHOICES,
 } from "@/lib/content/blockChoices";
 import { AdmLoading, Card, PageTitle, PrimaryButton } from "@/components/admin/ui";
-
-function uid(): string {
-  return typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID().slice(0, 8)
-    : Math.random().toString(36).slice(2, 10);
-}
+import { uid } from "@/lib/uid";
 
 function ArrowBtn({
   dir,

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Inscricao, Lote } from "@/lib/content/types";
 import { sortLotesDesc, validateLotes } from "@/lib/content/lotes";
+import { uid } from "@/lib/uid";
 import {
   Card,
   FieldLabel,
@@ -53,7 +54,7 @@ export function InscricaoLotesEditor({
     emit(inscricao, [
       ...lotes,
       {
-        id: `lote-${lotes.length + 1}-${Math.floor(Date.now() / 1000)}`,
+        id: `lote-${uid()}`,
         name: `Lote ${lotes.length + 1}`,
         text: "",
         ctaLabel: "Inscreva-se",
