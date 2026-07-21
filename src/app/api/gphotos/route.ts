@@ -18,6 +18,32 @@ function hostAllowed(host: string): boolean {
   return ALLOWED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
 }
 
+/**
+ * Faz o fetch seguindo redirects **manualmente**, revalidando o host de CADA
+ * salto contra a allow-list. `photos.app.goo.gl` é um encurtador que redireciona
+ * para `photos.google.com`; com `redirect:"follow"` só o host inicial seria
+ * checado, deixando um link redirecionar o servidor para qualquer host (SSRF).
+ */
+async function fetchAllowed(
+  url: string,
+  headers: HeadersInit,
+  maxHops = 4,
+): Promise<Response> {
+  let current = url;
+  for (let i = 0; i <= maxHops; i++) {
+    const res = await fetch(current, { headers, redirect: "manual" });
+    if (res.status < 300 || res.status >= 400) return res;
+    const loc = res.headers.get("location");
+    if (!loc) return res;
+    const next = new URL(loc, current);
+    if (next.protocol !== "https:" || !hostAllowed(next.host)) {
+      throw new Error("redirect para host não permitido");
+    }
+    current = next.toString();
+  }
+  throw new Error("redirects demais");
+}
+
 export async function GET(req: Request) {
   const target = new URL(req.url).searchParams.get("url");
   if (!target) {
@@ -39,13 +65,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    const res = await fetch(target, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Safari/537.36",
-        "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-      },
-      redirect: "follow",
+    const res = await fetchAllowed(target, {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Safari/537.36",
+      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
     });
     const html = await res.text();
 

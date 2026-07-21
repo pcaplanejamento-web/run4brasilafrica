@@ -50,13 +50,19 @@ export default function InscricaoCTA({
   inscricao,
   lotes,
   title,
+  initialNow = 0,
 }: {
   inscricao: Inscricao;
   lotes: Lote[];
   title?: string;
+  /** "Agora" do servidor (ms). Semeia o estado para que o SSR já renderize o
+   *  lote correto + o link de inscrição (SEO / sem-JS). Como é o MESMO valor no
+   *  servidor e na 1ª renderização do cliente, não há hydration mismatch; o
+   *  efeito depois atualiza para o relógio real do cliente. */
+  initialNow?: number;
 }) {
-  const [now, setNow] = useState(0);
-  const ready = now > 0; // 0 on SSR/first render → no hydration mismatch
+  const [now, setNow] = useState(initialNow);
+  const ready = now > 0;
 
   useEffect(() => {
     const tick = () => setNow(Date.now());

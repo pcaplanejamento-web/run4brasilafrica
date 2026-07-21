@@ -606,6 +606,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
   (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
   editor só aparece como fallback para blocos `secao` legados sem `kind`.
+- **Link de inscrição no SSR** (SEO / sem-JS): `SiteContent` passa `nowMs` (hora do servidor) no
+  `SectionRenderCtx`; `InscricaoCTA` semeia o estado com esse valor (`initialNow`), então o HTML já
+  renderiza o lote correto + o `<a>` de inscrição do lote aberto. Como é o **mesmo** valor no
+  servidor e na 1ª renderização do cliente, não há hydration mismatch; o efeito depois atualiza para
+  o relógio real e faz o tick.
+- **Rate limit KV = janela fixa** (`antispam.ts`): guarda o fim da janela (`exp`) no valor; o
+  contador só zera quando a janela termina (antes o TTL "deslizava" a cada acesso e podia bloquear um
+  usuário lento). Best-effort (KV não é atômico) — ok p/ baixo tráfego.
+- **`/api/gphotos` revalida redirects**: segue os saltos manualmente (`redirect:"manual"`) e
+  revalida o host de cada um contra a allow-list (o encurtador `photos.app.goo.gl` não pode levar o
+  servidor a um host arbitrário — anti-SSRF).
 - **Datas em fuso fixo −03:00** (`src/lib/content/datetime.ts`): os campos `datetime-local` do ADM
   gravam sem fuso; `new Date(str)` os interpretava no fuso do runtime (UTC no Worker, local no
   cliente), fazendo servidor/cliente/`.ics` discordarem ~3h nas viradas de lote/contagem/carrossel.

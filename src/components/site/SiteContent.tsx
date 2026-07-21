@@ -44,7 +44,8 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   // client re-evaluates live). `carouselsOf` guarantees a non-empty list with one
   // perpetual default, so the banner is never empty.
   const carousels = carouselsOf(c);
-  const initialCarousel = activeCarousel(carousels, Date.now()) ?? carousels[0];
+  const nowMs = Date.now();
+  const initialCarousel = activeCarousel(carousels, nowMs) ?? carousels[0];
 
   // Global content that `secao` blocks (inside abas) may need at render time.
   const ctx: SectionRenderCtx = {
@@ -56,6 +57,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     galleryTiles: c.galleryTiles ?? [],
     galleryPhotos: c.galleryPhotos ?? [],
     sejaParceiroEnabled,
+    nowMs,
   };
 
   // Só o Banner/Hero permanece built-in; todas as demais seções renderizam via

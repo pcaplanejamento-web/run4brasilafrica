@@ -49,6 +49,10 @@ export interface SectionRenderCtx {
   galleryPhotos: GalleryPhoto[];
   /** "Seja um parceiro" CTA só funciona quando aquela seção está ativa. */
   sejaParceiroEnabled: boolean;
+  /** "Agora" do servidor (época ms) para o 1º paint dos lotes — o mesmo valor é
+   *  reidratado no cliente (sem hydration mismatch) e o SSR já traz o link do
+   *  lote aberto (SEO / sem-JS). O cliente refina ao vivo no efeito. */
+  nowMs: number;
 }
 
 /** Renders a section block (each `SectionKind` is a `CustomBlockType`) by
@@ -104,6 +108,7 @@ function renderSection(
           inscricao={block.inscricao ?? ctx.inscricao}
           lotes={block.lotes ?? ctx.lotes}
           title={title}
+          initialNow={ctx.nowMs}
         />
       );
     case "galeria":
