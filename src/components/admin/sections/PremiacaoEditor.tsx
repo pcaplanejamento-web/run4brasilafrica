@@ -1,0 +1,172 @@
+"use client";
+
+import type { PodiumPlace, PremiacaoSection } from "@/lib/content/types";
+import {
+  Card,
+  FieldLabel,
+  GhostButton,
+  PrimaryButton,
+  SectionLabel,
+  TextArea,
+  TextInput,
+} from "@/components/admin/ui";
+
+/** Cores padrão do pódio (ouro / prata / bronze). */
+const DEFAULT_HEX = ["#c8ce2e", "#c9ccd2", "#cd7f4d"];
+
+/** Editor controlado da "Premiação" (`PremiacaoSection`). */
+export function PremiacaoEditor({
+  value,
+  onChange,
+}: {
+  value: PremiacaoSection;
+  onChange: (next: PremiacaoSection) => void;
+}) {
+  const p: PremiacaoSection = { ...value, places: value?.places ?? [] };
+  const places = p.places ?? [];
+  const set = (patch: Partial<PremiacaoSection>) => onChange({ ...p, ...patch });
+  const setPlace = (i: number, patch: Partial<PodiumPlace>) =>
+    set({ places: places.map((x, idx) => (idx === i ? { ...x, ...patch } : x)) });
+  const add = () =>
+    set({ places: [...places, { place: `${places.length + 1}º lugar`, prize: "" }] });
+  const remove = (i: number) => set({ places: places.filter((_, idx) => idx !== i) });
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= places.length) return;
+    const list = [...places];
+    [list[i], list[j]] = [list[j], list[i]];
+    set({ places: list });
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Card>
+        <SectionLabel>Seção</SectionLabel>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <FieldLabel>Chapéu (eyebrow)</FieldLabel>
+            <TextInput
+              value={p.eyebrow ?? ""}
+              onChange={(e) => set({ eyebrow: e.target.value })}
+              placeholder="PREMIAÇÃO"
+            />
+          </div>
+          <div>
+            <FieldLabel>Título da seção</FieldLabel>
+            <TextInput
+              value={p.title ?? ""}
+              onChange={(e) => set({ title: e.target.value })}
+              placeholder="Pódio"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <FieldLabel>Texto de apoio (opcional)</FieldLabel>
+          <TextArea
+            rows={2}
+            value={p.note ?? ""}
+            onChange={(e) => set({ note: e.target.value })}
+            placeholder="ex.: Premiação para os 3 primeiros de cada categoria."
+          />
+        </div>
+      </Card>
+
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <SectionLabel>Pódio (premiação por posição)</SectionLabel>
+          <PrimaryButton onClick={add} className="px-4 py-2 text-[13px]">
+            + Posição
+          </PrimaryButton>
+        </div>
+        <p className="mb-4 text-[12px] text-adm-muted">
+          As <strong>3 primeiras</strong> posições viram o pódio (1º ao centro, mais alto). As
+          demais aparecem como lista abaixo.
+        </p>
+        {places.length === 0 && (
+          <div className="rounded-lg border border-dashed border-adm-border p-6 text-center text-[13px] text-adm-muted">
+            Nenhuma posição ainda. Clique em &ldquo;+ Posição&rdquo;.
+          </div>
+        )}
+        <div className="flex flex-col gap-3">
+          {places.map((place, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-1 items-end gap-3 rounded-lg border border-adm-border p-3 sm:grid-cols-[150px_1fr_auto_auto]"
+            >
+              <div>
+                <FieldLabel>Posição</FieldLabel>
+                <TextInput
+                  value={place.place}
+                  onChange={(e) => setPlace(i, { place: e.target.value })}
+                  placeholder={`${i + 1}º lugar`}
+                />
+              </div>
+              <div>
+                <FieldLabel>Premiação</FieldLabel>
+                <TextInput
+                  value={place.prize}
+                  onChange={(e) => setPlace(i, { prize: e.target.value })}
+                  placeholder="ex.: R$ 500 + troféu + kit"
+                />
+              </div>
+              <div>
+                <FieldLabel>Cor do pódio</FieldLabel>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    aria-label={`Cor do pódio ${place.place || i + 1}`}
+                    value={place.color || DEFAULT_HEX[i] || "#c8ce2e"}
+                    onChange={(e) => setPlace(i, { color: e.target.value })}
+                    className="h-9 w-10 cursor-pointer rounded border border-adm-border bg-transparent"
+                  />
+                  {place.color && (
+                    <button
+                      type="button"
+                      onClick={() => setPlace(i, { color: "" })}
+                      className="text-[11px] text-adm-muted underline"
+                    >
+                      Padrão
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                <GhostButton onClick={() => move(i, -1)} className="px-3 py-2 text-[12px]">
+                  ↑
+                </GhostButton>
+                <GhostButton onClick={() => move(i, 1)} className="px-3 py-2 text-[12px]">
+                  ↓
+                </GhostButton>
+                <GhostButton onClick={() => remove(i)} className="px-3 py-2 text-[12px]">
+                  ✕
+                </GhostButton>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card>
+        <SectionLabel>Resultados completos (opcional)</SectionLabel>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <FieldLabel>Texto do botão</FieldLabel>
+            <TextInput
+              value={p.resultsLabel ?? ""}
+              onChange={(e) => set({ resultsLabel: e.target.value })}
+              placeholder="Ver resultados completos"
+            />
+          </div>
+          <div>
+            <FieldLabel>Link (cronometragem, planilha, etc.)</FieldLabel>
+            <TextInput
+              value={p.resultsUrl ?? ""}
+              onChange={(e) => set({ resultsUrl: e.target.value })}
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}

@@ -467,7 +467,7 @@ export default function Playlist({ playlist }: { playlist?: PlaylistSection }) {
       ref={sectionRef}
       id="playlist"
       className="px-5 py-16 sm:px-8 md:px-14 md:py-20"
-      style={{ background: "var(--color-ink-deep)" }}
+      style={{ background: "var(--color-ink)" }}
     >
       <Reveal>
         <SectionEyebrow className="mb-2">

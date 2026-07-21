@@ -27,7 +27,7 @@ export default function CtaButton({
 }: {
   href: string;
   children: ReactNode;
-  size?: "sm" | "lg";
+  size?: "xs" | "sm" | "lg";
   variant?: "solid" | "transparent";
   onClick?: () => void;
   className?: string;
@@ -36,7 +36,9 @@ export default function CtaButton({
   const sizeCls =
     size === "lg"
       ? "clip-cta-lg px-7 py-4 text-[15px] md:px-[34px] md:py-[17px] md:text-[16px]"
-      : "clip-cta px-6 py-3 text-[14px]";
+      : size === "xs"
+        ? "clip-cta px-4 py-2 text-[12px]"
+        : "clip-cta px-6 py-3 text-[14px]";
   const toneCls =
     variant === "transparent"
       ? "bg-gold/25 text-gold backdrop-blur-md hover:bg-gold/40"

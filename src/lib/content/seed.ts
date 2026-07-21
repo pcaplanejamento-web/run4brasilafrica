@@ -1,5 +1,31 @@
-import type { SiteContent } from "./types";
-import { DEFAULT_LAYOUT } from "./sections";
+import type { LayoutItem, SiteContent } from "./types";
+
+/**
+ * Ordem canônica da home. Inclui as chaves das seções que viram **abas** na
+ * leitura (`about`, `stats`, `depoimentos`, `faq`, …): `normalizeContent`
+ * (migrate.ts) troca cada uma por `custom:sec-*` **na mesma posição**, então a
+ * ordem padrão fica correta mesmo numa instalação nova. Chaves já não presentes
+ * em `SECTIONS` são válidas aqui só até a migração trocá-las (antes do
+ * `resolveLayout`).
+ */
+const SEED_LAYOUT: LayoutItem[] = [
+  "hero",
+  "stats",
+  "about",
+  "playlist",
+  "percurso",
+  "location",
+  "raceday",
+  "inscricao",
+  "galeria",
+  "premiacao",
+  "parceiros",
+  "sejaParceiro",
+  "depoimentos",
+  "faq",
+  "kit",
+  "compartilhar",
+].map((key) => ({ key, enabled: true }));
 
 /**
  * Default seed content — values ported verbatim from the Claude Design handoff
@@ -19,7 +45,7 @@ export const seedContent: SiteContent = {
 
   theme: {},
 
-  layout: DEFAULT_LAYOUT,
+  layout: SEED_LAYOUT,
 
   hero: {
     slides: [

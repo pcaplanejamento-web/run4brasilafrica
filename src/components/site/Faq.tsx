@@ -12,7 +12,7 @@ export default function Faq({ items }: { items: FaqItem[] }) {
   const [open, setOpen] = useState(0);
 
   return (
-    <section id="faq" className="bg-ink-deep px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
+    <section id="faq" className="bg-ink px-5 py-20 sm:px-8 md:px-14 md:py-[100px]">
       <SectionEyebrow as="h2" className="mb-8">
         Perguntas frequentes
       </SectionEyebrow>

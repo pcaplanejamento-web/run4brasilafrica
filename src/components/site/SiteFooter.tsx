@@ -24,7 +24,10 @@ export default function SiteFooter({
   ];
 
   return (
-    <footer className="flex flex-col gap-8 bg-ink-deeper px-5 py-12 text-muted sm:px-8 md:flex-row md:items-center md:justify-between md:px-14 md:py-[60px]">
+    <footer
+      style={{ background: "var(--color-footer-bg, var(--color-ink-deeper))" }}
+      className="flex flex-col gap-8 px-5 py-12 text-muted sm:px-8 md:flex-row md:items-center md:justify-between md:px-14 md:py-[60px]"
+    >
       {logo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

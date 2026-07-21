@@ -53,7 +53,13 @@ export default function RaceCountdownBar({ inscricao }: { inscricao: Inscricao }
   const time = date.slice(11, 16);
 
   return (
-    <div className="overflow-x-auto border-b border-line bg-ink-panel px-3 py-2 sm:px-8 md:px-14 md:py-2.5">
+    <div
+      // Part of the header block: follows the header color; when unset, uses the
+      // original panel tone as a LITERAL fallback (not `--color-ink-panel`) so the
+      // "inner components" color (`surfaces`) never leaks into the header strip.
+      style={{ background: "var(--color-header-bg, oklch(0.22 0.02 40))" }}
+      className="overflow-x-auto border-b border-line px-3 py-2 sm:px-8 md:px-14 md:py-2.5"
+    >
       <div className="flex items-center justify-center gap-2.5 whitespace-nowrap text-[10.5px] sm:gap-4 sm:text-[13px]">
         <span className="font-bold uppercase tracking-[0.08em] text-gold">
           Dia da corrida

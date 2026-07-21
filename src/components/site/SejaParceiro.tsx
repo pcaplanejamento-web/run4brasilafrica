@@ -5,7 +5,8 @@ import type { SejaParceiroSection, PartnerKind } from "@/lib/content/types";
 import { track } from "@/lib/track";
 import SectionEyebrow from "./SectionEyebrow";
 import Reveal from "./Reveal";
-import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
+import YouTubePlayer from "./YouTubePlayer";
+import { youtubeId, isVerticalYouTube } from "@/lib/youtube";
 
 const inputClass =
   "min-h-11 w-full rounded-lg border border-line bg-ink-panel px-3.5 text-[15px] text-cream outline-none transition-colors placeholder:text-muted focus:border-gold";
@@ -185,7 +186,7 @@ export default function SejaParceiro({ config }: { config: SejaParceiroSection }
       );
 
   return (
-    <section id="seja-parceiro" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
+    <section id="seja-parceiro" className="bg-ink px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <SectionEyebrow as="h2">{config.title || "Seja um parceiro"}</SectionEyebrow>
       {config.subtitle?.trim() && (
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">

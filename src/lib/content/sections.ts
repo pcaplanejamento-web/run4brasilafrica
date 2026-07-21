@@ -12,22 +12,12 @@ export interface SectionMeta {
 }
 
 export const SECTIONS: SectionMeta[] = [
+  // Só o Banner/Hero permanece built-in. Todas as demais seções foram convertidas
+  // em abas (custom sections) — ver migrate.ts SECTION_MIGRATIONS:
+  //  Fase 1: about ("A Causa"), stats, depoimentos, faq.
+  //  Fase 2: playlist, percurso, location, premiacao, sejaParceiro, compartilhar.
+  //  Fase 3: parceiros, kit, galeria, raceday, inscricao.
   { key: "hero", label: "Banner / Hero", href: "/admin/banner" },
-  { key: "stats", label: "Números em destaque", href: "/admin/numeros" },
-  { key: "about", label: "A Causa", href: "/admin/banner" },
-  { key: "playlist", label: "Playlist do evento", href: "/admin/playlist" },
-  { key: "percurso", label: "O Percurso", href: "/admin/strava" },
-  { key: "location", label: "Localização", href: "/admin/localizacao" },
-  { key: "raceday", label: "Dia da Corrida", href: "/admin/links" },
-  { key: "inscricao", label: "Inscrição / Lotes", href: "/admin/links" },
-  { key: "galeria", label: "Galeria", href: "/admin/galeria" },
-  { key: "premiacao", label: "Premiação", href: "/admin/premiacao" },
-  { key: "parceiros", label: "Parceiros", href: "/admin/patrocinadores" },
-  { key: "sejaParceiro", label: "Seja um Parceiro", href: "/admin/seja-parceiro" },
-  { key: "depoimentos", label: "Quem já correu", href: "/admin/depoimentos" },
-  { key: "faq", label: "Perguntas frequentes", href: "/admin/faq" },
-  { key: "kit", label: "Kit do atleta", href: "/admin/kit" },
-  { key: "compartilhar", label: "Compartilhar", href: "/admin/compartilhar" },
 ];
 
 export const DEFAULT_LAYOUT: LayoutItem[] = SECTIONS.map((s) => ({
@@ -39,16 +29,35 @@ export function sectionMeta(key: string): SectionMeta | undefined {
   return SECTIONS.find((s) => s.key === key);
 }
 
+/** Custom "aba" layout key helpers. */
+export const CUSTOM_PREFIX = "custom:";
+export function customKey(id: string): string {
+  return `${CUSTOM_PREFIX}${id}`;
+}
+export function isCustomKey(key: string): boolean {
+  return key.startsWith(CUSTOM_PREFIX);
+}
+export function customIdFromKey(key: string): string | null {
+  return isCustomKey(key) ? key.slice(CUSTOM_PREFIX.length) : null;
+}
+
 /**
- * Merge a stored layout with the registry: keep the stored order (known keys
- * only) and preserve any manual reordering, then insert sections not present
- * yet **at their natural registry position** (right after the nearest preceding
- * registry-sibling that exists), so a newly-added section shows up where it
- * belongs instead of dumped at the bottom. Guarantees every section appears.
+ * Merge a stored layout with the registry: keep the stored order (valid keys
+ * only) and preserve any manual reordering, then insert built-in sections not
+ * present yet **at their natural registry position** (right after the nearest
+ * preceding registry-sibling that exists). Custom "aba" keys (`custom:<id>`) are
+ * kept when they still exist (`customIds`) and appended if not yet placed.
  */
-export function resolveLayout(stored: LayoutItem[] | undefined): LayoutItem[] {
+export function resolveLayout(
+  stored: LayoutItem[] | undefined,
+  customIds?: string[],
+): LayoutItem[] {
   const known = new Set(SECTIONS.map((s) => s.key));
-  const result = (stored ?? []).filter((li) => known.has(li.key));
+  const customSet = customIds ? new Set(customIds.map(customKey)) : null;
+  const isValid = (key: string) =>
+    known.has(key) || (isCustomKey(key) && (customSet ? customSet.has(key) : true));
+
+  const result = (stored ?? []).filter((li) => isValid(li.key));
   const present = new Set(result.map((li) => li.key));
 
   SECTIONS.forEach((s, idx) => {
@@ -65,6 +74,16 @@ export function resolveLayout(stored: LayoutItem[] | undefined): LayoutItem[] {
     result.splice(insertAt, 0, { key: s.key, enabled: true });
     present.add(s.key);
   });
+
+  // Append any custom sections that exist but aren't in the layout yet.
+  if (customSet) {
+    customSet.forEach((k) => {
+      if (!present.has(k)) {
+        result.push({ key: k, enabled: true });
+        present.add(k);
+      }
+    });
+  }
 
   return result;
 }

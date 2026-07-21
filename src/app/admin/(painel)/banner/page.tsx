@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
-import type {
-  AboutSection,
-  HeroCarousel,
-  HeroSlide,
-  MediaType,
-} from "@/lib/content/types";
+import type { HeroCarousel, HeroSlide, MediaType } from "@/lib/content/types";
 import { carouselsOf, defaultCarousel, heroOf } from "@/lib/content/carousels";
 import HeroImageField from "@/components/admin/HeroImageField";
 import {
@@ -19,10 +14,8 @@ import {
   SaveBar,
   SectionLabel,
   Select,
-  TextArea,
   TextInput,
 } from "@/components/admin/ui";
-import ImageUpload from "@/components/admin/ImageUpload";
 
 /** Bring a slide (possibly from the old text-only carousel) to the new shape. */
 function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
@@ -50,15 +43,6 @@ function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
   };
 }
 
-const ASPECT_OPTIONS = [
-  { value: "4/3", label: "4:3 (paisagem)" },
-  { value: "16/9", label: "16:9 (widescreen)" },
-  { value: "1/1", label: "1:1 (quadrado)" },
-  { value: "3/4", label: "3:4 (retrato)" },
-  { value: "9/16", label: "9:16 (Reels)" },
-  { value: "21/9", label: "21:9 (cinema)" },
-];
-
 function newSlide(): HeroSlide {
   return {
     id: `slide-${Date.now()}`,
@@ -73,12 +57,10 @@ function newSlide(): HeroSlide {
 
 function BannerForm({
   initialCarousels,
-  initialAbout,
   editionLabel,
   cloudinary,
 }: {
   initialCarousels: HeroCarousel[];
-  initialAbout: AboutSection;
   editionLabel: string;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
 }) {
@@ -92,7 +74,6 @@ function BannerForm({
   const [selId, setSelId] = useState<string>(
     () => (initialCarousels.find((c) => c.isDefault) ?? initialCarousels[0])?.id,
   );
-  const [about, setAbout] = useState<AboutSection>(initialAbout);
 
   const sel = carousels.find((c) => c.id === selId) ?? carousels[0];
 
@@ -516,180 +497,6 @@ function BannerForm({
         </div>
       </Card>
 
-      {/* ---- A Causa (Sobre) ---- */}
-      <Card dashed>
-        <SectionLabel>Seção &quot;A Causa&quot;</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Text column */}
-          <div className="flex flex-col gap-3">
-            <div>
-              <FieldLabel>Linha superior (selo)</FieldLabel>
-              <TextInput
-                value={about.eyebrow}
-                onChange={(e) => setAbout({ ...about, eyebrow: e.target.value })}
-              />
-            </div>
-            <div>
-              <FieldLabel>Título</FieldLabel>
-              <TextInput
-                value={about.title}
-                onChange={(e) => setAbout({ ...about, title: e.target.value })}
-              />
-            </div>
-            <div>
-              <FieldLabel>Texto</FieldLabel>
-              <TextArea
-                rows={4}
-                value={about.body}
-                onChange={(e) => setAbout({ ...about, body: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <FieldLabel>Texto do botão</FieldLabel>
-                <TextInput
-                  value={about.linkLabel}
-                  onChange={(e) =>
-                    setAbout({ ...about, linkLabel: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <FieldLabel>Destino do botão</FieldLabel>
-                <TextInput
-                  value={about.linkUrl ?? ""}
-                  onChange={(e) => setAbout({ ...about, linkUrl: e.target.value })}
-                  placeholder="#parceiros"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Media column */}
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <FieldLabel>Tipo de mídia</FieldLabel>
-                <Select
-                  value={about.mediaType ?? "image"}
-                  onChange={(e) =>
-                    setAbout({ ...about, mediaType: e.target.value as MediaType })
-                  }
-                >
-                  <option value="image">Foto</option>
-                  <option value="video">Vídeo (YouTube)</option>
-                </Select>
-              </div>
-              <div>
-                <FieldLabel>Proporção</FieldLabel>
-                <Select
-                  value={about.aspectRatio ?? "4/3"}
-                  onChange={(e) =>
-                    setAbout({ ...about, aspectRatio: e.target.value })
-                  }
-                >
-                  {ASPECT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            {about.mediaType === "video" ? (
-              <>
-                <div>
-                  <FieldLabel>Link do vídeo no YouTube</FieldLabel>
-                  <TextInput
-                    value={about.videoUrl ?? ""}
-                    onChange={(e) =>
-                      setAbout({ ...about, videoUrl: e.target.value })
-                    }
-                    placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <FieldLabel>Exibição</FieldLabel>
-                    <Select
-                      value={about.clickToPlay ? "click" : "auto"}
-                      onChange={(e) =>
-                        setAbout({
-                          ...about,
-                          clickToPlay: e.target.value === "click",
-                        })
-                      }
-                    >
-                      <option value="auto">Tocar automático (mudo)</option>
-                      <option value="click">Clique para começar</option>
-                    </Select>
-                  </div>
-                  <div>
-                    <FieldLabel>Iniciar com som?</FieldLabel>
-                    <Select
-                      value={about.videoStartMuted === false ? "sim" : "nao"}
-                      onChange={(e) =>
-                        setAbout({
-                          ...about,
-                          videoStartMuted: e.target.value !== "sim",
-                        })
-                      }
-                    >
-                      <option value="nao">Não — começa mudo</option>
-                      <option value="sim">Sim — som ao interagir</option>
-                    </Select>
-                  </div>
-                  <div>
-                    <FieldLabel>Controles do YouTube</FieldLabel>
-                    <Select
-                      value={about.videoControls ? "sim" : "nao"}
-                      onChange={(e) =>
-                        setAbout({
-                          ...about,
-                          videoControls: e.target.value === "sim",
-                        })
-                      }
-                    >
-                      <option value="nao">Ocultar (só o vídeo)</option>
-                      <option value="sim">Mostrar (play/pausa, tela cheia, compartilhar, logo)</option>
-                    </Select>
-                  </div>
-                  <div>
-                    <FieldLabel>Legendas</FieldLabel>
-                    <Select
-                      value={about.videoCaptions ? "sim" : "nao"}
-                      onChange={(e) =>
-                        setAbout({
-                          ...about,
-                          videoCaptions: e.target.value === "sim",
-                        })
-                      }
-                    >
-                      <option value="nao">Não mostrar</option>
-                      <option value="sim">Mostrar legendas</option>
-                    </Select>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div>
-                <FieldLabel>Foto</FieldLabel>
-                <ImageUpload
-                  value={about.image}
-                  onChange={(url) => setAbout({ ...about, image: url })}
-                  className="h-44"
-                  label="foto da causa"
-                  cloudinary={cloudinary}
-                />
-                <p className="mt-1.5 text-[12px] text-adm-muted">
-                  A imagem se adapta à proporção escolhida (preenche cobrindo).
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
 
       <SaveBar
         onSave={() =>
@@ -699,9 +506,8 @@ function BannerForm({
               // Mirror the default carousel into `hero` for the image preload and
               // legacy readers.
               hero: heroOf(defaultCarousel(carousels)),
-              about,
             },
-            "Atualizou os carrosséis do banner e a seção A Causa",
+            "Atualizou os carrosséis do banner",
           )
         }
       />
@@ -715,7 +521,6 @@ export default function BannerPage() {
   return (
     <BannerForm
       initialCarousels={carouselsOf(content)}
-      initialAbout={content.about}
       editionLabel={`${content.event.brandName} ${content.event.editionYear}`}
       cloudinary={content.cloudinary}
     />

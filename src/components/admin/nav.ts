@@ -8,20 +8,14 @@ export interface AdmNavItem {
 export const ADM_NAV: AdmNavItem[] = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard" },
   { key: "banner", label: "Banner / Hero", href: "/admin/banner" },
-  { key: "playlist", label: "Playlist", href: "/admin/playlist" },
-  { key: "galeria", label: "Galeria", href: "/admin/galeria" },
   { key: "conteudo", label: "Textos do site", href: "/admin/conteudo" },
-  { key: "numeros", label: "Números em destaque", href: "/admin/numeros" },
-  { key: "depoimentos", label: "Depoimentos", href: "/admin/depoimentos" },
-  { key: "faq", label: "FAQ", href: "/admin/faq" },
-  { key: "kit", label: "Kit do atleta", href: "/admin/kit" },
-  { key: "compartilhar", label: "Compartilhar", href: "/admin/compartilhar" },
-  { key: "strava", label: "Percurso", href: "/admin/strava" },
-  { key: "localizacao", label: "Localização", href: "/admin/localizacao" },
-  { key: "patrocinadores", label: "Parceiros", href: "/admin/patrocinadores" },
-  { key: "seja-parceiro", label: "Seja um Parceiro", href: "/admin/seja-parceiro" },
+  // Quase todas as seções viraram abas (editadas via /admin/custom/sec-*). Ficam
+  // páginas próprias só: Galeria (fotos/álbuns) e Links & inscrição (lotes+data),
+  // que as abas-marcador de galeria/raceday/inscricao usam como conteúdo global;
+  // e "Cadastros de parceiros" (o CRM de leads do "Seja um Parceiro").
+  { key: "galeria", label: "Galeria (fotos)", href: "/admin/galeria" },
   { key: "links", label: "Links & inscrição", href: "/admin/links" },
-  { key: "premiacao", label: "Premiação", href: "/admin/premiacao" },
+  { key: "seja-parceiro", label: "Cadastros de parceiros", href: "/admin/seja-parceiro" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },
   { key: "edicoes", label: "Edições", href: "/admin/edicoes" },

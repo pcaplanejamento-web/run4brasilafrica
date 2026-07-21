@@ -3,7 +3,8 @@
 import type { CSSProperties } from "react";
 import type { AboutSection } from "@/lib/content/types";
 import Reveal from "./Reveal";
-import YouTubePlayer, { youtubeId, isVerticalYouTube } from "./YouTubePlayer";
+import YouTubePlayer from "./YouTubePlayer";
+import { youtubeId, isVerticalYouTube } from "@/lib/youtube";
 import SectionEyebrow from "./SectionEyebrow";
 
 /**

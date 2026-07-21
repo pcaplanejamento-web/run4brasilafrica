@@ -44,7 +44,7 @@ export default async function Localizacao({ location }: { location?: LocationSec
     : "";
 
   return (
-    <section id="localizacao" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
+    <section id="localizacao" className="bg-ink px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <SectionEyebrow as="h2">{location?.title?.trim() || "Localização"}</SectionEyebrow>
       {note && (
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-cream/70 md:text-[16px]">

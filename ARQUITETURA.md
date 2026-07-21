@@ -221,7 +221,20 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   A imagem aparece **inteira, sem corte** (`background-size: contain`) — se a proporção da foto
   não bater com a caixa (16:9 / 3:4), a área restante mostra o fundo (ink) em vez de cortar; o
   ponto focal só reposiciona a imagem dentro da caixa. Sem imagem → placeholder listrado.
-- **`Sobre`** ("A Causa", client) — caixa de mídia com a proporção escolhida
+- **"A Causa" agora é uma ABA** (`migrate.ts`): a antiga seção built-in `about` foi convertida
+  em uma **custom section** (`id = "a-causa"`) por `normalizeContent()`, chamado no `db.ts` a
+  cada leitura (puro/idempotente): se ainda não existe a aba `a-causa` e há conteúdo em `about`,
+  ele cria a aba (mídia à esquerda + título/texto/botão à direita, na ordem que o `Sobre` usava,
+  com **todos os controles de vídeo**) e a coloca **na posição onde `about` estava** no layout
+  (ou logo após `stats`). O campo `about` é mantido intacto (ignorado após a migração) — nada se
+  perde. O editor de "A Causa" foi **removido do Banner**; edita-se como aba (Configurações →
+  abas). `about` foi tirado do registro `SECTIONS`. O componente `Sobre` continua no repo (não é
+  mais usado no render).
+- **Bloco de vídeo das abas (`CustomSectionView`/editor)**: agora traz **todas** as opções da
+  antiga A Causa — Exibição (`clickToPlay`), Iniciar com som (`videoStartMuted`), Controles do
+  YouTube (`videoControls`), Legendas (`videoCaptions`) — além de proporção; passadas 1:1 ao
+  `YouTubePlayer`.
+- **`Sobre`** (legado, não renderizado) — caixa de mídia com a proporção escolhida
   (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, **9/16 Reels**, 21/9): imagem `object-cover`,
   ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Em
   proporções **retrato** (arH > arW, ex. 9/16) a caixa é limitada a **70vh** e a largura segue
@@ -317,8 +330,26 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   um menu sanfona (botão hambúrguer). O CTA de desktop fica num wrapper **`hidden lg:block`** —
   pôr `hidden` direto no `CtaButton` perde para o `inline-block` da base dele no cascade do
   Tailwind, o que fazia o CTA vazar no mobile e **empurrar o botão do menu para fora da tela**.
+- **Header mobile (< `lg`)** — layout definitivo e à prova de aparelho (inclui Safari em "site
+  para computador", que força ~980px). Na mesma linha do logo, à direita, um grupo `lg:hidden`
+  com: (1) **CTA compacto "Inscreva-se"** (`CtaButton size="xs"`) que **cabe entre o logo e o
+  ícone de menu** — renderizado **só quando há logo em imagem** (`{logo && …}`), pois o wordmark
+  de texto é largo demais para caber um botão ao lado; (2) o **botão do menu** com barras em
+  **`bg-white` literal** (não um token `oklch`), para o ícone nunca sair preto/invisível em
+  aparelhos onde as cores de tema não resolvem. O dropdown contém só os links (sem CTA dentro).
 - **CTA do header** (`SiteNav`): o botão adapta o texto ao lote ativo via `loteCtaLabel` —
   "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou "Inscrições encerradas".
+- **Fundo padronizado da home**: TODAS as seções de conteúdo usam o mesmo fundo `bg-ink` (=
+  cor do `body`) — seja explícito ou por transparência sobre o body. Não há mais alternância
+  clara/escura (`bg-ink-deep`/`bg-ink-panel`) nos *roots* de seção; cards internos ainda usam
+  tons próprios para contraste. Ao adicionar uma seção nova, mantenha o root em `bg-ink` (ou
+  sem `bg`) para não reintroduzir faixas.
+- **Scroll até o topo da seção** (`StickyOffset` + `globals.css`): clicar num link do menu que
+  aponta para a própria página leva o **topo da seção** para logo abaixo do header fixo, em
+  mobile e desktop. Como o header (`#site-sticky-header` = `SiteNav` + barra de contagem) tem
+  altura variável, `StickyOffset` (client) mede `offsetHeight` via `ResizeObserver` e escreve
+  `scroll-padding-top` **inline** no `<html>` (e a var `--sticky-h`); o CSS tem `7rem` como
+  fallback de SSR. Assim a âncora nunca fica escondida sob o header nem com folga.
 - **`WhatsAppFloat`** (canto inferior direito): botão flutuante que abre `wa.me/<número>`;
   ligado/desligado em ADM > Links & inscrição (Redes sociais → `contact.whatsappFloat`).
 - **ADM** (Links & inscrição): campo do **dia da corrida** + **abertura/encerramento** por
@@ -327,9 +358,27 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 ## Tema (cores) e marca
 
-- `content.theme` mapeia para variáveis CSS (`--color-ink`, `--color-gold`, ...) via
-  `SiteChrome` (client, no layout) — que também aplica o favicon. Editável em
-  Configurações (seletores de cor). Vazio = padrão.
+- `content.theme` (`ThemeColors`) mapeia para variáveis CSS via `THEME_VARS` (`theme.ts`) e é
+  injetado como um `:root{}` **no SSR** por `themeCss()` em `layout.tsx` (sem flash). Editável em
+  **Configurações** (seletores de cor). Vazio = padrão. Chaves: `background` → `--color-ink`,
+  **`headerBg` → `--color-header-bg`**, **`footerBg` → `--color-footer-bg`**, `accent` →
+  `--color-gold`, `accentText`, `text`, **`surfaces` → `--color-ink-panel/-card/-deep/-deeper`
+  (cor interna única de todos os componentes escuros)**, `heroRed`. (`sections`/`cards` seguem no
+  modelo por retrocompat, mas `surfaces` é listado por último em `THEME_VARS` e vence no cascade.)
+- **Cor interna dos componentes** (`surfaces`, Configurações): um único seletor que pinta TODAS as
+  superfícies escuras internas (cartões, painéis, caixas) mapeando os quatro tons de uma vez. O
+  **fundo da página** (`background`/`--color-ink`) e a **barra "Dia da corrida"** ficam **de fora**
+  — a barra de contagem usa um literal `oklch(0.22 0.02 40)` como fallback (não `--color-ink-panel`),
+  então pertence ao "header" e não é afetada pelo `surfaces`. Overlays translúcidos (`bg-black/XX`
+  de modais/setas) também não são afetados.
+- **Cor do fundo / header / rodapé** (Configurações): três seletores independentes. O
+  **header** — que abrange o **bloco fixo inteiro**: `SiteNav` + dropdown mobile **e a barra
+  "Dia da corrida"** (`RaceCountdownBar`) — usa `background: var(--color-header-bg, …)` (nav e
+  dropdown caem para `--color-ink`; a barra de contagem cai para `--color-ink-panel` quando não
+  configurado). Assim, ao definir a cor do header, menu e contagem ficam **uniformes**. O **rodapé**
+  (`SiteFooter`) usa `var(--color-footer-bg, var(--color-ink-deeper))` — sem definição, mantém o
+  tom escuro original. Assim, definir só o fundo já pinta o header junto; header/rodapé podem
+  ser sobrepostos individualmente sem afetar o resto.
 
 ## Galeria (grade deslizante + Google Fotos + comprar)
 
@@ -439,10 +488,13 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 ## Parceiros (grade de cards)
 
 - `content.sponsors` (`Sponsor`: `name`, `tier`, **`link`** + **`linkKind?: "site" | "social"`**,
-  `instagram?` legado, `logo?`) + `content.sponsorsShowTier` (flag global). Público
-  (`components/site/Parceiros.tsx`): **card por parceiro** com uma **placa de logo quadrada**
-  (`aspect-square` 1:1, fundo branco) que **preenche a largura do card**, o **nome embaixo** e um
-  selo de categoria (Ouro/Prata/Bronze) **opcional** (só quando `sponsorsShowTier` está ligado).
+  `instagram?` legado, **`username?`**, `logo?`) + `content.sponsorsShowTier` (flag global).
+  Público (`components/site/Parceiros.tsx`): **card por parceiro** com uma **placa de logo
+  quadrada** (`aspect-square` 1:1, fundo branco) que **preenche a largura do card**, o **nome
+  embaixo**, o **@usuário do Instagram** (igual ao card de Organizadores — `atHandle(sp.username)`,
+  em dourado) e um selo de categoria (Ouro/Prata/Bronze) **opcional** (só quando `sponsorsShowTier`
+  está ligado). A linha do @usuário é **sempre renderizada** (com `min-h` + espaço não-quebrável
+  quando vazia), então parceiros sem usuário mantêm **o mesmo tamanho/altura de card** dos demais.
   Card com borda arredondada + hover (sobe/realce). Uma **legenda opcional**
   (`sponsorsSubtitle`) aparece abaixo do título "Parceiros".
 - **Botão "Seja um parceiro"** (`sponsorsShowCta`): opcional, na **mesma linha do título,
@@ -458,7 +510,7 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   Some quando não há parceiros.
 - ADM > **Parceiros** (`patrocinadores/page.tsx`, título "Parceiros"): campo **Legenda**
   (`sponsorsSubtitle`, `TextArea`, opcional) + CRUD (logo/nome/categoria/**tipo de link**
-  Site|Rede social/**link único**) + **toggle global** "Mostrar a categoria no site"
+  Site|Rede social/**link único**/**usuário IG** `username`, opcional) + **toggle global** "Mostrar a categoria no site"
   (`sponsorsShowTier`). A logo usa `ImageUpload` com **`fit="contain"`** numa caixa
   **`aspect-square`** (1:1, sem corte). `migrate()` normaliza linhas legadas ao carregar
   (`instagram` → `linkKind:"social"`, senão `linkKind:"site"`).
@@ -507,7 +559,35 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - O ADM pode **criar novas abas (seções)** da tela inicial montando-as com os componentes já
   existentes no sistema. Modelo em `types.ts`: `CustomSection { id, title, blocks: CustomBlock[] }`
   e `CustomBlock { id, type, ... }`, com `type` ∈ `subtitulo | texto | imagem | video | botao |
-  carrossel | formulario`. Persistido em `content.customSections: CustomSection[]` (seed `[]`).
+  carrossel | formulario | secao`. Persistido em `content.customSections: CustomSection[]`.
+- **Toda seção é (ou vira) uma aba** — unificação em andamento (faseada). Bloco **`secao`**:
+  `CustomBlock.section?: SectionBlock` (união discriminada por `kind`) embute uma "seção pronta".
+  Kinds **autocontidos** (faq, depoimentos, stats, playlist, percurso, location, premiacao,
+  sejaParceiro, compartilhar, kit, parceiros) carregam o próprio dado; kinds **globais/marcador**
+  (raceday, inscricao, galeria) renderizam do conteúdo global via `SectionRenderCtx` (lotes,
+  inscricao, event, fotos, `sejaParceiroEnabled`) — fonte única, sem divergência. Render:
+  `renderSection(sb, ctx)` em `CustomSectionView` **delega ao componente original** (reuso 100%);
+  uma aba com **um único** bloco `secao` faz **short-circuit** (renderiza o componente direto, sem
+  o wrapper `<section id="aba-…">`) — markup, padding e **anchor** (`#faq`, `#parceiros`, …)
+  idênticos aos de hoje. Editor: `SectionKind` picker + editores controlados reutilizados
+  (`src/components/admin/sections/*Editor.tsx`) tanto na aba quanto (via redirect) nas páginas
+  legadas. Migração idempotente: `SECTION_MIGRATIONS` (`migrate.ts`) troca cada chave built-in por
+  `custom:sec-<key>` **na posição**, preservando `enabled`; campos top-level ficam intactos (nada
+  se perde). Ao converter uma seção, as 3 edições atômicas (entrada em `SECTION_MIGRATIONS` +
+  remover de `SECTIONS` + remover do mapa `rendered`) vão **juntas no mesmo deploy** (senão
+  renderiza 2×). **Unificação concluída** — todas as 15 seções viraram abas: **Fase 1**
+  `faq`/`depoimentos`/`stats` (+ `about`/"A Causa"); **Fase 2**
+  `playlist`/`percurso`/`location`/`premiacao`/`sejaParceiro`/`compartilhar`; **Fase 3** (acopladas/
+  globais) `parceiros`, `kit`, `galeria`, `raceday`, `inscricao`. `SECTIONS` agora tem só `hero`;
+  Banner/Hero é a única seção built-in fixa. `parceiros` carrega seus flags
+  (`sponsorsShowTier/Subtitle/ShowCta`) e o CTA respeita `sejaParceiroEnabled` (via `ctx`); `kit`
+  lê `ctx.lotes`; `galeria`/`raceday`/`inscricao` são marcadores globais (fotos/lotes/inscrição
+  nunca duplicados — `/admin/galeria` e `/admin/links` seguem como editores globais, e a barra fixa
+  `RaceCountdownBar` continua lendo `c.inscricao`).
+  `seed.layout` (`SEED_LAYOUT`) lista a ordem canônica com as chaves originais, para a migração
+  posicioná-las in-place também numa instalação nova. **Páginas legadas convertidas redirecionam**
+  para a aba (`SectionAbaRedirect`, cria a aba se faltar); exceção: `/admin/seja-parceiro` vira o
+  **CRM de cadastros** (leads), com link para editar a seção na aba.
 - **Chave de layout**: cada aba entra no `content.layout` com a chave `custom:<id>` (helpers
   `customKey`/`customIdFromKey`/`isCustomKey` em `sections.ts`). O `resolveLayout(stored,
   customIds?)` **preserva** as chaves `custom:*` que ainda existem e **descarta órfãs** (abas
@@ -529,10 +609,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   por bloco no editor (`PositionPicker`).
 - **Renderização pública** (`CustomSectionView`, servidor): título via `SectionEyebrow as="h2"`
   + blocos na ordem. Cada bloco **reusa um componente do site** — `texto`/`subtitulo` (tipografia),
-  `imagem` (`<img>` com proporção), `video` (`YouTubePlayer`, cobre Shorts 9:16), `botao`
+  `imagem` (`<img>` com **proporção** + **escala**: `CustomBlock.scale` = largura em % do container
+  10–100; abaixo de 100 a imagem é **centralizada** e não estoura — ideal para QR/logo pequeno; ADM
+  escolhe em "Escala (tamanho)"), `video` (`YouTubePlayer`, cobre Shorts 9:16), `botao`
   (`CtaButton`), `carrossel` (`CustomCarousel`, client: autoplay + setas + bolinhas + swipe),
   `formulario` (`NotifyForm`, captura de e-mail). Blocos vazios se auto-ocultam; a seção some se
-  não tiver título nem blocos com conteúdo. `SiteContent` injeta cada aba no mapa `rendered` com
+  não tiver título nem blocos com conteúdo. **Alinhamento por bloco** (`CustomBlock.align`:
+  `left`/`center`/`right`) posiciona o componente na horizontal (wrapper `flex flex-col
+  items-*` + `text-*` no texto) — vale para largura total e dentro da coluna Esquerda/Direita.
+  **Ordem no mobile**: numa dupla (Esquerda+Direita), no desktop são duas colunas independentes;
+  no mobile as colunas viram `display:contents` e cada bloco recebe `order` = seu índice na ordem
+  adicionada, então a pilha do celular segue **a ordem em que foram adicionados** (não "todos da
+  esquerda e depois todos da direita"), sem duplicar DOM nem "buracos" de grid. `SiteContent` injeta cada aba no mapa `rendered` com
   a chave `custom:<id>`, então a ordem/on-off segue o mesmo fluxo das seções nativas.
 - **Criar/excluir** (Dashboard, card de componentes): botão **"+ Criar aba"** abre um mini-form
   — título + **lista ordenável de componentes** (clicar na paleta adiciona; a lista abaixo

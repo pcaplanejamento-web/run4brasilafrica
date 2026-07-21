@@ -3,12 +3,23 @@ import type { SponsorTier, EditionStatus, ThemeColors } from "./types";
 /** Theme keys → the CSS custom properties they override. */
 export const THEME_VARS: Record<keyof ThemeColors, string[]> = {
   background: ["--color-ink"],
+  headerBg: ["--color-header-bg"],
+  footerBg: ["--color-footer-bg"],
   accent: ["--color-gold"],
   accentText: ["--color-gold-ink"],
   text: ["--color-cream"],
+  // Legacy split (kept for back-compat); superseded by `surfaces` below.
   sections: ["--color-ink-deep", "--color-ink-deeper"],
   cards: ["--color-ink-panel", "--color-ink-card"],
   heroRed: ["--color-brasil", "--color-brasil-2"],
+  // Single control for ALL dark inner surfaces. Listed LAST so its declarations
+  // come after `sections`/`cards` and win in the cascade when set.
+  surfaces: [
+    "--color-ink-panel",
+    "--color-ink-card",
+    "--color-ink-deep",
+    "--color-ink-deeper",
+  ],
 };
 
 /** Only allow safe CSS color tokens (hex / rgb / hsl / oklch / named). */

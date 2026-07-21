@@ -22,6 +22,18 @@ function social(v?: string) {
   return handle ? `https://instagram.com/${handle}` : null;
 }
 
+/** "@handle" for display, from a username/handle or an Instagram URL (same rule
+ *  as the organizers card). Returns "" when nothing usable is set. */
+function atHandle(v?: string): string {
+  const handle = (v || "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^(www\.)?instagram\.com\//i, "")
+    .replace(/\/+$/, "")
+    .replace(/^@/, "");
+  return handle ? `@${handle}` : "";
+}
+
 /**
  * The partner card destination. Uses the single `link` interpreted by
  * `linkKind` (site or social); falls back to the legacy `instagram`/`link`.
@@ -52,7 +64,7 @@ export default function Parceiros({
   if (sponsors.length === 0) return null;
 
   return (
-    <section id="parceiros" className="bg-ink-deep px-5 py-16 sm:px-8 md:px-14 md:py-20">
+    <section id="parceiros" className="bg-ink px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <SectionEyebrow as="h2">Parceiros</SectionEyebrow>
         {showCta && (
@@ -74,6 +86,12 @@ export default function Parceiros({
         {sponsors.map((sp, i) => {
           const href = partnerHref(sp);
           const tier = showTier ? TIER_COLOR[sp.tier] : null;
+          // The @handle shown under the name: an explicit `username` wins; otherwise
+          // it reuses the SAME value chosen for a social link (so the partner doesn't
+          // type it twice), falling back to the legacy `instagram`.
+          const handle = atHandle(
+            sp.username || (sp.linkKind === "social" ? sp.link : "") || sp.instagram,
+          );
           const inner = (
             <>
               {/* Logo tile — square (1:1), fills the full width of the card. */}
@@ -97,6 +115,12 @@ export default function Parceiros({
               <div className="flex flex-1 flex-col items-center justify-center gap-1.5 px-2 py-3 text-center">
                 <span className="text-[13px] font-bold uppercase leading-snug tracking-[0.03em] text-cream md:text-[14px]">
                   {sp.name}
+                </span>
+                {/* Instagram @handle (like the organizers card). Always rendered —
+                    a non-breaking space keeps the line's height when empty so every
+                    card stays the same size/proportion. */}
+                <span className="min-h-[1.15em] text-[12px] leading-none text-gold">
+                  {handle || " "}
                 </span>
                 {tier && (
                   <span

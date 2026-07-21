@@ -59,8 +59,11 @@ export default function SiteNav({
   const cta = loteCtaLabel(lotes ?? [], now);
 
   return (
-    <header className="border-b border-line bg-ink">
-      <nav className="flex items-center justify-between px-5 py-4 sm:px-8 md:px-14 md:py-[26px]">
+    <header
+      className="border-b border-line"
+      style={{ background: "var(--color-header-bg, var(--color-ink))" }}
+    >
+      <nav className="relative flex items-center justify-between px-5 py-4 sm:px-8 md:px-14 md:py-[26px]">
         <a href="#top" className="text-[19px] md:text-[22px]" aria-label="Run4BrasilAfrica — início">
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -88,27 +91,39 @@ export default function SiteNav({
           </CtaButton>
         </div>
 
-        {/* Mobile menu button */}
+        {/* Mobile CTA — absolutely centered in the header (below lg), between the
+            logo (left) and the menu button (right). Shown only when a logo IMAGE is
+            set; the text wordmark is too wide to leave room for a centered button. */}
+        {logo && (
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:hidden">
+            <CtaButton href={cta.url} size="xs">
+              {cta.label}
+            </CtaButton>
+          </div>
+        )}
+
+        {/* Mobile menu button (right). Thick literal-white bars (not an oklch token)
+            so the icon is bold and unmistakable — never faint/invisible/black. */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
-          className="flex h-11 w-11 flex-col items-center justify-center gap-[5px] lg:hidden"
+          className="flex h-11 w-11 shrink-0 flex-col items-center justify-center gap-[6px] lg:hidden"
         >
           <span
-            className={`block h-[2px] w-6 bg-cream transition-transform duration-300 ${
-              open ? "translate-y-[7px] rotate-45" : ""
+            className={`block h-[3px] w-7 rounded-full bg-white transition-transform duration-300 ${
+              open ? "translate-y-[9px] rotate-45" : ""
             }`}
           />
           <span
-            className={`block h-[2px] w-6 bg-cream transition-opacity duration-300 ${
+            className={`block h-[3px] w-7 rounded-full bg-white transition-opacity duration-300 ${
               open ? "opacity-0" : ""
             }`}
           />
           <span
-            className={`block h-[2px] w-6 bg-cream transition-transform duration-300 ${
-              open ? "-translate-y-[7px] -rotate-45" : ""
+            className={`block h-[3px] w-7 rounded-full bg-white transition-transform duration-300 ${
+              open ? "-translate-y-[9px] -rotate-45" : ""
             }`}
           />
         </button>
@@ -118,7 +133,8 @@ export default function SiteNav({
           any number of links (and scrolls if it ever exceeds the screen) instead
           of clipping the last item; `max-h-0 overflow-hidden` drives the collapse. */}
       <div
-        className={`border-t border-line bg-ink transition-[max-height] duration-300 ease-out lg:hidden ${
+        style={{ background: "var(--color-header-bg, var(--color-ink))" }}
+        className={`border-t border-line transition-[max-height] duration-300 ease-out lg:hidden ${
           open ? "max-h-[80vh] overflow-y-auto" : "max-h-0 overflow-hidden"
         }`}
       >
@@ -128,19 +144,11 @@ export default function SiteNav({
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className="border-b border-line/60 py-4 text-[15px] uppercase tracking-[0.04em] text-muted"
+              className="border-b border-line/60 py-4 text-[15px] uppercase tracking-[0.04em] text-muted last:border-b-0"
             >
               {l.label}
             </a>
           ))}
-          <CtaButton
-            href={cta.url}
-            size="sm"
-            onClick={() => setOpen(false)}
-            className="my-4 block w-full text-center"
-          >
-            {cta.label}
-          </CtaButton>
         </div>
       </div>
     </header>

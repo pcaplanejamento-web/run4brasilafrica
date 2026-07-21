@@ -4,28 +4,15 @@ import { resolveLayout, customKey } from "@/lib/content/sections";
 import { carouselsOf, activeCarousel } from "@/lib/content/carousels";
 import SiteNav from "./SiteNav";
 import HeroCarousels from "./HeroCarousels";
-import StatsBar from "./StatsBar";
 import Sobre from "./Sobre";
-import Playlist from "./Playlist";
-import Percurso from "./Percurso";
-import Localizacao from "./Localizacao";
-import RaceDay from "./RaceDay";
 import RaceCountdownBar from "./RaceCountdownBar";
 import WhatsAppFloat from "./WhatsAppFloat";
 import EventJsonLd from "./EventJsonLd";
 import Analytics from "./Analytics";
 import { AudioBusProvider } from "./AudioBus";
-import InscricaoCTA from "./InscricaoCTA";
-import Galeria from "./Galeria";
-import Parceiros from "./Parceiros";
-import SejaParceiro from "./SejaParceiro";
-import Depoimentos from "./Depoimentos";
-import Faq from "./Faq";
-import KitAtleta from "./KitAtleta";
-import Premiacao from "./Premiacao";
-import ShareEvent from "./ShareEvent";
-import CustomSectionView from "./CustomSectionView";
+import CustomSectionView, { type SectionRenderCtx } from "./CustomSectionView";
 import SiteFooter from "./SiteFooter";
+import StickyOffset from "./StickyOffset";
 import PrivacyModal from "./PrivacyModal";
 import OrganizersModal from "./OrganizersModal";
 
@@ -46,8 +33,13 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     c.layout,
     customSections.map((s) => s.id),
   );
-  // The "Seja um parceiro" CTA only works when its target section is enabled.
-  const sejaAtiva = layout.some((li) => li.key === "sejaParceiro" && li.enabled);
+  // The "Seja um parceiro" CTA only works when its target section is enabled —
+  // whether it's still the built-in `sejaParceiro` key or already an aba.
+  const sejaParceiroEnabled = layout.some(
+    (li) =>
+      li.enabled &&
+      (li.key === "sejaParceiro" || li.key === customKey("sec-sejaParceiro")),
+  );
 
   // Banner: pick the carousel on air now (server pick for the first paint; the
   // client re-evaluates live). `carouselsOf` guarantees a non-empty list with one
@@ -55,42 +47,28 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   const carousels = carouselsOf(c);
   const initialCarousel = activeCarousel(carousels, Date.now()) ?? carousels[0];
 
-  // Each homepage section keyed so the ADM dashboard can reorder / toggle them.
+  // Global content that `secao` blocks (inside abas) may need at render time.
+  const ctx: SectionRenderCtx = {
+    lotes: c.lotes ?? [],
+    inscricao: c.inscricao,
+    event: c.event,
+    gallery: c.gallery,
+    albums: c.albums ?? [],
+    galleryTiles: c.galleryTiles ?? [],
+    galleryPhotos: c.galleryPhotos ?? [],
+    sejaParceiroEnabled,
+  };
+
+  // Só o Banner/Hero permanece built-in; todas as demais seções renderizam via
+  // `custom:sec-*` (blocos `secao` em abas). `about` fica como fallback caso a
+  // migração de "A Causa" ainda não tenha rodado.
   const rendered: Record<string, ReactNode> = {
     hero: <HeroCarousels carousels={carousels} initialId={initialCarousel.id} />,
-    stats: <StatsBar stats={c.stats ?? []} />,
     about: <Sobre about={c.about} />,
-    playlist: <Playlist playlist={c.playlist} />,
-    percurso: <Percurso percurso={c.percurso} />,
-    location: <Localizacao location={c.location} />,
-    raceday: <RaceDay inscricao={c.inscricao} />,
-    inscricao: <InscricaoCTA inscricao={c.inscricao} lotes={c.lotes ?? []} />,
-    galeria: (
-      <Galeria
-        albums={c.albums ?? []}
-        tiles={c.galleryTiles ?? []}
-        photos={c.galleryPhotos ?? []}
-        gallery={c.gallery}
-      />
-    ),
-    parceiros: (
-      <Parceiros
-        sponsors={c.sponsors ?? []}
-        showTier={c.sponsorsShowTier}
-        subtitle={c.sponsorsSubtitle}
-        showCta={(c.sponsorsShowCta ?? false) && sejaAtiva}
-      />
-    ),
-    sejaParceiro: <SejaParceiro config={c.sejaParceiro ?? {}} />,
-    depoimentos: <Depoimentos testimonials={c.testimonials ?? []} />,
-    faq: <Faq items={c.faq ?? []} />,
-    kit: <KitAtleta kit={c.kit} lotes={c.lotes ?? []} />,
-    premiacao: <Premiacao premiacao={c.premiacao} />,
-    compartilhar: <ShareEvent share={c.share} event={c.event} />,
   };
   // Custom "abas" built in the ADM, keyed as `custom:<id>`.
   for (const cs of customSections) {
-    rendered[customKey(cs.id)] = <CustomSectionView section={cs} />;
+    rendered[customKey(cs.id)] = <CustomSectionView section={cs} ctx={ctx} />;
   }
 
   return (
@@ -100,7 +78,8 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo
       </a>
-      <div className="sticky top-0 z-30">
+      <StickyOffset />
+      <div id="site-sticky-header" className="sticky top-0 z-30">
         <SiteNav
           logo={c.branding?.logo}
           lotes={c.lotes ?? []}

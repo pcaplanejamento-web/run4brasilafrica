@@ -131,11 +131,12 @@ function ConfiguracoesForm({
 
   const THEME_FIELDS: { key: keyof ThemeColors; label: string; def: string }[] = [
     { key: "background", label: "Fundo do site", def: "#2b2119" },
+    { key: "headerBg", label: "Cor do header (topo)", def: "#2b2119" },
+    { key: "footerBg", label: "Cor do rodapé", def: "#1a130d" },
     { key: "accent", label: "Cor de destaque", def: "#c8ce2e" },
     { key: "accentText", label: "Texto sobre o destaque", def: "#211a08" },
     { key: "text", label: "Cor do texto", def: "#f2ede4" },
-    { key: "sections", label: "Seções escuras", def: "#221a12" },
-    { key: "cards", label: "Cartões", def: "#332619" },
+    { key: "surfaces", label: "Cor interna dos componentes (cartões e painéis)", def: "#2b2018" },
     { key: "heroRed", label: "Vermelho do hero", def: "#c05a3a" },
   ];
 

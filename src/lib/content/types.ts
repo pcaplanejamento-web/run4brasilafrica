@@ -196,10 +196,19 @@ export interface Branding {
  */
 export interface ThemeColors {
   background?: string;
+  /** Header (top nav) background. Defaults to `background` when unset. */
+  headerBg?: string;
+  /** Footer background. Defaults to the deep-ink tone when unset. */
+  footerBg?: string;
   accent?: string;
   accentText?: string;
   text?: string;
+  /** Single "inner surface" color for all dark card/panel tones on the home
+   *  (ink-panel, ink-card, ink-deep, ink-deeper). Overrides `cards`/`sections`. */
+  surfaces?: string;
+  /** @deprecated — kept for back-compat; superseded by `surfaces`. */
   sections?: string;
+  /** @deprecated — kept for back-compat; superseded by `surfaces`. */
   cards?: string;
   heroRed?: string;
 }
@@ -247,6 +256,10 @@ export interface Sponsor {
   linkKind?: "site" | "social";
   /** Legacy — Instagram profile. Read as fallback when `linkKind` is unset. */
   instagram?: string;
+  /** Instagram username/handle shown under the name (e.g. "@fulano"), like the
+   *  organizers card. Display only; when empty the line keeps its height so all
+   *  cards stay the same size. */
+  username?: string;
   logo?: string;
 }
 
@@ -419,25 +432,89 @@ export type CustomBlockType =
   | "video"
   | "botao"
   | "carrossel"
-  | "formulario";
+  | "formulario"
+  | "secao"; // embute uma seção "pronta" do site (ver SectionBlock)
+
+/** Quais seções "prontas" um bloco `secao` pode conter. */
+export type SectionKind =
+  | "stats"
+  | "playlist"
+  | "percurso"
+  | "location"
+  | "raceday"
+  | "inscricao"
+  | "galeria"
+  | "premiacao"
+  | "parceiros"
+  | "sejaParceiro"
+  | "depoimentos"
+  | "faq"
+  | "kit"
+  | "compartilhar";
+
+/**
+ * Conteúdo de um bloco `secao` — união discriminada por `kind` que reusa os
+ * modelos existentes. Duas famílias:
+ *  - **Autocontidas**: embutem o próprio dado (editável dentro da aba).
+ *  - **Globais (marcador)**: `raceday`/`inscricao`/`galeria` não copiam dado —
+ *    renderizam do conteúdo global (lotes/inscricao/fotos), evitando divergência
+ *    com os editores de Links/Galeria e inchaço da linha JSON.
+ */
+export type SectionBlock =
+  | { kind: "stats"; stats: Stat[] }
+  | { kind: "faq"; faq: FaqItem[] }
+  | { kind: "depoimentos"; testimonials: Testimonial[] }
+  | { kind: "playlist"; playlist: PlaylistSection }
+  | { kind: "percurso"; percurso: Percurso }
+  | { kind: "location"; location: LocationSection }
+  | { kind: "premiacao"; premiacao: PremiacaoSection }
+  | { kind: "sejaParceiro"; sejaParceiro: SejaParceiroSection }
+  | { kind: "compartilhar"; share: ShareSection }
+  | { kind: "kit"; kit: KitSection }
+  | {
+      kind: "parceiros";
+      sponsors: Sponsor[];
+      sponsorsShowTier?: boolean;
+      sponsorsSubtitle?: string;
+      sponsorsShowCta?: boolean;
+    }
+  | { kind: "raceday" }
+  | { kind: "inscricao" }
+  | { kind: "galeria" };
 
 /** Posição do bloco na seção: largura total, coluna esquerda ou direita
  *  (2 colunas no desktop; sempre empilhado no mobile). Ausente = "full". */
 export type CustomBlockColumn = "full" | "left" | "right";
+
+/** Alinhamento horizontal do bloco dentro da sua coluna/largura. Ausente = "left". */
+export type CustomBlockAlign = "left" | "center" | "right";
 
 export interface CustomBlock {
   id: string;
   type: CustomBlockType;
   /** Disposição do bloco (padrão "full"). */
   column?: CustomBlockColumn;
+  /** Alinhamento horizontal dentro da coluna/largura (padrão "left"). */
+  align?: CustomBlockAlign;
   /** subtítulo / texto. */
   text?: string;
   /** imagem (URL). */
   imageUrl?: string;
+  /** Escala da imagem: largura em % do container (10–100). Ausente/100 = largura
+   *  total. Ex.: um QR code fica bem menor com 30–40%. Centralizada quando < 100. */
+  scale?: number;
   /** vídeo (YouTube). */
   videoUrl?: string;
   /** proporção do vídeo/imagem (ex.: "16/9"). */
   aspectRatio?: string;
+  /** Vídeo: começa mudo (autoplay). Ausente = true. */
+  videoStartMuted?: boolean;
+  /** Vídeo: mostra overlay "clique para começar" em vez de autoplay. */
+  clickToPlay?: boolean;
+  /** Vídeo: mostra a barra de controles do YouTube. */
+  videoControls?: boolean;
+  /** Vídeo: força legendas. */
+  videoCaptions?: boolean;
   /** botão. */
   buttonLabel?: string;
   buttonUrl?: string;
@@ -445,6 +522,8 @@ export interface CustomBlock {
   images?: string[];
   /** formulário: qual formulário existente embutir. */
   formKind?: "email";
+  /** seção "pronta" embutida (presente só quando `type === "secao"`). */
+  section?: SectionBlock;
 }
 
 export interface CustomSection {

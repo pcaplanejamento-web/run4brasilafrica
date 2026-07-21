@@ -2,7 +2,11 @@ import "server-only";
 import { cache } from "react";
 import { getDB, getDBAsync, type D1Like } from "@/lib/cf";
 import { seedContent } from "./seed";
+import { normalizeContent } from "./migrate";
 import type { SiteContent } from "./types";
+
+/** Seed with the same normalization applied to stored content (A Causa → aba). */
+const seedNormalized = normalizeContent(seedContent);
 
 /**
  * Backend storage = Cloudflare D1 (binding CONTENT_DB in wrangler.jsonc).
@@ -16,21 +20,21 @@ import type { SiteContent } from "./types";
 export type ContentSource = "backend" | "seed" | "unset" | "error";
 
 function merge(stored: Partial<SiteContent> | null): SiteContent {
-  return stored ? { ...seedContent, ...stored } : seedContent;
+  return stored ? normalizeContent({ ...seedContent, ...stored }) : seedNormalized;
 }
 
 async function readFrom(
   db: D1Like | null,
 ): Promise<{ content: SiteContent; source: ContentSource }> {
-  if (!db) return { content: seedContent, source: "unset" };
+  if (!db) return { content: seedNormalized, source: "unset" };
   try {
     const row = await db
       .prepare("SELECT json FROM content WHERE id = 1")
       .first<string>("json");
-    if (!row) return { content: seedContent, source: "seed" };
+    if (!row) return { content: seedNormalized, source: "seed" };
     return { content: merge(JSON.parse(row) as Partial<SiteContent>), source: "backend" };
   } catch {
-    return { content: seedContent, source: "error" };
+    return { content: seedNormalized, source: "error" };
   }
 }
 
@@ -60,7 +64,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
     const { content } = await readContentAsync();
     return content;
   } catch {
-    return seedContent;
+    return seedNormalized;
   }
 });
 
