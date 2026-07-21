@@ -8,7 +8,9 @@ export interface AdmNavItem {
 export const ADM_NAV: AdmNavItem[] = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard" },
   { key: "banner", label: "Banner / Hero", href: "/admin/banner" },
-  { key: "conteudo", label: "Textos do site", href: "/admin/conteudo" },
+  // "Textos do site" foi removida: os textos são editados nas respectivas abas
+  // ("A Causa", "Perguntas frequentes") e na config geral (contato/rodapé em
+  // "Links & inscrição"). Cada texto tem uma única fonte de verdade.
   // Quase todas as seções viraram abas (editadas via /admin/custom/sec-*). Ficam
   // páginas próprias só: Galeria (fotos/álbuns) e Links & inscrição (lotes+data),
   // que as abas-marcador de galeria/raceday/inscricao usam como conteúdo global;

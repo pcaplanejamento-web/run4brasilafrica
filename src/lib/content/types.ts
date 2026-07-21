@@ -356,11 +356,6 @@ export interface ContactLinks {
   whatsappFloat?: boolean;
 }
 
-export interface ContentSection {
-  title: string;
-  body: string;
-}
-
 /** One podium position with its award. */
 export interface PodiumPlace {
   /** Position label ("1º lugar", "Campeão", …). */
@@ -629,7 +624,6 @@ export interface SiteContent {
   customSections?: CustomSection[];
   privacy?: PrivacySection;
   /* ADM-only content */
-  contentSections: ContentSection[];
   editions: Edition[];
   metrics: Metrics;
   log: LogEntry[];

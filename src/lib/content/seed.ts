@@ -326,25 +326,6 @@ Em caso de dúvidas jurídicas, consulte um advogado antes de usar este texto co
 
   /* ---- ADM-managed content ---- */
 
-  contentSections: [
-    {
-      title: "SOBRE A CAUSA",
-      body: "Cada passo do Run4BrasilAfrica financia projetos sociais que conectam comunidades no Brasil e na África. Energia de pista, impacto real.",
-    },
-    {
-      title: "SOBRE O EVENTO",
-      body: "Corrida de 10km e caminhada de 5km com concentração em Copacabana, aberta a corredores de todos os níveis.",
-    },
-    {
-      title: "PERGUNTAS FREQUENTES — INTRODUÇÃO",
-      body: "Reunimos aqui as dúvidas mais comuns sobre inscrição, kit do atleta e regras da prova.",
-    },
-    {
-      title: "RODAPÉ / CONTATO",
-      body: "contato@run4brasilafrica.com · +55 21 0000-0000",
-    },
-  ],
-
   editions: [
     { year: "2026", date: "14 set 2026", participants: "1.840", status: "Ativa" },
     { year: "2025", date: "8 set 2025", participants: "3.210", status: "Encerrada" },
