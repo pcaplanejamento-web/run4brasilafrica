@@ -582,10 +582,25 @@ export interface PrivacySection {
  * `Ativa`; as demais ficam ocultas mas editáveis/pré-visualizáveis. A "view"
  * completa (SiteContent) de uma edição é derivada por `resolveEdition`.
  */
+/**
+ * Uma **Edição** carrega TODO o seu conteúdo E a sua configuração — o site muda
+ * por completo conforme a edição ativa. Além de identidade (`event`), seções
+ * (`layout`/`customSections`), cada edição tem a sua **marca** (logo/favicon/OG),
+ * **cores** (tema), **contato/redes/doações**, **organizadores**, **privacidade**
+ * e **integrações** (cloudinary/analytics). Só ficam globais (fora da edição): a
+ * lista de edições e o log de alterações (ver `StoredContent`).
+ */
 export interface Edition {
   id: string;
   status: EditionStatus;
   event: EventInfo;
+  branding: Branding;
+  theme: ThemeColors;
+  cloudinary: Cloudinary;
+  analytics: Analytics;
+  contact: ContactLinks;
+  organizers?: OrganizersSection;
+  privacy?: PrivacySection;
   layout: LayoutItem[];
   customSections: CustomSection[];
 }
@@ -652,29 +667,32 @@ export interface SiteContent {
 }
 
 /**
- * O conteúdo **persistido** (uma linha D1, `id=1`): campos GLOBAIS (iguais em
- * todas as edições) + a lista de `editions` (cada uma com seu event/layout/
- * customSections). Os campos por-edição de `SiteContent` (event, layout,
- * customSections, hero, seções) NÃO ficam no topo aqui — são derivados por
- * `resolveEdition(stored, editionId?)`, que devolve um `SiteContent` completo
- * (a "view" de uma edição) para o render público e as telas do ADM.
+ * O conteúdo **persistido** (uma linha D1, `id=1`): APENAS o que é global —
+ * a lista de `editions` (cada uma com TODO o seu conteúdo + config) e o `log` de
+ * alterações. Todos os campos "de site" (`event`, `branding`, `theme`, `contact`,
+ * `organizers`, `privacy`, `cloudinary`, `analytics`, `layout`, `customSections`,
+ * seções) vivem DENTRO da edição — são derivados por `resolveEdition(stored,
+ * editionId?)`, que devolve um `SiteContent` completo (a "view" de uma edição)
+ * para o render público e as telas do ADM.
  */
 export interface StoredContent {
   editions: Edition[];
-  branding: Branding;
-  theme: ThemeColors;
-  cloudinary: Cloudinary;
-  analytics: Analytics;
-  contact: ContactLinks;
-  organizers?: OrganizersSection;
-  privacy?: PrivacySection;
   log: LogEntry[];
 }
 
 /** Campos de `SiteContent` que pertencem a UMA edição (roteados para
- *  `editions[selecionada]` no save; derivados no resolve). O resto é global. */
+ *  `editions[selecionada]` no save; derivados no resolve). Inclui TODA a config
+ *  do site (marca, tema, contato, organizadores, privacidade, integrações), além
+ *  da identidade e das seções. O que NÃO está aqui é global (só `editions`/`log`). */
 export const EDITION_KEYS = [
   "event",
+  "branding",
+  "theme",
+  "cloudinary",
+  "analytics",
+  "contact",
+  "organizers",
+  "privacy",
   "layout",
   "customSections",
   "hero",

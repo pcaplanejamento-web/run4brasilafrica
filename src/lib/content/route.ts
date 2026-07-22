@@ -1,13 +1,13 @@
 import type { Edition, SiteContent, StoredContent } from "./types";
 import { activeEdition } from "./editions";
 
-/** Chaves por-edição roteadas para `editions[selecionada]`. As demais chaves-espelho
- *  de seção (hero/stats/inscricao/…) são DERIVADAS dos blocos no `resolveEdition` —
- *  não se persistem separadamente; um patch com elas é ignorado aqui. */
-export const EDITION_FIELDS: readonly (keyof Edition)[] = ["event", "layout", "customSections"];
-
-/** Chaves globais (iguais em todas as edições) roteadas para o topo. */
-export const GLOBAL_FIELDS: readonly (keyof StoredContent)[] = [
+/** Chaves por-edição roteadas para `editions[selecionada]`. Inclui TODA a config
+ *  do site (marca/tema/contato/organizadores/privacidade/integrações) + identidade
+ *  + seções. As chaves-espelho de seção (hero/stats/inscricao/…) são DERIVADAS dos
+ *  blocos no `resolveEdition` — não se persistem separadamente; um patch com elas
+ *  é ignorado aqui. */
+export const EDITION_FIELDS: readonly (keyof Edition)[] = [
+  "event",
   "branding",
   "theme",
   "cloudinary",
@@ -15,7 +15,13 @@ export const GLOBAL_FIELDS: readonly (keyof StoredContent)[] = [
   "contact",
   "organizers",
   "privacy",
+  "layout",
+  "customSections",
 ];
+
+/** Chaves globais roteadas para o topo. Só sobra o `log` (a coleção `editions`
+ *  é tratada à parte). Toda a config do site agora é por-edição. */
+export const GLOBAL_FIELDS: readonly (keyof StoredContent)[] = ["log"];
 
 /**
  * Aplica um `patch` (forma de `SiteContent`) sobre o conteúdo cru roteando cada

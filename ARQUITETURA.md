@@ -607,18 +607,21 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
   (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
   editor só aparece como fallback para blocos `secao` legados sem `kind`.
-- **Edições multi-tenant** (`src/lib/content/{types,editions,resolve,migrate,route}.ts`): cada
-  **Edição** carrega o **próprio conteúdo** — `Edition { id, status, event, layout, customSections }`.
-  O que é **persistido** (uma linha D1) é o `StoredContent` = **globais** (branding, theme,
-  cloudinary/analytics, contact, organizers, privacy, log) + `editions[]`. A forma antiga de
+- **Edições multi-tenant — o site muda por COMPLETO conforme a edição ativa**
+  (`src/lib/content/{types,editions,resolve,migrate,route}.ts`): cada **Edição** carrega TODO o seu
+  conteúdo **E** a sua configuração — `Edition { id, status, event, branding, theme, cloudinary,
+  analytics, contact, organizers?, privacy?, layout, customSections }`. O que é **persistido** (uma
+  linha D1) é o `StoredContent` = **só** `editions[]` + `log` (nada mais é global). A forma antiga de
   `SiteContent` (com tudo no topo) vira a **view resolvida** de UMA edição:
-  `resolveEdition(stored, editionId?)` = globais + `event`/`layout`/`customSections` da edição +
-  os campos-espelho derivados dos blocos (`deriveView`). Assim **todo o render público e as telas
-  do ADM continuam iguais** — nenhum componente de site mudou.
+  `resolveEdition(stored, editionId?)` = a config + a identidade + as seções DAQUELA edição, e os
+  campos-espelho derivados dos blocos (`deriveView`). Assim **todo o render público e as telas do ADM
+  continuam iguais** — nenhum componente de site mudou; só a fonte dos dados (a edição) mudou.
   - **Migração** `migrateToEditions` (dentro de `normalizeContent`, a cada leitura, idempotente e
-    forward-only): move o conteúdo single-tenant do topo para a edição **ativa** (roda o
-    `runSectionPipeline`, que cria as abas incl. `sec-hero`); edições legadas (só rótulos) viram
-    edições **em branco**. Nada se apaga — é lazy (só grava `StoredContent` no próximo save do ADM).
+    forward-only): move conteúdo **E** config do topo para dentro da edição **ativa** (roda o
+    `runSectionPipeline`, que cria as abas incl. `sec-hero`); edições legadas viram edições **em
+    branco de seções**, mas com uma **cópia da config** (marca/tema/etc). Também cobre o caso
+    intermediário (edições com conteúdo mas config ainda global → preenche a config de cada edição).
+    Nada se apaga — é lazy (só grava `StoredContent` no próximo save do ADM).
   - **Banner/Hero é um componente** (`SectionKind "hero"`): **não tem mais página dedicada**. É um
     bloco como qualquer outro — pode ser adicionado em **qualquer aba** pelo Dashboard ("Banner /
     Hero" no picker), quantos quiser, e é editado **dentro da aba** pelo `HeroEditor`
@@ -629,13 +632,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     `/admin/banner` e o helper `withHeroCarousels` foram **removidos**.
   - **Store roteador** (`store.tsx` + `route.ts`): guarda o `StoredContent` cru + a **edição
     selecionada** (localStorage); `content` = view resolvida da selecionada. `save(patch)` roteia
-    (`routePatch`): `event`/`layout`/`customSections` → edição selecionada; `editions` e globais →
-    topo; chaves-espelho derivadas são ignoradas (recomputadas na leitura).
-  - **Menu** (`AdmSidebar`): `EditionSelector` no topo escolhe a edição — só as abas de **seção**
-    mudam; as **administrativas** (baixo, com o Dashboard) não. Identidade do evento saiu de
-    Configurações e virou **por-edição** em `/admin/edicoes` (nome/ano/data/cidade/chamada, tornar
-    ativa, excluir, nova-em-branco, copiar todas as seções de outra edição, pré-visualizar).
-    Edições **não têm mais** data(rótulo)/inscritos.
+    (`routePatch`): TODA a config + identidade + seções (`event`/`branding`/`theme`/`contact`/
+    `organizers`/`privacy`/`cloudinary`/`analytics`/`layout`/`customSections`) → edição selecionada;
+    `editions` (a coleção) e `log` → topo; chaves-espelho derivadas são ignoradas (recomputadas).
+  - **Configurações é o HUB** (`/admin/configuracoes`): a aba **Edições foi eliminada** — a gestão
+    (`EditionsManager`: criar em branco herdando a config da ativa, tornar ativa, excluir, copiar
+    seções, pré-visualizar) + a escolha de qual edição editar (radios que dirigem o
+    `selectedEditionId`) + **todos** os cards (identidade, marca/logo/favicon, cores, contato/redes/
+    doações, organizadores, privacidade, integrações) vivem aqui, editando a **edição selecionada**
+    (o form é `key`-ado por `selectedEditionId`, re-hidrata ao trocar). O `EditionSelector` da
+    sidebar continua para trocar rápido a edição (mesma `selectedEditionId`) — muda só as abas de
+    **seção**; as administrativas (baixo, com o Dashboard) não. Edições não têm data(rótulo)/inscritos.
   - **Público vê só a ativa** (`getSiteContent()` = edição ativa). **Pré-visualização** de edições
     não ativas: rota dedicada `/preview?edicao=<id>`, dinâmica, `noindex` e **restrita ao ADM
     logado** (`getSessionUser`, senão redireciona ao login) — não regride a home ISR.

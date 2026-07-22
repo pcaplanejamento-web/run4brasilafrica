@@ -8,12 +8,14 @@ import type {
   Branding,
   Cloudinary,
   ContactLinks,
+  EventInfo,
   Organizer,
   OrganizersSection,
   PrivacySection,
   ThemeColors,
 } from "@/lib/content/types";
 import ImageUpload from "@/components/admin/ImageUpload";
+import EditionsManager from "@/components/admin/EditionsManager";
 import {
   AdmLoading,
   Card,
@@ -49,6 +51,7 @@ const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }
 };
 
 function ConfiguracoesForm({
+  initialEvent,
   initialBranding,
   initialTheme,
   initialCloudinary,
@@ -58,6 +61,7 @@ function ConfiguracoesForm({
   initialContact,
   cloudinaryUpload,
 }: {
+  initialEvent: EventInfo;
   initialBranding: Branding;
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
@@ -68,6 +72,7 @@ function ConfiguracoesForm({
   cloudinaryUpload?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save, reset, reload, backend, status } = useContent();
+  const [event, setEvent] = useState<EventInfo>(initialEvent);
   const [branding, setBranding] = useState(initialBranding);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
@@ -102,6 +107,10 @@ function ConfiguracoesForm({
   }
 
   const b = BACKEND_LABEL[backend];
+
+  function setEv<K extends keyof EventInfo>(key: K, value: EventInfo[K]) {
+    setEvent((ev) => ({ ...ev, [key]: value }));
+  }
 
   async function handleReset() {
     if (
@@ -161,8 +170,56 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
-        {/* A Identidade do evento (nome, ano, cidade, chamada) agora é por-edição —
-            configurada em Edições (cada edição tem a sua). */}
+        {/* Gestão das edições — escolhe qual edição editar (dirige todos os cards
+            abaixo) + criar/ativar/excluir/copiar/pré-visualizar. */}
+        <EditionsManager />
+
+        {/* Identidade do evento — POR EDIÇÃO (cada edição tem a sua). */}
+        <Card>
+          <SectionLabel>Identidade do evento (desta edição)</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Nome do evento</FieldLabel>
+              <TextInput
+                value={event.brandName}
+                onChange={(e) => setEv("brandName", e.target.value)}
+                placeholder="Run4BrasilAfrica"
+              />
+            </div>
+            <div>
+              <FieldLabel>Ano da edição</FieldLabel>
+              <TextInput
+                value={event.editionYear}
+                onChange={(e) => setEv("editionYear", e.target.value)}
+                placeholder="2026"
+              />
+            </div>
+            <div>
+              <FieldLabel>Cidade</FieldLabel>
+              <TextInput
+                value={event.city}
+                onChange={(e) => setEv("city", e.target.value)}
+                placeholder="Rio de Janeiro"
+              />
+            </div>
+            <div>
+              <FieldLabel>Data / local (rótulo do banner)</FieldLabel>
+              <TextInput
+                value={event.dateLabel}
+                onChange={(e) => setEv("dateLabel", e.target.value)}
+                placeholder="14 SET 2026 · RIO DE JANEIRO"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <FieldLabel>Chamada principal (headline do hero)</FieldLabel>
+              <TextInput
+                value={event.tagline}
+                onChange={(e) => setEv("tagline", e.target.value)}
+                placeholder="Corra por algo maior"
+              />
+            </div>
+          </div>
+        </Card>
 
         {/* Marca: logo + favicon */}
         <Card>
@@ -476,6 +533,7 @@ function ConfiguracoesForm({
           onSave={() =>
             save(
               {
+                event,
                 branding,
                 theme,
                 cloudinary,
@@ -484,7 +542,7 @@ function ConfiguracoesForm({
                 organizers,
                 contact,
               },
-              "Atualizou configurações do evento",
+              "Atualizou configurações da edição",
             )
           }
         />
@@ -494,10 +552,14 @@ function ConfiguracoesForm({
 }
 
 export default function ConfiguracoesPage() {
-  const { hydrated, content } = useContent();
+  const { hydrated, content, selectedEditionId } = useContent();
   if (!hydrated) return <AdmLoading />;
   return (
+    // `key` = edição selecionada: ao trocar de edição no gestor, o formulário
+    // re-hidrata com a config daquela edição (todos os cards passam a editá-la).
     <ConfiguracoesForm
+      key={selectedEditionId ?? "none"}
+      initialEvent={content.event}
       initialBranding={content.branding ?? {}}
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}

@@ -1,11 +1,16 @@
 import { describe, it, expect } from "vitest";
-import type { Edition, StoredContent } from "@/lib/content/types";
+import type { ContactLinks, Edition, StoredContent } from "@/lib/content/types";
 import { activeEdition, editionById, editionLabel } from "@/lib/content/editions";
 
 const ed = (year: string, status: Edition["status"]): Edition => ({
   id: `ed-${year}`,
   status,
   event: { brandName: "Run4BrasilAfrica", editionYear: year, dateLabel: "X", city: "", tagline: "" },
+  branding: {},
+  theme: {},
+  cloudinary: {},
+  analytics: {},
+  contact: {} as ContactLinks,
   layout: [],
   customSections: [],
 });

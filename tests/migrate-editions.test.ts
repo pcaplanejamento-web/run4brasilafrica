@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { normalizeContent } from "@/lib/content/migrate";
 import { resolveEdition } from "@/lib/content/resolve";
 import { seedContent } from "@/lib/content/seed";
-import type { SiteContent } from "@/lib/content/types";
+import type { ContactLinks, SiteContent } from "@/lib/content/types";
 
 const clone = <T>(c: T): T => structuredClone(c);
 
@@ -35,12 +35,28 @@ describe("migrateToEditions — single-tenant → multi-tenant", () => {
     expect(encerrada.layout).toHaveLength(0);
   });
 
-  it("globais ficam no topo (branding/theme/contact/log), não na edição", () => {
+  it("a config (branding/theme/contact) vai para DENTRO da edição; só log fica global", () => {
     const out = normalizeContent(clone(seedContent));
-    expect(out.branding).toBeDefined();
-    expect(out.theme).toBeDefined();
-    expect(out.contact).toBeDefined();
+    const ativa = out.editions.find((e) => e.status === "Ativa")!;
+    expect(ativa.branding).toBeDefined();
+    expect(ativa.theme).toBeDefined();
+    expect(ativa.contact).toBeDefined();
+    // StoredContent no topo só tem editions + log
     expect(Array.isArray(out.log)).toBe(true);
+    expect((out as unknown as Record<string, unknown>).branding).toBeUndefined();
+    expect((out as unknown as Record<string, unknown>).theme).toBeUndefined();
+  });
+
+  it("edições encerradas herdam uma CÓPIA da config (marca/tema) na migração", () => {
+    const legacy = clone(seedContent) as unknown as Record<string, unknown>;
+    legacy.editions = [
+      { year: "2026", date: "14 set 2026", participants: "1", status: "Ativa" },
+      { year: "2025", date: "8 set 2025", participants: "1", status: "Encerrada" },
+    ];
+    const out = normalizeContent(legacy as unknown as Partial<SiteContent>);
+    const encerrada = out.editions.find((e) => e.status === "Encerrada")!;
+    expect(encerrada.branding).toEqual(seedContent.branding);
+    expect(encerrada.theme).toEqual(seedContent.theme);
   });
 
   it("é idempotente: normalizar de novo o StoredContent não muda nada", () => {
@@ -58,6 +74,11 @@ describe("resolveEdition — view por edição", () => {
       id: "ed-2099",
       status: "Encerrada",
       event: { brandName: "Run4BrasilAfrica", editionYear: "2099", dateLabel: "", city: "", tagline: "" },
+      branding: {},
+      theme: {},
+      cloudinary: {},
+      analytics: {},
+      contact: {} as ContactLinks,
       layout: [],
       customSections: [],
     });

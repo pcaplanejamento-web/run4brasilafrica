@@ -10,7 +10,7 @@ import { editionStatusColors } from "@/lib/content/theme";
  * Dashboard e no Banner/Hero. Deriva da lista de Edições (`activeEdition`), então
  * reflete na hora ao trocar a edição ativa. Clica para gerenciar em Edições.
  */
-export default function EditionBadge({ href = "/admin/edicoes" }: { href?: string }) {
+export default function EditionBadge({ href = "/admin/configuracoes" }: { href?: string }) {
   const { content, hydrated } = useContent();
   if (!hydrated) return null;
 

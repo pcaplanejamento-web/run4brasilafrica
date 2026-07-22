@@ -9,6 +9,7 @@ import type {
   KitSection,
   LayoutItem,
   LocationSection,
+  LogEntry,
   Percurso,
   PlaylistSection,
   PremiacaoSection,
@@ -541,8 +542,8 @@ type LegacyEdition = {
   status?: EditionStatus;
 };
 
-/** True quando `e` já é uma `Edition` no novo formato (carrega o próprio conteúdo). */
-function isNewEdition(e: unknown): e is Edition {
+/** True quando `e` já carrega o próprio CONTEÚDO (identidade + seções). */
+function isContentEdition(e: unknown): e is Edition {
   return (
     !!e &&
     typeof e === "object" &&
@@ -551,29 +552,53 @@ function isNewEdition(e: unknown): e is Edition {
   );
 }
 
-/** Só os campos GLOBAIS (iguais em todas as edições) de um conteúdo cru. */
-function pickGlobals(c: Partial<SiteContent>): Omit<StoredContent, "editions"> {
+/** A CONFIG do site (marca/tema/contato/organizadores/privacidade/integrações). */
+type EditionConfig = Pick<
+  Edition,
+  "branding" | "theme" | "cloudinary" | "analytics" | "contact" | "organizers" | "privacy"
+>;
+
+/** Extrai a config de um conteúdo cru (com defaults vazios). */
+function editionConfig(c: Partial<SiteContent>): EditionConfig {
   return {
-    branding: c.branding as StoredContent["branding"],
-    theme: c.theme as StoredContent["theme"],
-    cloudinary: c.cloudinary as StoredContent["cloudinary"],
-    analytics: c.analytics as StoredContent["analytics"],
-    contact: c.contact as StoredContent["contact"],
+    branding: (c.branding ?? {}) as Edition["branding"],
+    theme: (c.theme ?? {}) as Edition["theme"],
+    cloudinary: (c.cloudinary ?? {}) as Edition["cloudinary"],
+    analytics: (c.analytics ?? {}) as Edition["analytics"],
+    contact: (c.contact ?? {}) as Edition["contact"],
     organizers: c.organizers,
     privacy: c.privacy,
-    log: c.log ?? [],
+  };
+}
+
+/** Preenche a config de uma edição a partir dela mesma; o que faltar vem de
+ *  `top` (a config global do topo, na migração). Idempotente. */
+function withConfig(ed: Edition, top: EditionConfig): Edition {
+  return {
+    ...ed,
+    branding: ed.branding ?? top.branding,
+    theme: ed.theme ?? top.theme,
+    cloudinary: ed.cloudinary ?? top.cloudinary,
+    analytics: ed.analytics ?? top.analytics,
+    contact: ed.contact ?? top.contact,
+    organizers: ed.organizers ?? top.organizers,
+    privacy: ed.privacy ?? top.privacy,
   };
 }
 
 /**
  * Migração one-time (forward-only, idempotente) do modelo single-tenant para o
- * multi-tenant: move o conteúdo do topo (`event`/`layout`/`customSections`/`hero`
- * /espelhos) para dentro da edição **ativa** (roda o `runSectionPipeline` p/ criar
- * as abas, incl. `sec-hero`). As demais edições legadas (só rótulos) viram edições
- * **em branco** com o mesmo `event` e o ano próprio. Nada se perde.
+ * multi-tenant: move o conteúdo E a config do topo para dentro da edição **ativa**
+ * (roda o `runSectionPipeline` p/ criar as abas, incl. `sec-hero`). As demais
+ * edições legadas (só rótulos) viram edições **em branco** de seções, mas com uma
+ * CÓPIA da config (marca/tema/etc) — para terem um visual ao serem previstas.
+ * Nada se perde.
  */
-function migrateToEditions(raw: Partial<SiteContent>): StoredContent {
-  const globals = pickGlobals(raw);
+function migrateToEditions(
+  raw: Partial<SiteContent>,
+  log: LogEntry[],
+  cfg: EditionConfig,
+): StoredContent {
   const legacy = (Array.isArray(raw.editions) ? raw.editions : []) as LegacyEdition[];
 
   // O conteúdo atual do topo → abas da edição ativa.
@@ -589,21 +614,23 @@ function migrateToEditions(raw: Partial<SiteContent>): StoredContent {
 
   if (legacy.length === 0) {
     return {
-      ...globals,
       editions: [
         {
           id: editionId(baseEvent.editionYear),
           status: "Ativa",
           event: baseEvent,
+          ...cfg,
           layout: migrated.layout ?? [],
           customSections: migrated.customSections ?? [],
         },
       ],
+      log,
     };
   }
 
   // A ativa (ou, se nenhuma marcada, a de maior ano) recebe o conteúdo; as demais
-  // ficam em branco (o modelo antigo não guardava conteúdo por edição).
+  // ficam sem seções (o modelo antigo não guardava conteúdo por edição), mas com a
+  // config copiada.
   const active =
     legacy.find((e) => e.status === "Ativa") ??
     [...legacy].sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0))[0];
@@ -620,24 +647,35 @@ function migrateToEditions(raw: Partial<SiteContent>): StoredContent {
           id: editionId(year),
           status: "Ativa",
           event: raw.event ? migrated.event : event,
+          ...cfg,
           layout: migrated.layout ?? [],
           customSections: migrated.customSections ?? [],
         }
-      : { id: editionId(year), status: "Encerrada", event, layout: [], customSections: [] };
+      : {
+          id: editionId(year),
+          status: "Encerrada",
+          event,
+          ...cfg,
+          layout: [],
+          customSections: [],
+        };
   });
-  return { ...globals, editions };
+  return { editions, log };
 }
 
 /**
  * Normalização idempotente aplicada a cada leitura (db.ts). Devolve o
- * `StoredContent` (globais + `editions[]`): se o conteúdo ainda estiver no formato
- * antigo (topo com `event`/`layout`/… ou edições sem conteúdo), migra para o
- * multi-tenant; caso contrário passa direto. Pura (nunca muta).
+ * `StoredContent` (só `editions[]` + `log`): se as edições já têm conteúdo,
+ * preenche a config de cada uma (da própria edição ou, se ainda estava global no
+ * topo, do topo); senão migra o modelo antigo (single-tenant) para o multi-tenant,
+ * movendo conteúdo E config para dentro das edições. Pura (nunca muta).
  */
 export function normalizeContent(raw: Partial<SiteContent>): StoredContent {
+  const log = raw.log ?? [];
+  const topCfg = editionConfig(raw);
   const eds = Array.isArray(raw.editions) ? raw.editions : [];
-  if (eds.length > 0 && eds.every(isNewEdition)) {
-    return { ...pickGlobals(raw), editions: eds as Edition[] };
+  if (eds.length > 0 && eds.every(isContentEdition)) {
+    return { editions: (eds as Edition[]).map((ed) => withConfig(ed, topCfg)), log };
   }
-  return migrateToEditions(raw);
+  return migrateToEditions(raw, log, topCfg);
 }

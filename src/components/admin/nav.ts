@@ -19,7 +19,9 @@ export const ADM_NAV: AdmNavItem[] = [
   { key: "seja-parceiro", label: "Cadastros de parceiros", href: "/admin/seja-parceiro" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },
-  { key: "edicoes", label: "Edições", href: "/admin/edicoes" },
+  // "Edições" deixou de ser uma aba: a gestão das edições (criar/ativar/excluir/
+  // copiar/pré-visualizar) e TODA a config por-edição (identidade, marca, cores,
+  // contato, organizadores, privacidade, integrações) vivem em Configurações.
   { key: "log", label: "Log de alterações", href: "/admin/log" },
   { key: "backup", label: "Backup", href: "/admin/backup" },
   { key: "configuracoes", label: "Configurações", href: "/admin/configuracoes" },

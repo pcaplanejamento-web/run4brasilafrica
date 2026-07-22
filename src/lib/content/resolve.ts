@@ -1,5 +1,9 @@
 import type {
   AboutSection,
+  Analytics,
+  Branding,
+  Cloudinary,
+  ContactLinks,
   EventInfo,
   GalleryConfig,
   Hero,
@@ -8,6 +12,7 @@ import type {
   ShareSection,
   SiteContent,
   StoredContent,
+  ThemeColors,
 } from "./types";
 import { editionById } from "./editions";
 import { deriveView } from "./migrate";
@@ -82,15 +87,19 @@ export function resolveEdition(stored: StoredContent, editionId?: string): SiteC
   const ed = editionById(stored, editionId);
   const view: SiteContent = {
     ...MIRROR_DEFAULTS,
-    branding: stored.branding,
-    theme: stored.theme,
-    cloudinary: stored.cloudinary,
-    analytics: stored.analytics,
-    contact: stored.contact,
-    organizers: stored.organizers,
-    privacy: stored.privacy,
+    // Config do SITE — agora vem da EDIÇÃO (marca/tema/contato/organizadores/
+    // privacidade/integrações). Trocar a edição ativa muda o site por completo.
+    branding: (ed?.branding ?? {}) as Branding,
+    theme: (ed?.theme ?? {}) as ThemeColors,
+    cloudinary: (ed?.cloudinary ?? {}) as Cloudinary,
+    analytics: (ed?.analytics ?? {}) as Analytics,
+    contact: (ed?.contact ?? {}) as ContactLinks,
+    organizers: ed?.organizers,
+    privacy: ed?.privacy,
+    // Global (fora da edição).
     editions: stored.editions,
     log: stored.log,
+    // Identidade + seções da edição.
     event: ed?.event ?? EMPTY_EVENT,
     layout: ed?.layout ?? [],
     customSections: ed?.customSections ?? [],
