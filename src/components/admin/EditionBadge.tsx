@@ -14,9 +14,11 @@ export default function EditionBadge({ href = "/admin/edicoes" }: { href?: strin
   const { content, hydrated } = useContent();
   if (!hydrated) return null;
 
+  const active = activeEdition(content);
+  if (!active) return null;
+
   const label = editionLabel(content);
-  const status = activeEdition(content).status;
-  const c = editionStatusColors[status] ?? editionStatusColors.Ativa;
+  const c = editionStatusColors[active.status] ?? editionStatusColors.Ativa;
 
   return (
     <Link

@@ -35,6 +35,7 @@ const GENERIC: { value: CustomBlockType; label: string }[] = [
  * natural top-to-bottom order of the homepage sections).
  */
 export const SECTION_KIND_ORDER: SectionKind[] = [
+  "hero",
   "faq",
   "depoimentos",
   "stats",

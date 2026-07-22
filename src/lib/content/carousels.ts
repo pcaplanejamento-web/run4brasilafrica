@@ -1,5 +1,41 @@
-import type { Hero, HeroCarousel, SiteContent } from "./types";
+import type { CustomSection, Hero, HeroCarousel, SiteContent } from "./types";
 import { parseBR } from "./datetime";
+
+/** Id determinístico da aba Banner/Hero (casa com a migração em migrate.ts). */
+export const HERO_ABA_ID = "sec-hero";
+
+/**
+ * Insere/atualiza o bloco Banner/Hero (aba `sec-hero`) dentro de `customSections`
+ * de uma edição — a fonte de verdade do banner é o bloco. Atualiza o primeiro
+ * bloco `hero` que encontrar; se nenhum existir, cria a aba no topo. Puro.
+ */
+export function withHeroCarousels(
+  sections: CustomSection[],
+  carousels: HeroCarousel[],
+): CustomSection[] {
+  let found = false;
+  const next = sections.map((s) => {
+    let touched = false;
+    const blocks = (s.blocks ?? []).map((b) => {
+      if (b.type === "hero" && !found) {
+        found = true;
+        touched = true;
+        return { ...b, heroCarousels: carousels };
+      }
+      return b;
+    });
+    return touched ? { ...s, blocks } : s;
+  });
+  if (found) return next;
+  return [
+    {
+      id: HERO_ABA_ID,
+      title: "Banner / Hero",
+      blocks: [{ id: `${HERO_ABA_ID}-b`, type: "hero", heroCarousels: carousels }],
+    },
+    ...sections,
+  ];
+}
 
 /** Época (ms) da string do ADM, em fuso de Brasília (−03:00). */
 const ms = (s: string | undefined): number | null => parseBR(s);
@@ -25,8 +61,17 @@ function inWindow(c: HeroCarousel, now: number): boolean {
  * the single `content.hero` becomes the sole default carousel — so legacy content
  * keeps working untouched.
  */
-export function carouselsOf(content: SiteContent): HeroCarousel[] {
-  const list = (content.heroCarousels ?? []).filter(Boolean);
+/**
+ * Normaliza uma lista de carrosséis numa lista não-vazia com EXATAMENTE um
+ * default. Lista vazia → um único carrossel padrão (usa `fallbackHero` se dado,
+ * ex.: `content.hero` legado, senão slides vazios). Reusado pelo `carouselsOf` e
+ * pelo bloco de seção `hero`.
+ */
+export function normalizeCarousels(
+  input: HeroCarousel[] | undefined,
+  fallbackHero?: Hero,
+): HeroCarousel[] {
+  const list = (input ?? []).filter(Boolean);
   const base: HeroCarousel[] =
     list.length > 0
       ? list.map((c, i) => ({
@@ -37,7 +82,7 @@ export function carouselsOf(content: SiteContent): HeroCarousel[] {
         }))
       : [
           {
-            ...(content.hero ?? { slides: [], slideDurationSeconds: 6, reduceMotion: true }),
+            ...(fallbackHero ?? { slides: [], slideDurationSeconds: 6, reduceMotion: true }),
             id: "default",
             name: "Carrossel padrão",
             isDefault: true,
@@ -56,6 +101,15 @@ export function carouselsOf(content: SiteContent): HeroCarousel[] {
   });
   if (!seenDefault && normalized.length > 0) normalized[0].isDefault = true;
   return normalized;
+}
+
+/**
+ * Normalize a content's carousels into a non-empty list with EXACTLY one default
+ * (the perpetual fallback). Back-compat: when `heroCarousels` is missing/empty,
+ * the single `content.hero` becomes the sole default carousel.
+ */
+export function carouselsOf(content: SiteContent): HeroCarousel[] {
+  return normalizeCarousels(content.heroCarousels, content.hero);
 }
 
 /** The one default (perpetual) carousel — always present after `carouselsOf`. */

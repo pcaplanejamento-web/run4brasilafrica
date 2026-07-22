@@ -1,27 +1,35 @@
-import type { Edition, SiteContent } from "./types";
+import type { Edition, StoredContent } from "./types";
+
+type WithEditions = Pick<StoredContent, "editions">;
 
 /**
- * A edição **ativa** do evento — fonte única para "que edição está no ar". É a
- * de `status: "Ativa"`; sem uma marcada, cai na de maior ano; sem lista, numa
- * sintetizada a partir de `event` (instalações antigas). O ano dela é espelhado
- * em `event.editionYear` a cada leitura (ver `syncActiveEdition` em migrate.ts),
- * então o site público / SEO ficam consistentes.
+ * A edição **ativa** — a de `status: "Ativa"`; sem uma marcada, a de maior ano;
+ * lista vazia → `null`. É a que o público vê. Cada edição carrega seu próprio
+ * `event`/`layout`/`customSections` (ver `resolveEdition`).
  */
-export function activeEdition(c: SiteContent): Edition {
+export function activeEdition(c: WithEditions): Edition | null {
   const eds = c.editions ?? [];
-  const active = eds.find((e) => e.status === "Ativa");
-  if (active) return active;
-  const newest = [...eds].sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0))[0];
-  if (newest) return newest;
-  return {
-    year: c.event.editionYear,
-    date: c.event.dateLabel,
-    participants: "0",
-    status: "Ativa",
-  };
+  return (
+    eds.find((e) => e.status === "Ativa") ??
+    [...eds].sort(
+      (a, b) => (Number(b.event?.editionYear) || 0) - (Number(a.event?.editionYear) || 0),
+    )[0] ??
+    null
+  );
 }
 
-/** Rótulo padronizado da edição ativa (ex.: "Run4BrasilAfrica 2026"). */
-export function editionLabel(c: SiteContent): string {
-  return `${c.event.brandName} ${activeEdition(c).year}`.trim();
+/** Edição por id, com fallback para a ativa. */
+export function editionById(c: WithEditions, id?: string): Edition | null {
+  const eds = c.editions ?? [];
+  return (id ? eds.find((e) => e.id === id) : null) ?? activeEdition(c);
+}
+
+/** Rótulo padronizado da edição (ex.: "Run4BrasilAfrica 2026"). */
+export function editionLabelFor(e: Edition | null | undefined): string {
+  return e ? `${e.event.brandName} ${e.event.editionYear}`.trim() : "";
+}
+
+/** Rótulo da edição ativa. */
+export function editionLabel(c: WithEditions): string {
+  return editionLabelFor(activeEdition(c));
 }

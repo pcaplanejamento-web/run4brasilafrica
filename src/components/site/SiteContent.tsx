@@ -1,9 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import type { SiteContent as SiteContentType } from "@/lib/content/types";
 import { resolveLayout, customKey } from "@/lib/content/sections";
-import { carouselsOf, activeCarousel } from "@/lib/content/carousels";
 import SiteNav from "./SiteNav";
-import HeroCarousels from "./HeroCarousels";
 import RaceCountdownBar from "./RaceCountdownBar";
 import WhatsAppFloat from "./WhatsAppFloat";
 import EventJsonLd from "./EventJsonLd";
@@ -40,17 +38,12 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
       (li.key === "sejaParceiro" || li.key === customKey("sec-sejaParceiro")),
   );
 
-  // Banner: pick the carousel on air now (server pick for the first paint; the
-  // client re-evaluates live). `carouselsOf` guarantees a non-empty list with one
-  // perpetual default, so the banner is never empty.
-  const carousels = carouselsOf(c);
   // Server Component (1 render por request): capturar a hora do request é o
   // comportamento desejado — escolhe o carrossel/lote no ar agora e semeia o
   // `initialNow` dos clientes (o cliente refina ao vivo). Não é impuro no sentido
   // de re-render instável (roda só no servidor).
   // eslint-disable-next-line react-hooks/purity
   const nowMs = Date.now();
-  const initialCarousel = activeCarousel(carousels, nowMs) ?? carousels[0];
 
   // Global content that `secao` blocks (inside abas) may need at render time.
   const ctx: SectionRenderCtx = {
@@ -65,13 +58,10 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     nowMs,
   };
 
-  // Só o Banner/Hero permanece built-in; todas as demais seções renderizam via
-  // `custom:sec-*` (abas). "A Causa" (`about`) é convertida em aba `custom:a-causa`
-  // pela migração (migrate.ts) a cada leitura, então não há chave `about` no
-  // layout — o render dela vem da aba, como as outras seções.
-  const rendered: Record<string, ReactNode> = {
-    hero: <HeroCarousels carousels={carousels} initialId={initialCarousel.id} />,
-  };
+  // TODAS as seções renderizam via `custom:sec-*` (abas) — inclusive o Banner/Hero
+  // (aba `custom:sec-hero`) e "A Causa" (`custom:a-causa`), convertidos pela
+  // migração (migrate.ts). Não há mais caminho especial: o layout controla a ordem.
+  const rendered: Record<string, ReactNode> = {};
   // Custom "abas" built in the ADM, keyed as `custom:<id>`.
   for (const cs of customSections) {
     rendered[customKey(cs.id)] = <CustomSectionView section={cs} ctx={ctx} />;

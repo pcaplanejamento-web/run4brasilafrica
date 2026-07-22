@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readContent, writeContent, resetContent } from "@/lib/content/db";
 import { authConfigured, getSessionUser } from "@/lib/auth";
-import type { SiteContent } from "@/lib/content/types";
+import type { StoredContent } from "@/lib/content/types";
 
 /**
  * Content backend for the ADM, same-origin. Reads/writes Cloudflare D1
@@ -24,9 +24,9 @@ export async function PUT(req: Request) {
     return NextResponse.json({ ok: false, error: "não autenticado" }, { status: 401 });
   }
 
-  let body: { content?: SiteContent; action?: string };
+  let body: { content?: StoredContent; action?: string };
   try {
-    body = (await req.json()) as { content?: SiteContent; action?: string };
+    body = (await req.json()) as { content?: StoredContent; action?: string };
   } catch {
     return NextResponse.json({ ok: false, error: "corpo inválido" }, { status: 400 });
   }

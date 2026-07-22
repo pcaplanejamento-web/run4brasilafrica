@@ -588,8 +588,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   abas: **Fase 1**
   `faq`/`depoimentos`/`stats` (+ `about`/"A Causa"); **Fase 2**
   `playlist`/`percurso`/`location`/`premiacao`/`sejaParceiro`/`compartilhar`; **Fase 3** (acopladas/
-  globais) `parceiros`, `kit`, `galeria`, `raceday`, `inscricao`. `SECTIONS` agora tem só `hero`;
-  Banner/Hero é a única seção built-in fixa. `parceiros` carrega seus flags
+  globais) `parceiros`, `kit`, `galeria`, `raceday`, `inscricao`; e por fim o próprio **Banner/Hero**
+  (`sec-hero`). `SECTIONS` (registry built-in) agora está **vazio** — TODA seção é uma aba `custom:*`.
+  `parceiros` carrega seus flags
   (`sponsorsShowTier/Subtitle/ShowCta`) e o CTA respeita `sejaParceiroEnabled` (via `ctx`); `kit`
   lê `ctx.lotes`; `galeria`/`raceday`/`inscricao` são marcadores globais (fotos/lotes/inscrição
   nunca duplicados — `/admin/galeria` e `/admin/links` seguem como editores globais, e a barra fixa
@@ -606,16 +607,41 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   sectionDefaults(kind)`. **Nada muda no modelo/render/migração** — continuam blocos `secao`
   (`block.section.kind`), então o site é idêntico e 100% modelável. O dropdown "Tipo de seção" no
   editor só aparece como fallback para blocos `secao` legados sem `kind`.
-- **Edição ativa** (`src/lib/content/editions.ts`): a edição de `status: "Ativa"` em `content.editions`
-  é a fonte única de "qual edição está no ar". `activeEdition`/`editionLabel` derivam dela;
-  `syncActiveEdition` (migrate.ts) espelha o ano dela em `event.editionYear` a cada leitura (público
-  + SEO consistentes). O marcador é o **componente compartilhado `EditionBadge`** (Dashboard +
-  Banner). Edições é editável (ano/data/inscritos, tornar ativa, excluir, adicionar). O card "Visão
-  geral"/`Metrics` (números manuais) foi **removido** do Dashboard e de Configurações (sem uso).
+- **Edições multi-tenant** (`src/lib/content/{types,editions,resolve,migrate,route}.ts`): cada
+  **Edição** carrega o **próprio conteúdo** — `Edition { id, status, event, layout, customSections }`.
+  O que é **persistido** (uma linha D1) é o `StoredContent` = **globais** (branding, theme,
+  cloudinary/analytics, contact, organizers, privacy, log) + `editions[]`. A forma antiga de
+  `SiteContent` (com tudo no topo) vira a **view resolvida** de UMA edição:
+  `resolveEdition(stored, editionId?)` = globais + `event`/`layout`/`customSections` da edição +
+  os campos-espelho derivados dos blocos (`deriveView`). Assim **todo o render público e as telas
+  do ADM continuam iguais** — nenhum componente de site mudou.
+  - **Migração** `migrateToEditions` (dentro de `normalizeContent`, a cada leitura, idempotente e
+    forward-only): move o conteúdo single-tenant do topo para a edição **ativa** (roda o
+    `runSectionPipeline`, que cria as abas incl. `sec-hero`); edições legadas (só rótulos) viram
+    edições **em branco**. Nada se apaga — é lazy (só grava `StoredContent` no próximo save do ADM).
+  - **Banner/Hero é uma aba** (`SectionKind "hero"`, `sec-hero`): reordenável/ocultável como as
+    demais. O bloco (`heroCarousels`) é a fonte; `syncGlobalsFromBlocks` espelha para
+    `content.heroCarousels`/`content.hero` (preload/`carouselsOf` seguem lendo o topo). O editor
+    rico continua em `/admin/banner`, que grava `customSections` via `withHeroCarousels`.
+  - **Store roteador** (`store.tsx` + `route.ts`): guarda o `StoredContent` cru + a **edição
+    selecionada** (localStorage); `content` = view resolvida da selecionada. `save(patch)` roteia
+    (`routePatch`): `event`/`layout`/`customSections` → edição selecionada; `editions` e globais →
+    topo; chaves-espelho derivadas são ignoradas (recomputadas na leitura).
+  - **Menu** (`AdmSidebar`): `EditionSelector` no topo escolhe a edição — só as abas de **seção**
+    mudam; as **administrativas** (baixo, com o Dashboard) não. Identidade do evento saiu de
+    Configurações e virou **por-edição** em `/admin/edicoes` (nome/ano/data/cidade/chamada, tornar
+    ativa, excluir, nova-em-branco, copiar todas as seções de outra edição, pré-visualizar).
+    Edições **não têm mais** data(rótulo)/inscritos.
+  - **Público vê só a ativa** (`getSiteContent()` = edição ativa). **Pré-visualização** de edições
+    não ativas: rota dedicada `/preview?edicao=<id>`, dinâmica, `noindex` e **restrita ao ADM
+    logado** (`getSessionUser`, senão redireciona ao login) — não regride a home ISR.
+  - `activeEdition`/`editionLabel` (agora `null`-safe); `EditionBadge` = marcador compartilhado.
+    O card "Visão geral"/`Metrics` já havia sido removido.
 - **Testes** (`tests/*.test.ts`, vitest): a lógica crítica tem cobertura unitária — `datetime`
-  (parser −03:00), `lotes` (status/ordem/ativo/validação/contagem), `carousels` (agendamento) e
-  `migrate` (flatten + backfill + espelho + posse do raceDate + idempotência), além de `sections`
-  (resolveLayout/abaAnchor) e `antispam`. 60 testes.
+  (parser −03:00), `lotes` (status/ordem/ativo/validação/contagem), `carousels` (agendamento),
+  `migrate` (flatten + backfill + espelho + posse do raceDate + idempotência), `migrate-editions`
+  (single→multi-tenant + `resolveEdition`), `route` (roteamento de save por edição/global),
+  `editions` (ativa/label/by-id), além de `sections` (resolveLayout/abaAnchor) e `antispam`. 77 testes.
 - **Bloqueio de save de lotes**: o editor de aba (`custom/[id]`) desabilita o `SaveBar` quando
   `validateLotes` acusa erro (sobreposição / abertura depois do encerramento / dia da corrida cedo
   demais) — não grava configuração de inscrição quebrada. Editores de galeria/inscrição são

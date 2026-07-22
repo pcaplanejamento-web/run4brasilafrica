@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ADM_NAV, type AdmNavItem } from "./nav";
 import { useAuth } from "./AuthProvider";
+import EditionSelector from "./EditionSelector";
 import { useContent } from "@/lib/content/store";
 import {
   customIdFromKey,
@@ -50,7 +51,6 @@ export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) 
   const { content } = useContent();
 
   const byHref = (href: string) => ADM_NAV.find((n) => n.href === href);
-  const dashboard = byHref("/admin/dashboard");
 
   // Section tabs in the dashboard's component order (deduped by ADM page, since
   // a few sections share one page — e.g. Hero + A Causa → Banner). Custom "abas"
@@ -81,13 +81,13 @@ export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) 
   }
   const sectionHrefSet = seenHref;
 
-  // Everything else (not a home section, not the dashboard) sits at the bottom;
-  // "Usuários" (administrator) goes last, just above the account block.
-  const bottom = ADM_NAV.filter(
-    (n) => n.key !== "dashboard" && !sectionHrefSet.has(n.href),
-  );
+  // Grupo administrativo (baixo) — NÃO muda ao trocar de edição (item 8). O
+  // Dashboard entra aqui (item 1: dentro do grupo de configurações), como
+  // primeira aba; "Usuários" fica por último, logo acima do bloco da conta.
+  const bottom = ADM_NAV.filter((n) => !sectionHrefSet.has(n.href));
   const bottomOrdered = [
-    ...bottom.filter((n) => n.key !== "usuarios"),
+    ...bottom.filter((n) => n.key === "dashboard"),
+    ...bottom.filter((n) => n.key !== "dashboard" && n.key !== "usuarios"),
     ...bottom.filter((n) => n.key === "usuarios"),
   ];
 
@@ -101,14 +101,10 @@ export default function AdmSidebar({ onNavigate }: { onNavigate?: () => void }) 
         R4BA · Admin
       </Link>
 
+      {/* Seletor de edição (item 7) — no topo; troca a edição sendo editada. */}
+      <EditionSelector />
+
       <nav className="flex flex-col">
-        {dashboard && (
-          <NavLink
-            item={dashboard}
-            active={pathname === dashboard.href}
-            onNavigate={onNavigate}
-          />
-        )}
         {sectionItems.map((n) => (
           <NavLink key={n.key} item={n} active={pathname === n.href} onNavigate={onNavigate} />
         ))}

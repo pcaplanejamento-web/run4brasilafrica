@@ -16,6 +16,8 @@ import YouTubePlayer from "./YouTubePlayer";
 import { youtubeId, isVerticalYouTube } from "@/lib/youtube";
 import NotifyForm from "./NotifyForm";
 import CustomCarousel from "./CustomCarousel";
+import HeroCarousels from "./HeroCarousels";
+import { normalizeCarousels, activeCarousel } from "@/lib/content/carousels";
 // Section components reused verbatim by `secao` blocks (zero regression).
 import StatsBar from "./StatsBar";
 import Playlist from "./Playlist";
@@ -66,6 +68,11 @@ function renderSection(
   title?: string,
 ): ReactNode {
   switch (block.type) {
+    case "hero": {
+      const carousels = normalizeCarousels(block.heroCarousels);
+      const initial = activeCarousel(carousels, ctx.nowMs) ?? carousels[0];
+      return <HeroCarousels carousels={carousels} initialId={initial.id} />;
+    }
     case "stats":
       return <StatsBar stats={block.stats ?? []} />;
     case "faq":

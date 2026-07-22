@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useContent } from "@/lib/content/store";
 import EditionBadge from "@/components/admin/EditionBadge";
-import type { HeroCarousel, HeroSlide, MediaType } from "@/lib/content/types";
-import { carouselsOf, defaultCarousel, heroOf } from "@/lib/content/carousels";
+import type { CustomSection, HeroCarousel, HeroSlide, MediaType } from "@/lib/content/types";
+import { carouselsOf, defaultCarousel, withHeroCarousels } from "@/lib/content/carousels";
 import HeroImageField from "@/components/admin/HeroImageField";
 import {
   AdmLoading,
@@ -58,9 +58,11 @@ function newSlide(): HeroSlide {
 
 function BannerForm({
   initialCarousels,
+  customSections,
   cloudinary,
 }: {
   initialCarousels: HeroCarousel[];
+  customSections: CustomSection[];
   cloudinary?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save } = useContent();
@@ -499,13 +501,10 @@ function BannerForm({
 
       <SaveBar
         onSave={() =>
+          // O banner é a aba `sec-hero` da edição selecionada: gravamos o bloco
+          // (`customSections`) — o topo (`heroCarousels`/`hero`) é derivado dele.
           save(
-            {
-              heroCarousels: carousels,
-              // Mirror the default carousel into `hero` for the image preload and
-              // legacy readers.
-              hero: heroOf(defaultCarousel(carousels)),
-            },
+            { customSections: withHeroCarousels(customSections, carousels) },
             "Atualizou os carrosséis do banner",
           )
         }
@@ -518,6 +517,10 @@ export default function BannerPage() {
   const { hydrated, content } = useContent();
   if (!hydrated) return <AdmLoading />;
   return (
-    <BannerForm initialCarousels={carouselsOf(content)} cloudinary={content.cloudinary} />
+    <BannerForm
+      initialCarousels={carouselsOf(content)}
+      customSections={content.customSections ?? []}
+      cloudinary={content.cloudinary}
+    />
   );
 }

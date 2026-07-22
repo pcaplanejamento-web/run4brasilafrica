@@ -428,6 +428,7 @@ export interface PartnerLead {
  * global (lotes/inscricao/fotos), fonte única, sem divergência.
  */
 export type SectionKind =
+  | "hero"
   | "stats"
   | "playlist"
   | "percurso"
@@ -537,6 +538,8 @@ export interface CustomBlock {
   lotes?: Lote[];
   /** type "raceday" (dia da corrida). */
   raceDate?: string;
+  /** type "hero" (Banner / Hero — carrosséis agendados). */
+  heroCarousels?: HeroCarousel[];
 }
 
 export interface CustomSection {
@@ -572,11 +575,19 @@ export interface PrivacySection {
   body?: string;
 }
 
+/**
+ * Uma **edição** do evento — unidade de conteúdo multi-tenant. Cada edição tem a
+ * sua própria identidade (`event`), ordem de seções (`layout`) e seções
+ * (`customSections`, incluindo o Banner como bloco `hero`). O público vê só a
+ * `Ativa`; as demais ficam ocultas mas editáveis/pré-visualizáveis. A "view"
+ * completa (SiteContent) de uma edição é derivada por `resolveEdition`.
+ */
 export interface Edition {
-  year: string;
-  date: string;
-  participants: string;
+  id: string;
   status: EditionStatus;
+  event: EventInfo;
+  layout: LayoutItem[];
+  customSections: CustomSection[];
 }
 
 export interface LogEntry {
@@ -639,3 +650,54 @@ export interface SiteContent {
   editions: Edition[];
   log: LogEntry[];
 }
+
+/**
+ * O conteúdo **persistido** (uma linha D1, `id=1`): campos GLOBAIS (iguais em
+ * todas as edições) + a lista de `editions` (cada uma com seu event/layout/
+ * customSections). Os campos por-edição de `SiteContent` (event, layout,
+ * customSections, hero, seções) NÃO ficam no topo aqui — são derivados por
+ * `resolveEdition(stored, editionId?)`, que devolve um `SiteContent` completo
+ * (a "view" de uma edição) para o render público e as telas do ADM.
+ */
+export interface StoredContent {
+  editions: Edition[];
+  branding: Branding;
+  theme: ThemeColors;
+  cloudinary: Cloudinary;
+  analytics: Analytics;
+  contact: ContactLinks;
+  organizers?: OrganizersSection;
+  privacy?: PrivacySection;
+  log: LogEntry[];
+}
+
+/** Campos de `SiteContent` que pertencem a UMA edição (roteados para
+ *  `editions[selecionada]` no save; derivados no resolve). O resto é global. */
+export const EDITION_KEYS = [
+  "event",
+  "layout",
+  "customSections",
+  "hero",
+  "heroCarousels",
+  "stats",
+  "about",
+  "playlist",
+  "percurso",
+  "inscricao",
+  "lotes",
+  "albums",
+  "galleryTiles",
+  "galleryPhotos",
+  "gallery",
+  "sponsors",
+  "sponsorsShowTier",
+  "sponsorsSubtitle",
+  "sponsorsShowCta",
+  "testimonials",
+  "faq",
+  "kit",
+  "premiacao",
+  "sejaParceiro",
+  "location",
+  "share",
+] as const satisfies readonly (keyof SiteContent)[];

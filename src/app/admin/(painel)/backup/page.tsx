@@ -5,14 +5,15 @@ import { useContent } from "@/lib/content/store";
 import { AdmLoading, Card, GhostButton, PageTitle, PrimaryButton, SectionLabel } from "@/components/admin/ui";
 
 export default function BackupPage() {
-  const { content, hydrated, save, status } = useContent();
+  const { stored, hydrated, restore, status } = useContent();
   const inputRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   if (!hydrated) return <AdmLoading />;
 
   function exportJson() {
-    const blob = new Blob([JSON.stringify(content, null, 2)], { type: "application/json" });
+    // Exporta o conteúdo CRU (globais + edições) para restaurar 1:1.
+    const blob = new Blob([JSON.stringify(stored, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const day = new Date().toISOString().slice(0, 10);
@@ -37,14 +38,18 @@ export default function BackupPage() {
     }
     // Validate the shape so a malformed backup can't crash the public site
     // (it does .map/.length on these). Arrays must be arrays; objects objects.
+    // Aceita tanto o novo formato (globais + `editions[]`) quanto backups antigos
+    // (single-tenant) — a migração (`normalizeContent`) converte no `restore`.
     const p = parsed as Record<string, unknown>;
     const arrays = ["stats", "lotes", "sponsors", "testimonials", "faq", "editions", "galleryPhotos"];
-    const objects = ["event", "hero", "about", "contact", "inscricao"];
+    const objects = ["event", "hero", "about", "contact", "inscricao", "branding", "theme"];
     const badArr = arrays.find((k) => k in p && !Array.isArray(p[k]));
     const badObj = objects.find(
       (k) => k in p && (typeof p[k] !== "object" || p[k] === null || Array.isArray(p[k])),
     );
-    if (!("event" in p) || badArr || badObj) {
+    // Um backup válido é reconhecível pelo novo formato (`editions`) OU pelo antigo (`event`).
+    const looksValid = "editions" in p || "event" in p;
+    if (!looksValid || badArr || badObj) {
       setMsg(
         `Backup inválido${badArr ? ` — "${badArr}" deveria ser uma lista` : badObj ? ` — "${badObj}" está corrompido` : ""}.`,
       );
@@ -54,7 +59,7 @@ export default function BackupPage() {
       "Isto vai SUBSTITUIR todo o conteúdo do site pelo backup enviado. Deseja continuar?",
     );
     if (!ok) return;
-    const done = await save(parsed as Record<string, unknown>, "Restaurou um backup do conteúdo");
+    const done = await restore(parsed as Record<string, unknown>, "Restaurou um backup do conteúdo");
     setMsg(done ? "Backup importado com sucesso." : "Falha ao importar o backup.");
   }
 

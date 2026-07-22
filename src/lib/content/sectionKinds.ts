@@ -2,6 +2,7 @@ import type { CustomBlock, CustomBlockType, SectionKind } from "./types";
 
 /** PT label per section kind (used in the aba block picker). */
 export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
+  hero: "Banner / Hero",
   stats: "Números em destaque",
   playlist: "Playlist do evento",
   percurso: "O Percurso",
@@ -24,6 +25,7 @@ export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
  * componente.
  */
 export const SECTION_ANCHOR: Record<SectionKind, string> = {
+  hero: "top",
   stats: "numeros",
   playlist: "playlist",
   percurso: "percurso",
@@ -104,5 +106,7 @@ export function sectionDefaults(kind: SectionKind): Partial<CustomBlock> {
       };
     case "raceday":
       return { raceDate: "" };
+    case "hero":
+      return { heroCarousels: [] };
   }
 }

@@ -13,12 +13,10 @@ export interface SectionMeta {
 }
 
 export const SECTIONS: SectionMeta[] = [
-  // Só o Banner/Hero permanece built-in. Todas as demais seções foram convertidas
-  // em abas (custom sections) — ver migrate.ts SECTION_MIGRATIONS:
-  //  Fase 1: about ("A Causa"), stats, depoimentos, faq.
-  //  Fase 2: playlist, percurso, location, premiacao, sejaParceiro, compartilhar.
-  //  Fase 3: parceiros, kit, galeria, raceday, inscricao.
-  { key: "hero", label: "Banner / Hero", href: "/admin/banner" },
+  // TODAS as seções são abas (custom sections) agora — inclusive o Banner/Hero,
+  // que virou a aba `sec-hero` (SectionKind "hero"). Ver migrate.ts
+  // SECTION_MIGRATIONS. Este registry ficou vazio: não há mais seção built-in no
+  // layout; `resolveLayout` só preserva/anexa as abas `custom:<id>`.
 ];
 
 export function sectionMeta(key: string): SectionMeta | undefined {

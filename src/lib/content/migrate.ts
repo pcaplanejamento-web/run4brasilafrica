@@ -2,6 +2,9 @@ import type {
   AboutSection,
   CustomBlock,
   CustomSection,
+  Edition,
+  EditionStatus,
+  EventInfo,
   FaqItem,
   KitSection,
   LayoutItem,
@@ -15,9 +18,11 @@ import type {
   SiteContent,
   Sponsor,
   Stat,
+  StoredContent,
   Testimonial,
 } from "./types";
 import { customKey } from "./sections";
+import { carouselsOf, defaultCarousel, heroOf, normalizeCarousels } from "./carousels";
 
 /**
  * Legacy nested "seção pronta" shape (pre-flatten: `{ type:"secao", section }`).
@@ -159,6 +164,9 @@ interface SectionMigration {
   build: (c: SiteContent) => Partial<CustomBlock>;
   /** Posição natural quando a chave não está no layout (seed sem a chave). */
   fallbackAfter?: string;
+  /** Onde inserir quando a chave não está no layout e não há `fallbackAfter`.
+   *  "start" = topo (usado pelo Banner/Hero); default = fim. */
+  fallbackAt?: "start" | "end";
 }
 
 /**
@@ -168,6 +176,15 @@ interface SectionMigration {
  * vezes. Campos top-level (`c.faq`, `c.stats`, ...) ficam intactos: nada se perde.
  */
 const SECTION_MIGRATIONS: SectionMigration[] = [
+  {
+    key: "hero",
+    id: "sec-hero",
+    kind: "hero",
+    title: () => "Banner / Hero",
+    hasContent: () => true,
+    build: (c) => ({ heroCarousels: carouselsOf(c) }),
+    fallbackAt: "start", // Banner é sempre a primeira seção da edição.
+  },
   {
     key: "faq",
     id: "sec-faq",
@@ -326,7 +343,9 @@ function applyMigration(c: SiteContent, m: SectionMigration): SiteContent {
     layout.splice(idx, 1, { key, enabled: layout[idx].enabled }); // troca in-place, preserva enabled
   } else {
     const afterIdx = m.fallbackAfter ? layout.findIndex((li) => li.key === m.fallbackAfter) : -1;
-    layout.splice(afterIdx >= 0 ? afterIdx + 1 : layout.length, 0, { key, enabled: true });
+    const insertAt =
+      afterIdx >= 0 ? afterIdx + 1 : m.fallbackAt === "start" ? 0 : layout.length;
+    layout.splice(insertAt, 0, { key, enabled: true });
   }
   return { ...c, customSections: [...secs, aba], layout };
 }
@@ -447,7 +466,18 @@ function syncGlobalsFromBlocks(c: SiteContent): SiteContent {
   const insc = blocks.find((b) => b.type === "inscricao");
   const race = blocks.find((b) => b.type === "raceday");
   const gal = blocks.find((b) => b.type === "galeria");
-  if (!insc && !race && !gal) return c;
+  // O bloco Banner/Hero é a fonte; espelhamos para o topo (`heroCarousels`/`hero`)
+  // para `carouselsOf` e o preload de imagem crítica (layout.tsx) seguirem lendo o
+  // topo sem alteração. O primeiro slide do carrossel padrão vira `content.hero`.
+  const heroBlk = blocks.find((b) => b.type === "hero");
+  const heroMirror =
+    heroBlk?.heroCarousels !== undefined
+      ? (() => {
+          const list = normalizeCarousels(heroBlk.heroCarousels);
+          return { heroCarousels: heroBlk.heroCarousels, hero: heroOf(defaultCarousel(list)) };
+        })()
+      : {};
+  if (!insc && !race && !gal && !heroBlk) return { ...c, ...heroMirror };
 
   let inscricao = c.inscricao;
   let lotes = c.lotes;
@@ -465,39 +495,149 @@ function syncGlobalsFromBlocks(c: SiteContent): SiteContent {
     lotes,
     ...(gal?.gallery !== undefined ? { gallery: gal.gallery } : {}),
     ...(gal?.albums !== undefined ? { albums: gal.albums } : {}),
+    ...heroMirror,
   };
 }
 
 /**
- * Normalização idempotente aplicada a cada leitura (db.ts): converte seções
- * built-in em abas editáveis, achata blocos `secao` legados, preenche os blocos
- * autocontidos globais e espelha-os de volta ao topo. Pura (retorna novo objeto,
- * nunca muta).
+ * Pipeline **completo** de conversão de seções built-in → abas: `A Causa` →
+ * aba, cada seção → bloco de 1ª classe (incl. Banner/Hero → `sec-hero`), achata
+ * blocos `secao` legados, preenche os autocontidos e espelha ao topo. Roda UMA
+ * vez por edição na migração (`migrateToEditions`). Puro, idempotente.
  */
-/** Espelha o ano da edição ATIVA em `event.editionYear`, para o site público e o
- *  SEO (`EventJsonLd`) ficarem sempre consistentes com a lista de Edições. */
-function syncActiveEdition(c: SiteContent): SiteContent {
-  const active = (c.editions ?? []).find((e) => e.status === "Ativa");
-  if (!active || !c.event || c.event.editionYear === active.year) return c;
-  return { ...c, event: { ...c.event, editionYear: active.year } };
-}
-
-/** Remove o campo legado `metrics` (números manuais, descontinuado) do conteúdo
- *  gravado por deploys anteriores — nada mais o lê; sai do D1 no próximo save. */
-function dropLegacyMetrics(c: SiteContent): SiteContent {
-  if (!("metrics" in c)) return c;
-  const rest = { ...(c as SiteContent & { metrics?: unknown }) };
-  delete rest.metrics;
-  return rest;
-}
-
-export function normalizeContent(c: SiteContent): SiteContent {
-  let out = applyAbout(c);
+function runSectionPipeline(view: SiteContent): SiteContent {
+  let out = applyAbout(view);
   for (const m of SECTION_MIGRATIONS) out = applyMigration(out, m);
   out = flattenLegacySecao(out);
   out = backfillSectionData(out);
   out = syncGlobalsFromBlocks(out);
-  out = syncActiveEdition(out);
-  out = dropLegacyMetrics(out);
   return out;
+}
+
+/**
+ * Deriva a "view" de uma edição a cada leitura: as abas já estão no formato final
+ * (a migração rodou), então aqui só achatamos blocos legados, preenchemos os
+ * autocontidos e espelhamos os dados dos blocos de volta ao topo
+ * (`inscricao`/`lotes`/`gallery`/`albums`/`hero`) para os consumidores legados.
+ * NÃO injeta seções novas — uma edição em branco continua em branco.
+ */
+export function deriveView(view: SiteContent): SiteContent {
+  let out = flattenLegacySecao(view);
+  out = backfillSectionData(out);
+  out = syncGlobalsFromBlocks(out);
+  return out;
+}
+
+/** Id determinístico de edição a partir do ano (sem Date.now/random). */
+function editionId(year: string): string {
+  return `ed-${(year || "").trim() || "x"}`;
+}
+
+/** Forma legada de uma edição (pré multi-tenant): só rótulos, sem conteúdo. */
+type LegacyEdition = {
+  year?: string;
+  date?: string;
+  participants?: string;
+  status?: EditionStatus;
+};
+
+/** True quando `e` já é uma `Edition` no novo formato (carrega o próprio conteúdo). */
+function isNewEdition(e: unknown): e is Edition {
+  return (
+    !!e &&
+    typeof e === "object" &&
+    "event" in (e as Record<string, unknown>) &&
+    "layout" in (e as Record<string, unknown>)
+  );
+}
+
+/** Só os campos GLOBAIS (iguais em todas as edições) de um conteúdo cru. */
+function pickGlobals(c: Partial<SiteContent>): Omit<StoredContent, "editions"> {
+  return {
+    branding: c.branding as StoredContent["branding"],
+    theme: c.theme as StoredContent["theme"],
+    cloudinary: c.cloudinary as StoredContent["cloudinary"],
+    analytics: c.analytics as StoredContent["analytics"],
+    contact: c.contact as StoredContent["contact"],
+    organizers: c.organizers,
+    privacy: c.privacy,
+    log: c.log ?? [],
+  };
+}
+
+/**
+ * Migração one-time (forward-only, idempotente) do modelo single-tenant para o
+ * multi-tenant: move o conteúdo do topo (`event`/`layout`/`customSections`/`hero`
+ * /espelhos) para dentro da edição **ativa** (roda o `runSectionPipeline` p/ criar
+ * as abas, incl. `sec-hero`). As demais edições legadas (só rótulos) viram edições
+ * **em branco** com o mesmo `event` e o ano próprio. Nada se perde.
+ */
+function migrateToEditions(raw: Partial<SiteContent>): StoredContent {
+  const globals = pickGlobals(raw);
+  const legacy = (Array.isArray(raw.editions) ? raw.editions : []) as LegacyEdition[];
+
+  // O conteúdo atual do topo → abas da edição ativa.
+  const migrated = runSectionPipeline(raw as SiteContent);
+  const baseEvent: EventInfo =
+    (raw.event as EventInfo | undefined) ?? {
+      brandName: "",
+      editionYear: "",
+      dateLabel: "",
+      city: "",
+      tagline: "",
+    };
+
+  if (legacy.length === 0) {
+    return {
+      ...globals,
+      editions: [
+        {
+          id: editionId(baseEvent.editionYear),
+          status: "Ativa",
+          event: baseEvent,
+          layout: migrated.layout ?? [],
+          customSections: migrated.customSections ?? [],
+        },
+      ],
+    };
+  }
+
+  // A ativa (ou, se nenhuma marcada, a de maior ano) recebe o conteúdo; as demais
+  // ficam em branco (o modelo antigo não guardava conteúdo por edição).
+  const active =
+    legacy.find((e) => e.status === "Ativa") ??
+    [...legacy].sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0))[0];
+
+  const editions: Edition[] = legacy.map((le) => {
+    const year = le.year ?? baseEvent.editionYear;
+    const event: EventInfo = {
+      ...baseEvent,
+      editionYear: year,
+      dateLabel: le.date ? le.date.toUpperCase() : baseEvent.dateLabel,
+    };
+    return le === active
+      ? {
+          id: editionId(year),
+          status: "Ativa",
+          event: raw.event ? migrated.event : event,
+          layout: migrated.layout ?? [],
+          customSections: migrated.customSections ?? [],
+        }
+      : { id: editionId(year), status: "Encerrada", event, layout: [], customSections: [] };
+  });
+  return { ...globals, editions };
+}
+
+/**
+ * Normalização idempotente aplicada a cada leitura (db.ts). Devolve o
+ * `StoredContent` (globais + `editions[]`): se o conteúdo ainda estiver no formato
+ * antigo (topo com `event`/`layout`/… ou edições sem conteúdo), migra para o
+ * multi-tenant; caso contrário passa direto. Pura (nunca muta).
+ */
+export function normalizeContent(raw: Partial<SiteContent>): StoredContent {
+  const eds = Array.isArray(raw.editions) ? raw.editions : [];
+  if (eds.length > 0 && eds.every(isNewEdition)) {
+    return { ...pickGlobals(raw), editions: eds as Edition[] };
+  }
+  return migrateToEditions(raw);
 }

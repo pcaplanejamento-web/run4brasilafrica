@@ -326,11 +326,10 @@ Em caso de dúvidas jurídicas, consulte um advogado antes de usar este texto co
 
   /* ---- ADM-managed content ---- */
 
-  editions: [
-    { year: "2026", date: "14 set 2026", participants: "1.840", status: "Ativa" },
-    { year: "2025", date: "8 set 2025", participants: "3.210", status: "Encerrada" },
-    { year: "2024", date: "9 set 2024", participants: "2.480", status: "Encerrada" },
-  ],
+  // O seed é single-tenant; a migração (`migrateToEditions`) empacota TODO o
+  // conteúdo do topo na edição **ativa** (ano = `event.editionYear`). Portanto
+  // aqui a lista fica vazia — cada edição carrega seu próprio conteúdo.
+  editions: [],
 
 
   log: [

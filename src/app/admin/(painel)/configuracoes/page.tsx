@@ -8,8 +8,6 @@ import type {
   Branding,
   Cloudinary,
   ContactLinks,
-  EventInfo,
-  Hero,
   Organizer,
   OrganizersSection,
   PrivacySection,
@@ -51,8 +49,6 @@ const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }
 };
 
 function ConfiguracoesForm({
-  initialEvent,
-  initialHero,
   initialBranding,
   initialTheme,
   initialCloudinary,
@@ -62,8 +58,6 @@ function ConfiguracoesForm({
   initialContact,
   cloudinaryUpload,
 }: {
-  initialEvent: EventInfo;
-  initialHero: Hero;
   initialBranding: Branding;
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
@@ -74,8 +68,6 @@ function ConfiguracoesForm({
   cloudinaryUpload?: { cloudName?: string; uploadPreset?: string };
 }) {
   const { save, reset, reload, backend, status } = useContent();
-  const [event, setEvent] = useState(initialEvent);
-  const [hero, setHero] = useState(initialHero);
   const [branding, setBranding] = useState(initialBranding);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
@@ -110,10 +102,6 @@ function ConfiguracoesForm({
   }
 
   const b = BACKEND_LABEL[backend];
-
-  function setEv<K extends keyof EventInfo>(key: K, value: EventInfo[K]) {
-    setEvent({ ...event, [key]: value });
-  }
 
   async function handleReset() {
     if (
@@ -173,62 +161,8 @@ function ConfiguracoesForm({
           </div>
         </Card>
 
-        {/* Event info */}
-        <Card>
-          <SectionLabel>Identidade do evento</SectionLabel>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <FieldLabel>Nome da marca</FieldLabel>
-              <TextInput
-                value={event.brandName}
-                onChange={(e) => setEv("brandName", e.target.value)}
-              />
-            </div>
-            <div>
-              <FieldLabel>Ano da edição</FieldLabel>
-              <div className="flex min-h-11 items-center rounded-md border border-adm-border bg-[#faf9f7] px-3 text-[13px] text-adm-muted">
-                {event.editionYear} — definido em{" "}
-                <a href="/admin/edicoes" className="ml-1 font-semibold text-terracotta underline">
-                  Edições
-                </a>
-              </div>
-            </div>
-            <div>
-              <FieldLabel>Cidade</FieldLabel>
-              <TextInput
-                value={event.city}
-                onChange={(e) => setEv("city", e.target.value)}
-              />
-            </div>
-            <div>
-              <FieldLabel>Selo de data (badge do hero)</FieldLabel>
-              <TextInput
-                value={event.dateLabel}
-                onChange={(e) => {
-                  setEv("dateLabel", e.target.value);
-                  setHero({ ...hero, badge: e.target.value });
-                }}
-              />
-            </div>
-          </div>
-          <div className="mt-4">
-            <FieldLabel>Chamada principal (título do hero)</FieldLabel>
-            <TextInput
-              value={hero.title}
-              onChange={(e) => {
-                setHero({ ...hero, title: e.target.value });
-                setEv("tagline", e.target.value);
-              }}
-            />
-          </div>
-          <div className="mt-4">
-            <FieldLabel>Texto do botão principal</FieldLabel>
-            <TextInput
-              value={hero.ctaLabel}
-              onChange={(e) => setHero({ ...hero, ctaLabel: e.target.value })}
-            />
-          </div>
-        </Card>
+        {/* A Identidade do evento (nome, ano, cidade, chamada) agora é por-edição —
+            configurada em Edições (cada edição tem a sua). */}
 
         {/* Marca: logo + favicon */}
         <Card>
@@ -542,8 +476,6 @@ function ConfiguracoesForm({
           onSave={() =>
             save(
               {
-                event,
-                hero,
                 branding,
                 theme,
                 cloudinary,
@@ -566,8 +498,6 @@ export default function ConfiguracoesPage() {
   if (!hydrated) return <AdmLoading />;
   return (
     <ConfiguracoesForm
-      initialEvent={content.event}
-      initialHero={content.hero}
       initialBranding={content.branding ?? {}}
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}

@@ -9,58 +9,83 @@ import {
   useRef,
   useState,
 } from "react";
-import type { SiteContent, LogEntry } from "./types";
+import type { LogEntry, SiteContent, StoredContent } from "./types";
 import { seedContent } from "./seed";
+import { normalizeContent } from "./migrate";
+import { resolveEdition } from "./resolve";
+import { activeEdition } from "./editions";
+import { routePatch } from "./route";
 
 /**
- * ADM content store.
+ * ADM content store (multi-tenant).
  *
- * Reads/writes through the same-origin `/api/content` route, which stores the
- * content in Cloudflare D1 (the binding lives in the Worker). A localStorage copy
- * is kept as an offline cache and as the persistence layer when there is no
- * binding (e.g. `next dev`), so the ADM is always usable.
+ * Guarda o conteúdo **cru** (`StoredContent`: globais + `editions[]`) e a **edição
+ * selecionada** no ADM. `content` exposto é a **view resolvida** dessa edição
+ * (`resolveEdition`), com a mesma forma de `SiteContent` — as telas do ADM leem
+ * `content.event/layout/customSections/...` sem alteração. `save(patch)` roteia
+ * as chaves: as por-edição (`event`/`layout`/`customSections`) para a edição
+ * selecionada, `editions` e as globais para o topo. Persiste tudo via
+ * `/api/content` (Cloudflare D1) com cópia em localStorage (offline/dev).
  */
 
-const CACHE_KEY = "r4ba:content:v2";
+const CACHE_KEY = "r4ba:content:v3";
+const SEL_KEY = "r4ba:edition:v1";
 
 export type SaveStatus = "loading" | "idle" | "saving" | "saved" | "error";
 export type Backend = "backend" | "seed" | "unset" | "error" | "local";
 
+/** Seed migrado para o modelo multi-tenant (cliente). */
+const seedStored: StoredContent = normalizeContent(seedContent);
+
 interface ContentContextValue {
+  /** View resolvida da edição selecionada (mesma forma de SiteContent). */
   content: SiteContent;
+  /** Conteúdo cru persistido (globais + edições) — para backup/export. */
+  stored: StoredContent;
+  /** Id da edição selecionada no ADM (default = ativa). */
+  selectedEditionId: string | null;
+  /** Troca a edição sendo editada (sidebar). */
+  selectEdition: (id: string) => void;
   /** True once the initial load (server or cache) has completed. */
   hydrated: boolean;
   status: SaveStatus;
   error: string | null;
-  /** Where the current content came from / where saves are going. */
   backend: Backend;
-  /** True when saves are persisting to localStorage only (no backend). */
   localOnly: boolean;
-  /** Apply a patch and persist it (optimistic). Returns success. */
+  /** Apply a patch (roteado por edição/global) and persist it (optimistic). */
   save: (patch: Partial<SiteContent>, logAction?: string) => Promise<boolean>;
-  /** Re-fetch content from the backend. */
+  /** Substitui TODO o conteúdo cru (importar backup). */
+  restore: (raw: Partial<SiteContent>, logAction?: string) => Promise<boolean>;
   reload: () => Promise<void>;
-  /** Restore the default seed content (and clear the backend). */
   reset: () => Promise<boolean>;
 }
 
 const ContentContext = createContext<ContentContextValue | null>(null);
 
-function readCache(): SiteContent | null {
+function readCache(): StoredContent | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(CACHE_KEY);
-    return raw ? ({ ...seedContent, ...JSON.parse(raw) } as SiteContent) : null;
+    return raw ? normalizeContent(JSON.parse(raw) as Partial<SiteContent>) : null;
   } catch {
     return null;
   }
 }
 
-function writeCache(content: SiteContent) {
+function writeCache(content: StoredContent) {
   try {
     window.localStorage.setItem(CACHE_KEY, JSON.stringify(content));
   } catch {
     /* storage may be unavailable (private mode) — non-fatal */
+  }
+}
+
+function readSelected(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(SEL_KEY);
+  } catch {
+    return null;
   }
 }
 
@@ -72,32 +97,53 @@ function nowStamp(): string {
   )}`;
 }
 
-function withLog(
-  base: SiteContent,
+/** Aplica um patch roteando as chaves por-edição/global e carimba o log. */
+function applyPatch(
+  base: StoredContent,
+  editionId: string | null,
   patch: Partial<SiteContent>,
   logAction?: string,
-): SiteContent {
-  const next: SiteContent = { ...base, ...patch };
+): StoredContent {
+  const next = routePatch(base, editionId, patch);
   if (logAction) {
     const entry: LogEntry = { time: nowStamp(), action: logAction, user: "Você" };
-    next.log = [entry, ...base.log].slice(0, 50);
+    next.log = [entry, ...(base.log ?? [])].slice(0, 50);
   }
   return next;
 }
 
 export function ContentProvider({ children }: { children: React.ReactNode }) {
-  const [content, setContent] = useState<SiteContent>(seedContent);
+  const [stored, setStored] = useState<StoredContent>(seedStored);
+  const [selectedEditionId, setSelectedEditionId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("loading");
   const [error, setError] = useState<string | null>(null);
   const [backend, setBackend] = useState<Backend>("unset");
 
-  // Mirror of content so async save() can read the latest without stale closures.
-  const contentRef = useRef(content);
+  // Mirrors so async callbacks read the latest without stale closures.
+  const storedRef = useRef(stored);
   useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
+    storedRef.current = stored;
+  }, [stored]);
+  const selRef = useRef(selectedEditionId);
+  useEffect(() => {
+    selRef.current = selectedEditionId;
+  }, [selectedEditionId]);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // A edição efetiva: a selecionada (se existir) ou a ativa.
+  const effectiveEditionId = useMemo(() => {
+    const eds = stored.editions ?? [];
+    if (selectedEditionId && eds.some((e) => e.id === selectedEditionId)) {
+      return selectedEditionId;
+    }
+    return activeEdition(stored)?.id ?? null;
+  }, [stored, selectedEditionId]);
+
+  const content = useMemo(
+    () => resolveEdition(stored, effectiveEditionId ?? undefined),
+    [stored, effectiveEditionId],
+  );
 
   const applyServer = useCallback(async () => {
     try {
@@ -107,19 +153,16 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
       });
       const data = (await res.json()) as {
         ok: boolean;
-        content: SiteContent;
+        content: StoredContent;
         source: Backend;
       };
-      // Only the real backend is authoritative. When it's unset/empty/errored,
-      // the local cache is the source of truth — never clobber it with the
-      // seed the API returns as a placeholder (would drop local-only edits).
       if (data?.source === "backend" && data.content) {
-        setContent(data.content);
-        writeCache(data.content);
+        const norm = normalizeContent(data.content);
+        setStored(norm);
+        writeCache(norm);
       }
       setBackend(data?.source ?? "error");
     } catch {
-      // Keep whatever we already have (cache/seed); mark backend unreachable.
       setBackend("error");
     }
   }, []);
@@ -127,9 +170,10 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   // Initial load: paint cache instantly, then reconcile with the server.
   useEffect(() => {
     const cached = readCache();
-    // Paint cached content instantly before the network resolves.
+    const sel = readSelected();
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (cached) setContent(cached);
+    if (sel) setSelectedEditionId(sel);
+    if (cached) setStored(cached);
     applyServer().finally(() => {
       setHydrated(true);
       setStatus("idle");
@@ -145,41 +189,39 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
     savedTimer.current = setTimeout(() => setStatus("idle"), 3000);
   }, []);
 
-  const save = useCallback(
-    async (patch: Partial<SiteContent>, logAction?: string) => {
-      const next = withLog(contentRef.current, patch, logAction);
-      // Optimistic: update UI + cache immediately.
-      setContent(next);
+  const selectEdition = useCallback((id: string) => {
+    setSelectedEditionId(id);
+    try {
+      window.localStorage.setItem(SEL_KEY, id);
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
+
+  // Persiste um `StoredContent` já montado (usado por save/restore/reset).
+  const persist = useCallback(
+    async (next: StoredContent) => {
+      setStored(next);
       writeCache(next);
       setStatus("saving");
       setError(null);
-
       try {
         const res = await fetch("/api/content", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: next }),
         });
-        const data = (await res.json()) as {
-          ok: boolean;
-          code?: string;
-          error?: string;
-        };
-
+        const data = (await res.json()) as { ok: boolean; code?: string; error?: string };
         if (!data.ok && data.code === "not_configured") {
-          // No backend: local cache is the source of truth. Not an error.
           setBackend("local");
           flashSaved();
           return true;
         }
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error ?? "Falha ao salvar no backend");
-        }
+        if (!res.ok || !data.ok) throw new Error(data.error ?? "Falha ao salvar no backend");
         setBackend("backend");
         flashSaved();
         return true;
       } catch (err) {
-        // Local change is kept (already cached) so nothing is lost.
         setStatus("error");
         setError(err instanceof Error ? err.message : String(err));
         return false;
@@ -188,9 +230,31 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
     [flashSaved],
   );
 
+  const save = useCallback(
+    async (patch: Partial<SiteContent>, logAction?: string) => {
+      const next = applyPatch(storedRef.current, selRef.current, patch, logAction);
+      return persist(next);
+    },
+    [persist],
+  );
+
+  const restore = useCallback(
+    async (raw: Partial<SiteContent>, logAction?: string) => {
+      const next = normalizeContent(raw);
+      if (logAction) {
+        next.log = [
+          { time: nowStamp(), action: logAction, user: "Você" },
+          ...(next.log ?? []),
+        ].slice(0, 50);
+      }
+      return persist(next);
+    },
+    [persist],
+  );
+
   const reset = useCallback(async () => {
-    setContent(seedContent);
-    writeCache(seedContent);
+    setStored(seedStored);
+    writeCache(seedStored);
     setStatus("saving");
     setError(null);
     try {
@@ -225,16 +289,33 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<ContentContextValue>(
     () => ({
       content,
+      stored,
+      selectedEditionId: effectiveEditionId,
+      selectEdition,
       hydrated,
       status,
       error,
       backend,
       localOnly: backend === "local" || backend === "unset",
       save,
+      restore,
       reload,
       reset,
     }),
-    [content, hydrated, status, error, backend, save, reload, reset],
+    [
+      content,
+      stored,
+      effectiveEditionId,
+      selectEdition,
+      hydrated,
+      status,
+      error,
+      backend,
+      save,
+      restore,
+      reload,
+      reset,
+    ],
   );
 
   return (
