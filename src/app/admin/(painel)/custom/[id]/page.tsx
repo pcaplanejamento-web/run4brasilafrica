@@ -36,6 +36,7 @@ import { ParceirosEditor } from "@/components/admin/sections/ParceirosEditor";
 import { KitEditor } from "@/components/admin/sections/KitEditor";
 import { GalleryEditor } from "@/components/admin/sections/GalleryEditor";
 import { InscricaoLotesEditor } from "@/components/admin/sections/InscricaoLotesEditor";
+import HeroEditor from "@/components/admin/sections/HeroEditor";
 import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
 import {
   type BlockChoiceValue,
@@ -74,18 +75,11 @@ function SectionEditor({
   return (
     <div className="flex flex-col gap-3">
       {block.type === "hero" && (
-        <div className="rounded-lg border border-adm-border bg-[#faf9f7] p-4">
-          <p className="text-[13px] text-adm-muted">
-            O Banner/Hero tem um editor dedicado (carrosséis, slides de foto/vídeo,
-            botões e agendamento).
-          </p>
-          <Link
-            href="/admin/banner"
-            className="mt-3 inline-flex rounded-lg bg-terracotta px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
-          >
-            Abrir editor do Banner
-          </Link>
-        </div>
+        <HeroEditor
+          value={block.heroCarousels ?? []}
+          onChange={(heroCarousels) => set({ heroCarousels })}
+          cloudinary={cloudinary}
+        />
       )}
       {block.type === "faq" && (
         <FaqEditor value={block.faq ?? []} onChange={(faq) => set({ faq })} />

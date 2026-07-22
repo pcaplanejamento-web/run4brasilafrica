@@ -1,24 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useContent } from "@/lib/content/store";
-import EditionBadge from "@/components/admin/EditionBadge";
-import type { CustomSection, HeroCarousel, HeroSlide, MediaType } from "@/lib/content/types";
-import { carouselsOf, defaultCarousel, withHeroCarousels } from "@/lib/content/carousels";
+import type { HeroCarousel, HeroSlide, MediaType } from "@/lib/content/types";
+import { normalizeCarousels, defaultCarousel } from "@/lib/content/carousels";
 import HeroImageField from "@/components/admin/HeroImageField";
-import {
-  AdmLoading,
-  Card,
-  FieldLabel,
-  GhostButton,
-  PageTitle,
-  SaveBar,
-  SectionLabel,
-  Select,
-  TextInput,
-} from "@/components/admin/ui";
+import { Card, FieldLabel, GhostButton, SectionLabel, Select, TextInput } from "@/components/admin/ui";
 
-/** Bring a slide (possibly from the old text-only carousel) to the new shape. */
+/** Traz um slide (possivelmente do carrossel só-texto antigo) para a forma nova. */
 function normalizeSlide(s: HeroSlide, i: number): HeroSlide {
   return {
     id: s.id ?? `slide-${i + 1}`,
@@ -56,52 +44,52 @@ function newSlide(): HeroSlide {
   };
 }
 
-function BannerForm({
-  initialCarousels,
-  customSections,
+/**
+ * Editor **controlado** do bloco Banner/Hero — a mesma UI rica do antigo
+ * `/admin/banner` (carrosséis agendados, slides de foto/vídeo, botões), agora
+ * embutida no editor de abas (`custom/[id]`). Deriva de `value` a cada render
+ * (via `normalizeCarousels`), então o Hero é um componente como qualquer outro:
+ * pode ser adicionado em qualquer aba, quantos quiser. `selId` é só estado de UI
+ * (qual carrossel está aberto), não persistido.
+ */
+export default function HeroEditor({
+  value,
+  onChange,
   cloudinary,
 }: {
-  initialCarousels: HeroCarousel[];
-  customSections: CustomSection[];
+  value: HeroCarousel[];
+  onChange: (carousels: HeroCarousel[]) => void;
   cloudinary?: { cloudName?: string; uploadPreset?: string };
 }) {
-  const { save } = useContent();
-  const [carousels, setCarousels] = useState<HeroCarousel[]>(() =>
-    initialCarousels.map((c) => ({
-      ...c,
-      slides: (c.slides ?? []).map(normalizeSlide),
-    })),
-  );
-  const [selId, setSelId] = useState<string>(
-    () => (initialCarousels.find((c) => c.isDefault) ?? initialCarousels[0])?.id,
-  );
+  // Lista normalizada (não-vazia, exatamente 1 padrão) com slides normalizados.
+  const carousels = normalizeCarousels(value).map((c) => ({
+    ...c,
+    slides: (c.slides ?? []).map(normalizeSlide),
+  }));
 
+  const [selId, setSelId] = useState<string>(() => carousels[0]?.id ?? "");
   const sel = carousels.find((c) => c.id === selId) ?? carousels[0];
 
-  function patchSel(patch: Partial<HeroCarousel>) {
-    setCarousels((cs) => cs.map((c) => (c.id === sel.id ? { ...c, ...patch } : c)));
-  }
+  const commit = (next: HeroCarousel[]) => onChange(next);
+  const patchSel = (patch: Partial<HeroCarousel>) =>
+    commit(carousels.map((c) => (c.id === sel.id ? { ...c, ...patch } : c)));
 
-  // ---- Slides of the SELECTED carousel ----
-  function setSlide(i: number, patch: Partial<HeroSlide>) {
+  // ---- Slides do carrossel SELECIONADO ----
+  const setSlide = (i: number, patch: Partial<HeroSlide>) =>
     patchSel({ slides: sel.slides.map((s, idx) => (idx === i ? { ...s, ...patch } : s)) });
-  }
-  function move(i: number, dir: -1 | 1) {
+  const move = (i: number, dir: -1 | 1) => {
     const next = [...sel.slides];
     const j = i + dir;
     if (j < 0 || j >= next.length) return;
     [next[i], next[j]] = [next[j], next[i]];
     patchSel({ slides: next });
-  }
-  function remove(i: number) {
+  };
+  const removeSlide = (i: number) =>
     patchSel({ slides: sel.slides.filter((_, idx) => idx !== i) });
-  }
-  function add() {
-    patchSel({ slides: [...sel.slides, newSlide()] });
-  }
+  const addSlide = () => patchSel({ slides: [...sel.slides, newSlide()] });
 
-  // ---- Carousels (only one on air at a time; one perpetual default) ----
-  function addCarousel() {
+  // ---- Carrosséis (só um no ar por vez; um padrão perpétuo) ----
+  const addCarousel = () => {
     const id = `carousel-${Date.now()}`;
     const nc: HeroCarousel = {
       id,
@@ -113,36 +101,28 @@ function BannerForm({
       slideDurationSeconds: 6,
       reduceMotion: true,
     };
-    setCarousels((cs) => [...cs, nc]);
+    commit([...carousels, nc]);
     setSelId(id);
-  }
-  function removeCarousel(id: string) {
+  };
+  const removeCarousel = (id: string) => {
     const target = carousels.find((c) => c.id === id);
     if (!target || target.isDefault || carousels.length <= 1) return;
-    setCarousels((cs) => cs.filter((c) => c.id !== id));
-    if (selId === id) {
-      setSelId((defaultCarousel(carousels) ?? carousels[0]).id);
-    }
-  }
-  function makeDefault(id: string) {
-    // Exactly one default; the default is perpetual (no schedule).
-    setCarousels((cs) =>
-      cs.map((c) =>
+    const rest = carousels.filter((c) => c.id !== id);
+    commit(rest);
+    if (selId === id) setSelId((defaultCarousel(rest) ?? rest[0]).id);
+  };
+  const makeDefault = (id: string) =>
+    commit(
+      carousels.map((c) =>
         c.id === id
           ? { ...c, isDefault: true, startAt: "", endAt: "" }
           : { ...c, isDefault: false },
       ),
     );
-  }
 
   return (
-    <>
-      <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <PageTitle>Gestão do Banner / Hero</PageTitle>
-        <EditionBadge />
-      </div>
-
-      <Card dashed className="mb-7">
+    <div className="flex flex-col gap-5">
+      <Card dashed>
         <SectionLabel>Carrosséis do banner</SectionLabel>
         <p className="-mt-2 mb-4 text-[12px] text-adm-muted">
           Só um carrossel aparece por vez. O <strong>padrão</strong> é perpétuo
@@ -220,7 +200,7 @@ function BannerForm({
         </div>
       </Card>
 
-      <Card dashed className="mb-7">
+      <Card dashed>
         <SectionLabel>
           Slides do carrossel «{sel.name}» (use as setas para reordenar)
         </SectionLabel>
@@ -232,10 +212,7 @@ function BannerForm({
 
         <div className="flex flex-col gap-4">
           {sel.slides.map((sl, i) => (
-            <div
-              key={sl.id}
-              className="rounded-lg border border-[#e2e2dc] bg-[#fbfbfa] p-4"
-            >
+            <div key={sl.id} className="rounded-lg border border-[#e2e2dc] bg-[#fbfbfa] p-4">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-[12px] font-bold uppercase text-adm-muted">
                   Slide {i + 1}
@@ -244,25 +221,20 @@ function BannerForm({
                   <GhostButton onClick={() => move(i, -1)} disabled={i === 0}>
                     ↑
                   </GhostButton>
-                  <GhostButton
-                    onClick={() => move(i, 1)}
-                    disabled={i === sel.slides.length - 1}
-                  >
+                  <GhostButton onClick={() => move(i, 1)} disabled={i === sel.slides.length - 1}>
                     ↓
                   </GhostButton>
-                  <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
+                  <GhostButton onClick={() => removeSlide(i)}>Remover</GhostButton>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {/* Media column */}
+                {/* Coluna de mídia */}
                 <div>
                   <FieldLabel>Tipo de mídia</FieldLabel>
                   <Select
                     value={sl.mediaType}
-                    onChange={(e) =>
-                      setSlide(i, { mediaType: e.target.value as MediaType })
-                    }
+                    onChange={(e) => setSlide(i, { mediaType: e.target.value as MediaType })}
                   >
                     <option value="image">Foto</option>
                     <option value="video">Vídeo (YouTube)</option>
@@ -272,11 +244,10 @@ function BannerForm({
                     <div className="mt-3">
                       <p className="mb-3 text-[12px] text-adm-muted">
                         Envie a foto de <strong>desktop (16:9)</strong> e a de{" "}
-                        <strong>mobile (3:4)</strong>. Cada caixa é exatamente
-                        como aparece na tela inicial; <strong>toque/clique na
-                        imagem</strong> para escolher o ponto que fica
-                        centralizado, e use os botões no canto para trocar ou
-                        remover a foto.
+                        <strong>mobile (3:4)</strong>. Cada caixa é exatamente como
+                        aparece na tela inicial; <strong>toque/clique na imagem</strong>{" "}
+                        para escolher o ponto que fica centralizado, e use os botões no
+                        canto para trocar ou remover a foto.
                       </p>
                       <div className="flex flex-wrap items-start gap-4">
                         <div className="min-w-[240px] flex-1">
@@ -300,9 +271,7 @@ function BannerForm({
                             label="Foto mobile (3:4)"
                             value={sl.imageMobile}
                             onChange={(url) => setSlide(i, { imageMobile: url })}
-                            onFocus={(x, y) =>
-                              setSlide(i, { focusXm: x, focusYm: y })
-                            }
+                            onFocus={(x, y) => setSlide(i, { focusXm: x, focusYm: y })}
                             hint="Vertical (ideal 1080×1440). Vazio = usa a de desktop."
                             cloudinary={cloudinary}
                           />
@@ -322,17 +291,15 @@ function BannerForm({
                         <Select
                           value={sl.videoStartMuted ? "nao" : "sim"}
                           onChange={(e) =>
-                            setSlide(i, {
-                              videoStartMuted: e.target.value !== "sim",
-                            })
+                            setSlide(i, { videoStartMuted: e.target.value !== "sim" })
                           }
                         >
                           <option value="nao">Não — começa mudo (recomendado)</option>
                           <option value="sim">Sim — som na 1ª interação</option>
                         </Select>
                         <p className="mt-1.5 text-[12px] text-adm-muted">
-                          Navegadores só permitem som após um clique. Há sempre um
-                          botão de som sobre o vídeo.
+                          Navegadores só permitem som após um clique. Há sempre um botão
+                          de som sobre o vídeo.
                         </p>
                       </div>
                       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -340,25 +307,19 @@ function BannerForm({
                           <FieldLabel>Controles do YouTube</FieldLabel>
                           <Select
                             value={sl.videoControls ? "sim" : "nao"}
-                            onChange={(e) =>
-                              setSlide(i, {
-                                videoControls: e.target.value === "sim",
-                              })
-                            }
+                            onChange={(e) => setSlide(i, { videoControls: e.target.value === "sim" })}
                           >
                             <option value="nao">Ocultar (só o vídeo)</option>
-                            <option value="sim">Mostrar (play/pausa, tela cheia, compartilhar, logo)</option>
+                            <option value="sim">
+                              Mostrar (play/pausa, tela cheia, compartilhar, logo)
+                            </option>
                           </Select>
                         </div>
                         <div>
                           <FieldLabel>Legendas</FieldLabel>
                           <Select
                             value={sl.videoCaptions ? "sim" : "nao"}
-                            onChange={(e) =>
-                              setSlide(i, {
-                                videoCaptions: e.target.value === "sim",
-                              })
-                            }
+                            onChange={(e) => setSlide(i, { videoCaptions: e.target.value === "sim" })}
                           >
                             <option value="nao">Não mostrar</option>
                             <option value="sim">Mostrar legendas</option>
@@ -369,7 +330,7 @@ function BannerForm({
                   )}
                 </div>
 
-                {/* Text column */}
+                {/* Coluna de texto */}
                 <div className="flex flex-col gap-3">
                   <div>
                     <FieldLabel>Selo (linha superior)</FieldLabel>
@@ -390,9 +351,7 @@ function BannerForm({
                     <FieldLabel>Exibir botão no slide?</FieldLabel>
                     <Select
                       value={sl.ctaEnabled === false ? "nao" : "sim"}
-                      onChange={(e) =>
-                        setSlide(i, { ctaEnabled: e.target.value === "sim" })
-                      }
+                      onChange={(e) => setSlide(i, { ctaEnabled: e.target.value === "sim" })}
                     >
                       <option value="sim">Sim, mostrar botão</option>
                       <option value="nao">Não, sem botão</option>
@@ -420,9 +379,7 @@ function BannerForm({
                         <Select
                           value={sl.ctaAlign === "right" ? "right" : "left"}
                           onChange={(e) =>
-                            setSlide(i, {
-                              ctaAlign: e.target.value as "left" | "right",
-                            })
+                            setSlide(i, { ctaAlign: e.target.value as "left" | "right" })
                           }
                         >
                           <option value="left">Esquerda</option>
@@ -434,9 +391,7 @@ function BannerForm({
                         <Select
                           value={sl.ctaVariant === "transparent" ? "transparent" : "solid"}
                           onChange={(e) =>
-                            setSlide(i, {
-                              ctaVariant: e.target.value as "solid" | "transparent",
-                            })
+                            setSlide(i, { ctaVariant: e.target.value as "solid" | "transparent" })
                           }
                         >
                           <option value="solid">Colorido (dourado sólido)</option>
@@ -463,14 +418,14 @@ function BannerForm({
 
         <button
           type="button"
-          onClick={add}
+          onClick={addSlide}
           className="mt-4 inline-block rounded border border-dashed border-[#999] px-4 py-2.5 text-[13px] text-[#666] hover:border-terracotta hover:text-terracotta"
         >
           + Adicionar slide
         </button>
       </Card>
 
-      <Card dashed className="mb-7">
+      <Card dashed>
         <SectionLabel>Configurações gerais do carrossel</SectionLabel>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
@@ -480,9 +435,7 @@ function BannerForm({
               min={2}
               max={30}
               value={sel.slideDurationSeconds}
-              onChange={(e) =>
-                patchSel({ slideDurationSeconds: Number(e.target.value) || 0 })
-              }
+              onChange={(e) => patchSel({ slideDurationSeconds: Number(e.target.value) || 0 })}
             />
           </div>
           <div>
@@ -497,30 +450,6 @@ function BannerForm({
           </div>
         </div>
       </Card>
-
-
-      <SaveBar
-        onSave={() =>
-          // O banner é a aba `sec-hero` da edição selecionada: gravamos o bloco
-          // (`customSections`) — o topo (`heroCarousels`/`hero`) é derivado dele.
-          save(
-            { customSections: withHeroCarousels(customSections, carousels) },
-            "Atualizou os carrosséis do banner",
-          )
-        }
-      />
-    </>
-  );
-}
-
-export default function BannerPage() {
-  const { hydrated, content } = useContent();
-  if (!hydrated) return <AdmLoading />;
-  return (
-    <BannerForm
-      initialCarousels={carouselsOf(content)}
-      customSections={content.customSections ?? []}
-      cloudinary={content.cloudinary}
-    />
+    </div>
   );
 }

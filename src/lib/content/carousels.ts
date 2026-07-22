@@ -1,41 +1,5 @@
-import type { CustomSection, Hero, HeroCarousel, SiteContent } from "./types";
+import type { Hero, HeroCarousel, SiteContent } from "./types";
 import { parseBR } from "./datetime";
-
-/** Id determinístico da aba Banner/Hero (casa com a migração em migrate.ts). */
-export const HERO_ABA_ID = "sec-hero";
-
-/**
- * Insere/atualiza o bloco Banner/Hero (aba `sec-hero`) dentro de `customSections`
- * de uma edição — a fonte de verdade do banner é o bloco. Atualiza o primeiro
- * bloco `hero` que encontrar; se nenhum existir, cria a aba no topo. Puro.
- */
-export function withHeroCarousels(
-  sections: CustomSection[],
-  carousels: HeroCarousel[],
-): CustomSection[] {
-  let found = false;
-  const next = sections.map((s) => {
-    let touched = false;
-    const blocks = (s.blocks ?? []).map((b) => {
-      if (b.type === "hero" && !found) {
-        found = true;
-        touched = true;
-        return { ...b, heroCarousels: carousels };
-      }
-      return b;
-    });
-    return touched ? { ...s, blocks } : s;
-  });
-  if (found) return next;
-  return [
-    {
-      id: HERO_ABA_ID,
-      title: "Banner / Hero",
-      blocks: [{ id: `${HERO_ABA_ID}-b`, type: "hero", heroCarousels: carousels }],
-    },
-    ...sections,
-  ];
-}
 
 /** Época (ms) da string do ADM, em fuso de Brasília (−03:00). */
 const ms = (s: string | undefined): number | null => parseBR(s);

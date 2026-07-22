@@ -7,7 +7,9 @@ export interface AdmNavItem {
 
 export const ADM_NAV: AdmNavItem[] = [
   { key: "dashboard", label: "Dashboard", href: "/admin/dashboard" },
-  { key: "banner", label: "Banner / Hero", href: "/admin/banner" },
+  // O Banner/Hero deixou de ter página dedicada: virou um COMPONENTE ("Banner /
+  // Hero") que pode ser adicionado em qualquer aba pelo Dashboard e é editado
+  // dentro dela (HeroEditor em /admin/custom/<id>), como as demais seções.
   // "Textos do site" foi removida: os textos são editados nas respectivas abas
   // ("A Causa", "Perguntas frequentes") e na config geral (contato/rodapé em
   // "Links & inscrição"). Cada texto tem uma única fonte de verdade.

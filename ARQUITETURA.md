@@ -619,10 +619,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     forward-only): move o conteúdo single-tenant do topo para a edição **ativa** (roda o
     `runSectionPipeline`, que cria as abas incl. `sec-hero`); edições legadas (só rótulos) viram
     edições **em branco**. Nada se apaga — é lazy (só grava `StoredContent` no próximo save do ADM).
-  - **Banner/Hero é uma aba** (`SectionKind "hero"`, `sec-hero`): reordenável/ocultável como as
-    demais. O bloco (`heroCarousels`) é a fonte; `syncGlobalsFromBlocks` espelha para
-    `content.heroCarousels`/`content.hero` (preload/`carouselsOf` seguem lendo o topo). O editor
-    rico continua em `/admin/banner`, que grava `customSections` via `withHeroCarousels`.
+  - **Banner/Hero é um componente** (`SectionKind "hero"`): **não tem mais página dedicada**. É um
+    bloco como qualquer outro — pode ser adicionado em **qualquer aba** pelo Dashboard ("Banner /
+    Hero" no picker), quantos quiser, e é editado **dentro da aba** pelo `HeroEditor`
+    (`components/admin/sections/HeroEditor.tsx`, controlado, ligado a `block.heroCarousels`) —
+    carrosséis agendados, slides de foto/vídeo, botões. A migração ainda cria a aba `sec-hero` a
+    partir do hero legado. O bloco é a fonte; `syncGlobalsFromBlocks` espelha o primeiro bloco `hero`
+    para `content.heroCarousels`/`content.hero` (preload/`carouselsOf` seguem lendo o topo). A rota
+    `/admin/banner` e o helper `withHeroCarousels` foram **removidos**.
   - **Store roteador** (`store.tsx` + `route.ts`): guarda o `StoredContent` cru + a **edição
     selecionada** (localStorage); `content` = view resolvida da selecionada. `save(patch)` roteia
     (`routePatch`): `event`/`layout`/`customSections` → edição selecionada; `editions` e globais →
