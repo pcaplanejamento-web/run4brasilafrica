@@ -5,7 +5,8 @@ import type { HeroSlide } from "@/lib/content/types";
 import HeroMedia from "@/components/site/HeroMedia";
 import { uploadMedia, type CloudinaryConfig } from "@/lib/uploadMedia";
 import { FieldLabel } from "./ui";
-import { SpinnerIcon, SwapIcon, TrashIcon, UploadIcon, iconSm } from "./mediaIcons";
+import MediaPicker from "./MediaPicker";
+import { ImagesIcon, SpinnerIcon, SwapIcon, TrashIcon, UploadIcon, iconSm } from "./mediaIcons";
 
 const clampPct = (n: number) => Math.max(0, Math.min(100, n));
 
@@ -45,6 +46,7 @@ export default function HeroImageField({
   const boxRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const fx = variant === "desktop" ? slide.focusX ?? 50 : slide.focusXm ?? 50;
   const fy = variant === "desktop" ? slide.focusY ?? 50 : slide.focusYm ?? 50;
@@ -114,8 +116,22 @@ export default function HeroImageField({
             style={{ left: `${fx}%`, top: `${fy}%` }}
           />
 
-          {/* Import (swap) / remove — stop the click so it doesn't set focus. */}
+          {/* Escolher do armazenamento / trocar / remover — stop the click so it
+              doesn't set the focal point. */}
           <div className="absolute right-2 top-2 z-20 flex gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPickerOpen(true);
+              }}
+              disabled={busy}
+              aria-label="Escolher do armazenamento"
+              title="Escolher do armazenamento"
+              className={overlayBtn}
+            >
+              <ImagesIcon />
+            </button>
             <button
               type="button"
               onClick={(e) => {
@@ -124,7 +140,7 @@ export default function HeroImageField({
               }}
               disabled={busy}
               aria-label={`Trocar ${label.toLowerCase()}`}
-              title="Trocar foto"
+              title="Trocar foto (do computador)"
               className={overlayBtn}
             >
               {busy ? <SpinnerIcon className={iconSm} /> : <SwapIcon />}
@@ -146,16 +162,27 @@ export default function HeroImageField({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
-          title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
-          className={`flex ${ratioClass} w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta`}
-        >
-          {busy ? <SpinnerIcon /> : <UploadIcon />}
-        </button>
+        <div>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy}
+            aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
+            title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
+            className={`flex ${ratioClass} w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta`}
+          >
+            {busy ? <SpinnerIcon /> : <UploadIcon />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            disabled={busy}
+            className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
+          >
+            <ImagesIcon className="h-4 w-4" />
+            Escolher do armazenamento
+          </button>
+        </div>
       )}
 
       <p className="mt-1 text-[11px] text-adm-muted">
@@ -167,6 +194,13 @@ export default function HeroImageField({
         <p className="text-[11px] text-adm-muted">{hint}</p>
       )}
       {error && <div className="mt-1 text-[12px] text-[#c0392b]">{error}</div>}
+
+      <MediaPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={(url) => onChange(url)}
+        kind="image"
+      />
     </div>
   );
 }

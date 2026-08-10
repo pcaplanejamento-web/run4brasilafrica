@@ -123,6 +123,20 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   ≤ 8 MB) e **vídeo** (MP4/WebM/MOV, ≤ 25 MB — limite do KV). Devolve `{ url }`.
 - **Servir**: `GET /api/media/[key]` com cache imutável e **suporte a Range**
   (206) para tocar/seek de vídeo. `DELETE` remove (admin).
+- **Compactação → WebP**: `lib/uploadMedia.ts` `compressImage` redimensiona e reencoda
+  toda imagem **no navegador para .webp** antes de enviar (mantém transparência; SVG/GIF
+  passam intactos). O upload guarda `size` + `contentType` na metadata do KV.
+- **Armazenamento** (`/admin/armazenamento`, aba ADM) — a **biblioteca central de mídia**:
+  - `GET /api/media` lista tudo (segue o cursor de paginação do KV; **filtra** as chaves que
+    não são mídia — os contadores `rl:`/`login:fail:` dividem o namespace, ver `lib/media.ts`
+    `isMediaKey`) e devolve `usedKeys` = chaves referenciadas em **qualquer** edição
+    (`usedMediaKeys` serializa o `StoredContent` e casa `/api/media/<key>`).
+  - A página mostra grade responsiva (2→5 colunas, touch), tamanho, badge **em uso/não usado**,
+    excluir individual e **"Limpar não usadas"** → `POST /api/media/cleanup` (deleta só os
+    órfãos; cada delete é best-effort — cota de KV não derruba a operação).
+  - **`MediaPicker`** (`components/admin/MediaPicker.tsx`) — modal reutilizável: escolher uma
+    imagem já enviada **ou** enviar do computador. Ligado a **todos** os campos de imagem
+    (`ImageUpload` e `HeroImageField` ganharam "Escolher do armazenamento").
 - Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload; a lógica de
   compressão/envio vive em `lib/uploadMedia.ts` (reusada por `ImageUpload` e `HeroImageField`).
 - Campos no conteúdo: mídia por slide (`hero.slides[].image`), mídia da seção A Causa

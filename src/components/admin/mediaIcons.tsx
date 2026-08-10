@@ -55,5 +55,17 @@ export function SpinnerIcon({ className = "h-6 w-6" }: { className?: string }) {
   );
 }
 
+/** "Escolher do armazenamento" — a stack of photos. */
+export function ImagesIcon({ className = svg }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...stroke} aria-hidden="true">
+      <rect x="3" y="3" width="14" height="14" rx="2" />
+      <path d="M21 7v12a2 2 0 0 1-2 2H7" />
+      <circle cx="8" cy="8" r="1.5" />
+      <path d="m3 14 3.5-3.5 4 4L14 11l3 3" />
+    </svg>
+  );
+}
+
 /** Small size class shared by the overlay controls. */
 export const iconSm = svg;

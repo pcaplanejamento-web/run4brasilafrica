@@ -18,6 +18,7 @@ export const ADM_NAV: AdmNavItem[] = [
   // leads do "Seja um Parceiro" (cadastros).
   { key: "seja-parceiro", label: "Cadastros de parceiros", href: "/admin/seja-parceiro" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
+  { key: "armazenamento", label: "Armazenamento", href: "/admin/armazenamento" },
   { key: "usuarios", label: "Usuários", href: "/admin/usuarios" },
   // "Edições" deixou de ser uma aba: a gestão das edições (criar/ativar/excluir/
   // copiar/pré-visualizar) e TODA a config por-edição (identidade, marca, cores,

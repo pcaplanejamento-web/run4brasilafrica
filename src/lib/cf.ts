@@ -57,6 +57,11 @@ export interface MediaKV {
     type: "arrayBuffer",
   ): Promise<{ value: ArrayBuffer | null; metadata: Record<string, unknown> | null }>;
   delete(key: string): Promise<void>;
+  list(options?: { prefix?: string; cursor?: string; limit?: number }): Promise<{
+    keys: { name: string; metadata?: Record<string, unknown> | null; expiration?: number }[];
+    list_complete: boolean;
+    cursor?: string;
+  }>;
 }
 
 /** The media KV binding (MEDIA_KV), or null when unavailable (local dev). */

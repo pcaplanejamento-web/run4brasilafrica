@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getMediaKV } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
+import { readContent } from "@/lib/content/db";
+import { isMediaKey, usedMediaKeys } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,65 @@ const EXT: Record<string, string> = {
   "video/quicktime": "mov",
 };
 const ALLOWED = Object.keys(EXT);
+
+/** Upload timestamp embedded in the key `${Date.now()}-${uuid}.${ext}` (or null). */
+function keyTime(key: string): number | null {
+  const n = Number(key.split("-")[0]);
+  return Number.isFinite(n) && n > 1_000_000_000_000 ? n : null;
+}
+
+/**
+ * Media library listing (Armazenamento). Returns every uploaded file in KV
+ * (filtering out the non-media keys that share the namespace — anti-brute-force
+ * counters) plus the set of keys currently referenced anywhere in the content
+ * (all editions), so the ADM can flag unused files. Admin-only.
+ */
+export async function GET() {
+  const kv = getMediaKV();
+  if (!kv) return NextResponse.json({ ok: false, code: "not_configured", items: [], usedKeys: [] });
+  if (authConfigured() && !(await getSessionUser())) {
+    return NextResponse.json({ ok: false, error: "não autenticado" }, { status: 401 });
+  }
+
+  // KV list is paginated (1000 keys per page); follow the cursor to get them all.
+  const items: {
+    key: string;
+    url: string;
+    size?: number;
+    contentType?: string;
+    uploadedAt: number | null;
+  }[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await kv.list({ cursor, limit: 1000 });
+    for (const k of page.keys) {
+      if (!isMediaKey(k.name)) continue; // skip rl:/login:fail: counters
+      const meta = k.metadata ?? {};
+      items.push({
+        key: k.name,
+        url: `/api/media/${k.name}`,
+        size: typeof meta.size === "number" ? meta.size : undefined,
+        contentType: typeof meta.contentType === "string" ? meta.contentType : undefined,
+        uploadedAt: keyTime(k.name),
+      });
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  // Newest first.
+  items.sort((a, b) => (b.uploadedAt ?? 0) - (a.uploadedAt ?? 0));
+
+  // Which keys are actually referenced in the stored content (any edition).
+  let usedKeys: string[] = [];
+  try {
+    const { content } = await readContent();
+    usedKeys = [...usedMediaKeys(content)];
+  } catch {
+    usedKeys = [];
+  }
+
+  return NextResponse.json({ ok: true, items, usedKeys });
+}
 
 export async function POST(req: Request) {
   const kv = getMediaKV();
@@ -46,7 +107,8 @@ export async function POST(req: Request) {
   }
 
   const key = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${EXT[type] ?? "bin"}`;
-  await kv.put(key, buf, { metadata: { contentType: type } });
+  // Store size + contentType so the library can show them without a HEAD per file.
+  await kv.put(key, buf, { metadata: { contentType: type, size: buf.byteLength } });
 
   return NextResponse.json({ ok: true, key, url: `/api/media/${key}` });
 }
