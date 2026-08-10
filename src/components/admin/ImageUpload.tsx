@@ -88,24 +88,16 @@ export default function ImageUpload({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt={label} className={`w-full ${fitClass} ${className}`} />
           )}
-          <div className="absolute right-2 top-2 flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => setPickerOpen(true)}
-              disabled={busy}
-              aria-label="Escolher do armazenamento"
-              title="Escolher do armazenamento"
-              className="grid h-9 w-9 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60"
-            >
-              <ImagesIcon />
-            </button>
+          {/* Trocar (computador) + remover — sempre visíveis (2 botões cabem em
+              caixas pequenas; o "armazenamento" fica no link abaixo, sem cortar). */}
+          <div className="absolute right-1.5 top-1.5 flex gap-1.5">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={busy}
               aria-label={`Trocar ${label.toLowerCase()}`}
               title="Trocar (enviar do computador)"
-              className="grid h-9 w-9 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60"
+              className="grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60"
             >
               {busy ? <SpinnerIcon className={svg} /> : <SwapIcon />}
             </button>
@@ -114,35 +106,37 @@ export default function ImageUpload({
               onClick={() => onChange("")}
               aria-label={`Remover ${label.toLowerCase()}`}
               title="Remover"
-              className="grid h-9 w-9 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80"
+              className="grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80"
             >
               <TrashIcon />
             </button>
           </div>
         </div>
       ) : (
-        <div>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy}
-            aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
-            title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
-            className={`flex w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta ${className}`}
-          >
-            {busy ? <SpinnerIcon /> : <UploadIcon />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            disabled={busy}
-            className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
-          >
-            <ImagesIcon className="h-4 w-4" />
-            Escolher do armazenamento
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
+          title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
+          className={`flex w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta ${className}`}
+        >
+          {busy ? <SpinnerIcon /> : <UploadIcon />}
+        </button>
       )}
+
+      {/* "Escolher do armazenamento" — SEMPRE abaixo da caixa (cheia ou vazia),
+          então funciona em qualquer proporção (logo pequeno, banner grande) e no
+          toque; nunca é cortado pelo overflow da caixa. */}
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        disabled={busy}
+        className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
+      >
+        <ImagesIcon className="h-4 w-4" />
+        Escolher do armazenamento
+      </button>
 
       {error && <div className="mt-1.5 text-[12px] text-[#c0392b]">{error}</div>}
 

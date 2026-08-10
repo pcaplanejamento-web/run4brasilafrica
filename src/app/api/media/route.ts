@@ -40,22 +40,16 @@ export async function GET() {
   }
 
   // KV list is paginated (1000 keys per page); follow the cursor to get them all.
-  const items: {
-    key: string;
-    url: string;
-    size?: number;
-    contentType?: string;
-    uploadedAt: number | null;
-  }[] = [];
+  type Raw = { key: string; size?: number; contentType?: string; uploadedAt: number | null };
+  const raw: Raw[] = [];
   let cursor: string | undefined;
   do {
     const page = await kv.list({ cursor, limit: 1000 });
     for (const k of page.keys) {
       if (!isMediaKey(k.name)) continue; // skip rl:/login:fail: counters
       const meta = k.metadata ?? {};
-      items.push({
+      raw.push({
         key: k.name,
-        url: `/api/media/${k.name}`,
         size: typeof meta.size === "number" ? meta.size : undefined,
         contentType: typeof meta.contentType === "string" ? meta.contentType : undefined,
         uploadedAt: keyTime(k.name),
@@ -63,6 +57,24 @@ export async function GET() {
     }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
+
+  // Tamanho EXATO: arquivos enviados antes de guardarmos `size` na metadata não o
+  // têm — nesses, lemos o byteLength real (só leitura, não conta cota de escrita)
+  // para o total ficar correto. Novos uploads já trazem `size` (sem leitura extra).
+  const items = await Promise.all(
+    raw.map(async (r) => {
+      let size = r.size;
+      if (size === undefined) {
+        try {
+          const { value } = await kv.getWithMetadata(r.key, "arrayBuffer");
+          if (value) size = value.byteLength;
+        } catch {
+          /* best-effort: se falhar, fica sem tamanho */
+        }
+      }
+      return { ...r, url: `/api/media/${r.key}`, size };
+    }),
+  );
 
   // Newest first.
   items.sort((a, b) => (b.uploadedAt ?? 0) - (a.uploadedAt ?? 0));

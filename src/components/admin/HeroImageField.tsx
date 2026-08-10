@@ -116,22 +116,9 @@ export default function HeroImageField({
             style={{ left: `${fx}%`, top: `${fy}%` }}
           />
 
-          {/* Escolher do armazenamento / trocar / remover — stop the click so it
-              doesn't set the focal point. */}
+          {/* Trocar (computador) + remover — stop the click so it doesn't set the
+              focal point. "Escolher do armazenamento" fica no link abaixo da caixa. */}
           <div className="absolute right-2 top-2 z-20 flex gap-1.5">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPickerOpen(true);
-              }}
-              disabled={busy}
-              aria-label="Escolher do armazenamento"
-              title="Escolher do armazenamento"
-              className={overlayBtn}
-            >
-              <ImagesIcon />
-            </button>
             <button
               type="button"
               onClick={(e) => {
@@ -162,28 +149,28 @@ export default function HeroImageField({
           </div>
         </div>
       ) : (
-        <div>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy}
-            aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
-            title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
-            className={`flex ${ratioClass} w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta`}
-          >
-            {busy ? <SpinnerIcon /> : <UploadIcon />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            disabled={busy}
-            className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
-          >
-            <ImagesIcon className="h-4 w-4" />
-            Escolher do armazenamento
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
+          title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
+          className={`flex ${ratioClass} w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta`}
+        >
+          {busy ? <SpinnerIcon /> : <UploadIcon />}
+        </button>
       )}
+
+      {/* "Escolher do armazenamento" — sempre abaixo da caixa (cheia ou vazia). */}
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        disabled={busy}
+        className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
+      >
+        <ImagesIcon className="h-4 w-4" />
+        Escolher do armazenamento
+      </button>
 
       <p className="mt-1 text-[11px] text-adm-muted">
         {hasPreview

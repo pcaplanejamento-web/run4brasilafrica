@@ -60,6 +60,19 @@ export default function ArmazenamentoPage() {
   const unused = items.filter((it) => !usedKeys.has(it.key));
   const totalBytes = items.reduce((s, it) => s + (it.size ?? 0), 0);
 
+  // Detalhamento por TIPO de arquivo (extensão): quantos + quanto ocupam.
+  const byType = (() => {
+    const m = new Map<string, { count: number; bytes: number }>();
+    for (const it of items) {
+      const ext = (it.key.split(".").pop() || "?").toLowerCase();
+      const cur = m.get(ext) ?? { count: 0, bytes: 0 };
+      cur.count += 1;
+      cur.bytes += it.size ?? 0;
+      m.set(ext, cur);
+    }
+    return [...m.entries()].sort((a, b) => b[1].bytes - a[1].bytes);
+  })();
+
   async function handleUpload(file: File) {
     setBusy(true);
     setNotice(null);
@@ -144,18 +157,19 @@ export default function ArmazenamentoPage() {
 
       <div className="max-w-[960px]">
         <p className="-mt-2 mb-4 text-[13px] text-adm-muted">
-          Todas as imagens enviadas ao sistema ficam aqui. Ao enviar, o sistema{" "}
+          Todos os arquivos enviados ao sistema (imagens e vídeos) ficam aqui, com o espaço total
+          usado e a divisão por tipo. Ao enviar imagem, o sistema{" "}
           <strong>compacta e converte para .webp</strong> automaticamente. Em qualquer campo de
           imagem do painel você pode <strong>escolher uma daqui</strong> em vez de enviar de novo.
         </p>
 
-        {/* Resumo */}
+        {/* Resumo: total de arquivos, em uso, não usados e ESPAÇO TOTAL usado. */}
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "Arquivos", value: String(items.length) },
             { label: "Em uso", value: String(used.length) },
             { label: "Não usados", value: String(unused.length) },
-            { label: "Espaço", value: formatBytes(totalBytes) },
+            { label: "Espaço total", value: formatBytes(totalBytes) },
           ].map((s) => (
             <Card key={s.label} className="py-3">
               <div className="text-[22px] font-bold text-adm-ink">{s.value}</div>
@@ -163,6 +177,29 @@ export default function ArmazenamentoPage() {
             </Card>
           ))}
         </div>
+
+        {/* Tipos de arquivo que ocupam o armazenamento (extensão · qtd · tamanho). */}
+        {byType.length > 0 && (
+          <Card className="mb-4 py-3">
+            <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-adm-muted">
+              Tipos de arquivo
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {byType.map(([ext, s]) => (
+                <span
+                  key={ext}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-adm-border bg-[#faf9f7] px-3 py-1 text-[12px]"
+                  title={`${s.count} arquivo(s) .${ext} · ${formatBytes(s.bytes)}`}
+                >
+                  <strong className="uppercase text-adm-ink">.{ext}</strong>
+                  <span className="text-adm-muted">
+                    {s.count} · {formatBytes(s.bytes)}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <GhostButton onClick={refresh} disabled={busy || loading} className="px-3 py-2">
@@ -222,13 +259,15 @@ export default function ArmazenamentoPage() {
                     >
                       {inUse ? "Em uso" : "Não usado"}
                     </span>
+                    {/* Excluir individual — SEMPRE visível (funciona no toque; não
+                        depende de hover). Confirma antes de apagar. */}
                     <button
                       type="button"
                       onClick={() => handleDelete(it)}
                       disabled={busy}
-                      aria-label="Excluir imagem"
-                      title="Excluir"
-                      className="absolute right-1.5 top-1.5 grid h-9 w-9 place-items-center rounded-md bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 focus:opacity-100 group-hover:opacity-100 disabled:opacity-60 sm:h-8 sm:w-8"
+                      aria-label="Excluir arquivo"
+                      title="Excluir arquivo"
+                      className="absolute right-1.5 top-1.5 grid h-9 w-9 place-items-center rounded-md bg-black/70 text-white transition-colors hover:bg-[#c0392b] disabled:opacity-60"
                     >
                       {busy ? <SpinnerIcon className="h-4 w-4" /> : <TrashIcon className="h-4 w-4" />}
                     </button>

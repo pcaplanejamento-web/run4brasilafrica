@@ -148,7 +148,13 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     órfãos; cada delete é best-effort — cota de KV não derruba a operação).
   - **`MediaPicker`** (`components/admin/MediaPicker.tsx`) — modal reutilizável: escolher uma
     imagem já enviada **ou** enviar do computador. Ligado a **todos** os campos de imagem
-    (`ImageUpload` e `HeroImageField` ganharam "Escolher do armazenamento").
+    (`ImageUpload` e `HeroImageField`). O botão **"Escolher do armazenamento"** fica **abaixo da
+    caixa** (cheia ou vazia), nunca sobreposto — assim aparece e é tocável em **qualquer proporção**
+    (logo pequeno de parceiro, banner grande) sem ser cortado pelo `overflow` da caixa.
+  - **Espaço/tipos/exclusão**: o resumo mostra **espaço total** (o GET lê o `byteLength` real dos
+    arquivos antigos sem `size` na metadata — só leitura) e a **divisão por tipo** (extensão · qtd ·
+    tamanho). Cada arquivo tem **excluir individual sempre visível** (touch, não depende de hover) e
+    o botão **"Limpar não usadas"** apaga de uma vez os órfãos (`POST /api/media/cleanup`).
 - Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload; a lógica de
   compressão/envio vive em `lib/uploadMedia.ts` (reusada por `ImageUpload` e `HeroImageField`).
 - Campos no conteúdo: mídia por slide (`hero.slides[].image`), mídia da seção A Causa
