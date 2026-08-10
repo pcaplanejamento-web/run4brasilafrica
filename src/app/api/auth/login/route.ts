@@ -14,6 +14,25 @@ const MAX_FAILS = 5; // failures before a temporary lock (per e-mail)
 const LOCK_SECONDS = 15 * 60; // 15 min
 
 export async function POST(req: Request) {
+  // Blindagem: qualquer exceção não tratada vira JSON (nunca HTML/500 cru), para
+  // o cliente mostrar uma mensagem clara e o erro ser registrado (visível no
+  // `wrangler tail`). `detail` é temporário — ajuda a diagnosticar em produção.
+  try {
+    return await handleLogin(req);
+  } catch (err) {
+    console.error("login route failed:", err);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Erro no servidor ao entrar. Tente novamente.",
+        detail: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+      },
+      { status: 500 },
+    );
+  }
+}
+
+async function handleLogin(req: Request) {
   const db = getDB();
   if (!db) return NextResponse.json({ ok: false, code: "not_configured" });
 

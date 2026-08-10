@@ -29,7 +29,7 @@ export default function AdminLogin() {
       // Parse defensivo: um 500 durante um redeploy pode vir como HTML (sem JSON).
       const data = (await res
         .json()
-        .catch(() => null)) as { ok: boolean; code?: string; error?: string } | null;
+        .catch(() => null)) as { ok: boolean; code?: string; error?: string; detail?: string } | null;
 
       // ok = authenticated; not_configured = local dev (open) → let in.
       if (data && (data.ok || data.code === "not_configured")) {
@@ -37,7 +37,8 @@ export default function AdminLogin() {
         return;
       }
       if (data?.error) {
-        setError(data.error); // erro conhecido do servidor (ex.: credencial inválida)
+        // `detail` é temporário (diagnóstico em produção) — some quando resolvido.
+        setError(data.detail ? `${data.error} [${data.detail}]` : data.error);
       } else {
         // Resposta sem JSON (servidor reiniciando/instável) → orienta a repetir.
         setError("Servidor indisponível no momento. Aguarde alguns segundos e tente novamente.");
