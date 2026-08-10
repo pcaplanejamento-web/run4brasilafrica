@@ -34,6 +34,10 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Segredo local do acesso interno de dev (ADMIN_BYPASS_TOKEN) — nunca commitar
+.claude-dev-token
+.dev.vars
+
 # vercel
 .vercel
 

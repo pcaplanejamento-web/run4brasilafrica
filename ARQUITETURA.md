@@ -115,6 +115,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   D1 tem **Time Travel** (restauração de qualquer ponto dos últimos 30 dias).
 - Em `next dev` (sem D1) a auth fica desligada (painel aberto), para desenvolvimento.
 
+## Acesso interno de desenvolvimento (sem login)
+
+- `POST /api/auth/dev-session` ([route](src/app/api/auth/dev-session/route.ts)) — emite uma
+  **sessão de admin legítima** (mesmo `createSession` do login) para inspeção interna, liberado só:
+  1. em **dev local** (`NODE_ENV === "development"`, i.e. `next dev`) — sem segredo; e/ou
+  2. com **opt-in do dono**: Worker secret `ADMIN_BYPASS_TOKEN` definido **e** header `x-admin-bypass`
+     igual a ele (`wrangler secret put ADMIN_BYPASS_TOKEN`; remover com `secret delete`).
+- **Produção sem segredo → 404** (o worker publicado é sempre `production`): não há backdoor público.
+  Nenhum guarda é enfraquecido — `getSessionUser` inalterado; a rota só **cria** a sessão.
+- Uso (mesma origem): `fetch('/api/auth/dev-session', {method:'POST'})` grava o cookie httpOnly;
+  recarregue e o ADM abre. Cookie `secure` só em HTTPS (funciona no `localhost` http).
+
 ## Imagens e vídeo (mídia)
 
 - Storage = **Cloudflare KV** (binding `MEDIA_KV`) guardando o binário + o
