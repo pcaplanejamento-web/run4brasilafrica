@@ -141,8 +141,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - **Armazenamento** (`/admin/armazenamento`, aba ADM) — a **biblioteca central de mídia**:
   - `GET /api/media` lista tudo (segue o cursor de paginação do KV; **filtra** as chaves que
     não são mídia — os contadores `rl:`/`login:fail:` dividem o namespace, ver `lib/media.ts`
-    `isMediaKey`) e devolve `usedKeys` = chaves referenciadas em **qualquer** edição
-    (`usedMediaKeys` serializa o `StoredContent` e casa `/api/media/<key>`).
+    `isMediaKey`) e devolve `usedKeys` = quais **destes arquivos** aparecem no `StoredContent`
+    (todas as edições) por **substring exata da chave** (`usedKeysIn`) — robusto a qualquer forma
+    de URL (query string, base diferente, campo qualquer). A limpeza usa a MESMA lógica, então o
+    selo "em uso"/"não usado" e o que a limpeza remove são **sempre consistentes**. Observação: um
+    arquivo só conta como "em uso" depois de **salvo**; e **re-enviar** uma foto cria um arquivo
+    novo, deixando a versão antiga (visualmente idêntica) como órfã "não usada".
   - A página mostra grade responsiva (2→5 colunas, touch), tamanho, badge **em uso/não usado**,
     excluir individual e **"Limpar não usadas"** → `POST /api/media/cleanup` (deleta só os
     órfãos; cada delete é best-effort — cota de KV não derruba a operação).

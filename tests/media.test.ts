@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { isMediaKey, isVideoKey, isImageKey, extractMediaKey, usedMediaKeys, formatBytes } from "@/lib/media";
+import {
+  isMediaKey,
+  isVideoKey,
+  isImageKey,
+  extractMediaKey,
+  usedMediaKeys,
+  usedKeysIn,
+  formatBytes,
+} from "@/lib/media";
 
 describe("media helpers", () => {
   it("distingue chave de mídia de contador de anti-spam", () => {
@@ -40,6 +48,21 @@ describe("media helpers", () => {
     expect(used.has("hero-3.webp")).toBe(true);
     expect(used.has("nao-existe.webp")).toBe(false);
     expect(used.size).toBe(3);
+  });
+
+  it("usedKeysIn: casa a chave por substring, em qualquer forma de URL", () => {
+    const content = {
+      editions: [
+        { branding: { logo: "/api/media/logo-1.webp" } },
+        { customSections: [{ blocks: [{ image: "/api/media/hero-2.webp?v=3&token=abc" }] }] },
+      ],
+    };
+    const keys = ["logo-1.webp", "hero-2.webp", "orfao-3.webp"];
+    const used = usedKeysIn(content, keys);
+    expect(used.has("logo-1.webp")).toBe(true); // URL simples
+    expect(used.has("hero-2.webp")).toBe(true); // URL com query string
+    expect(used.has("orfao-3.webp")).toBe(false); // não referenciada → órfã
+    expect(used.size).toBe(2);
   });
 
   it("formata bytes", () => {

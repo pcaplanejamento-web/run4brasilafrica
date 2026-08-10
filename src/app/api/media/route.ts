@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getMediaKV } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
 import { readContent } from "@/lib/content/db";
-import { isMediaKey, usedMediaKeys } from "@/lib/media";
+import { isMediaKey, usedKeysIn } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -79,11 +79,12 @@ export async function GET() {
   // Newest first.
   items.sort((a, b) => (b.uploadedAt ?? 0) - (a.uploadedAt ?? 0));
 
-  // Which keys are actually referenced in the stored content (any edition).
+  // Which of THESE files are actually referenced in the stored content (any
+  // edition) — por substring exata da chave, robusto a qualquer forma de URL.
   let usedKeys: string[] = [];
   try {
     const { content } = await readContent();
-    usedKeys = [...usedMediaKeys(content)];
+    usedKeys = [...usedKeysIn(content, items.map((i) => i.key))];
   } catch {
     usedKeys = [];
   }

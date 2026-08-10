@@ -52,6 +52,24 @@ export function usedMediaKeys(content: unknown): Set<string> {
   return used;
 }
 
+/**
+ * Dentre `keys` (as chaves reais no armazenamento), quais aparecem no conteúdo —
+ * por **substring exata da chave** no JSON serializado. Mais robusto que casar o
+ * formato da URL: acha a chave referenciada de QUALQUER forma (com query string,
+ * base diferente, dentro de outro campo). As chaves são longas e únicas
+ * (`timestamp-hex.ext`), então não há colisão acidental. É a fonte única de
+ * verdade do "em uso" no Armazenamento e da limpeza — sempre consistentes.
+ */
+export function usedKeysIn(content: unknown, keys: string[]): Set<string> {
+  let json: string;
+  try {
+    json = JSON.stringify(content);
+  } catch {
+    return new Set();
+  }
+  return new Set(keys.filter((k) => json.includes(k)));
+}
+
 /** Mensagem única para a cota diária de operações do KV (plano free) estourada. */
 export const KV_QUOTA_MESSAGE =
   "Limite diário de exclusões do Cloudflare (KV) atingido. Tente novamente após a virada do dia (00:00 UTC).";

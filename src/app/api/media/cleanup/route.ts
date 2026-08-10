@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getMediaKV } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
 import { readContent } from "@/lib/content/db";
-import { isKvQuotaError, isMediaKey, KV_QUOTA_MESSAGE, usedMediaKeys } from "@/lib/media";
+import { isKvQuotaError, isMediaKey, KV_QUOTA_MESSAGE, usedKeysIn } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -25,26 +25,27 @@ export async function POST() {
     return NextResponse.json({ ok: false, error: "não autenticado" }, { status: 401 });
   }
 
-  // Source of truth for "in use": scan the whole content blob.
-  let used: Set<string>;
+  // Fonte da verdade do "em uso": o blob de conteúdo inteiro (todas as edições).
+  let content: unknown;
   try {
-    const { content } = await readContent();
-    used = usedMediaKeys(content);
+    ({ content } = await readContent());
   } catch {
-    // If we can't read the content, do nothing rather than risk deleting a used file.
+    // Sem conseguir ler o conteúdo, não apaga nada (evita remover arquivo em uso).
     return NextResponse.json({ ok: false, error: "não foi possível ler o conteúdo", deleted: [] });
   }
 
-  // Collect all orphaned media keys across the paginated KV list.
-  const orphans: string[] = [];
+  // Todas as chaves de mídia no KV (paginado), depois os órfãos = as que NÃO
+  // aparecem no conteúdo (substring exata — mesma lógica do selo "em uso").
+  const allKeys: string[] = [];
   let cursor: string | undefined;
   do {
     const page = await kv.list({ cursor, limit: 1000 });
-    for (const k of page.keys) {
-      if (isMediaKey(k.name) && !used.has(k.name)) orphans.push(k.name);
-    }
+    for (const k of page.keys) if (isMediaKey(k.name)) allKeys.push(k.name);
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
+
+  const used = usedKeysIn(content, allKeys);
+  const orphans = allKeys.filter((k) => !used.has(k));
 
   // Só um LOTE por requisição (subrequest budget). Deletes em paralelo (allSettled
   // → best-effort). Se a cota de KV estourar, para e avisa.
