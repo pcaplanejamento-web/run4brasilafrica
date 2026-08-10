@@ -4,11 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * ADM login (ported from ADM Login.dc.html).
- *
- * This is a front-end gate for the prototype — it routes to the dashboard on
- * submit. Wire it to real auth (Supabase Auth / Auth0, Plano §4.2) before
- * production; the form already collects the credentials to send.
+ * ADM login. Autentica em `/api/auth/login` (D1 `users` + sessão via cookie
+ * httpOnly). Distingue os modos de falha: credencial inválida (JSON de erro),
+ * erro do servidor (resposta sem JSON, ex.: 500 durante um redeploy) e falha de
+ * rede (o `fetch` lança) — cada um com mensagem própria e amigável a retry.
  */
 export default function AdminLogin() {
   const router = useRouter();
@@ -27,15 +26,25 @@ export default function AdminLogin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = (await res.json()) as { ok: boolean; code?: string; error?: string };
+      // Parse defensivo: um 500 durante um redeploy pode vir como HTML (sem JSON).
+      const data = (await res
+        .json()
+        .catch(() => null)) as { ok: boolean; code?: string; error?: string } | null;
+
       // ok = authenticated; not_configured = local dev (open) → let in.
-      if (data.ok || data.code === "not_configured") {
+      if (data && (data.ok || data.code === "not_configured")) {
         router.push("/admin/dashboard");
         return;
       }
-      setError(data.error ?? "Não foi possível entrar.");
+      if (data?.error) {
+        setError(data.error); // erro conhecido do servidor (ex.: credencial inválida)
+      } else {
+        // Resposta sem JSON (servidor reiniciando/instável) → orienta a repetir.
+        setError("Servidor indisponível no momento. Aguarde alguns segundos e tente novamente.");
+      }
     } catch {
-      setError("Falha de conexão. Tente novamente.");
+      // O `fetch` só lança em falha de rede real (offline, DNS, requisição abortada).
+      setError("Falha de conexão. Verifique sua internet e tente novamente.");
     } finally {
       setLoading(false);
     }
