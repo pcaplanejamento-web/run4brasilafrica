@@ -521,6 +521,11 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   em dourado) e um selo de categoria (Ouro/Prata/Bronze) **opcional** (só quando `sponsorsShowTier`
   está ligado). A linha do @usuário é **sempre renderizada** (com `min-h` + espaço não-quebrável
   quando vazia), então parceiros sem usuário mantêm **o mesmo tamanho/altura de card** dos demais.
+  **Robustez a `tier` ausente:** um parceiro pode ter `tier` nulo (criado sem escolher categoria).
+  O público já guarda (`tier &&`); o **editor** (`ParceirosEditor`) usa
+  `sponsorTierColors[sp.tier] ?? sponsorTierColors.Bronze` e `value={sp.tier ?? "Bronze"}` — antes
+  o `sponsorTierColors[null].bg` quebrava TODO o ADM (a árvore React desmontava → "This page
+  couldn't load"). Regra geral: **todo lookup `MAP[campo].prop` num editor precisa de fallback**.
   Card com borda arredondada + hover (sobe/realce). Uma **legenda opcional**
   (`sponsorsSubtitle`) aparece abaixo do título "Parceiros".
 - **Botão "Seja um parceiro"** (`sponsorsShowCta`): opcional, na **mesma linha do título,

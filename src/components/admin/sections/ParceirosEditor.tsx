@@ -114,7 +114,9 @@ export function ParceirosEditor({
 
       <div className="overflow-hidden rounded-lg border border-adm-border bg-adm-card">
         {rows.map((sp, i) => {
-          const c = sponsorTierColors[sp.tier];
+          // Robusto a dados sem nível (tier null/ausente, ex.: apoiador criado sem
+          // escolher tier): cai num padrão em vez de quebrar a tela toda.
+          const c = sponsorTierColors[sp.tier] ?? sponsorTierColors.Bronze;
           const social = sp.linkKind === "social";
           return (
             <div
@@ -131,7 +133,10 @@ export function ParceirosEditor({
               />
               <TextInput value={sp.name} onChange={(e) => set(i, { name: e.target.value })} />
               <div className="flex items-center gap-2">
-                <Select value={sp.tier} onChange={(e) => set(i, { tier: e.target.value as SponsorTier })}>
+                <Select
+                  value={sp.tier ?? "Bronze"}
+                  onChange={(e) => set(i, { tier: e.target.value as SponsorTier })}
+                >
                   {TIERS.map((t) => (
                     <option key={t}>{t}</option>
                   ))}
