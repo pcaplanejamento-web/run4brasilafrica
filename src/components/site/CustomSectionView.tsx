@@ -100,6 +100,7 @@ function renderSection(
           showTier={block.sponsorsShowTier}
           subtitle={block.sponsorsSubtitle}
           showCta={(block.sponsorsShowCta ?? false) && ctx.sejaParceiroEnabled}
+          title={title}
         />
       );
     case "raceday":

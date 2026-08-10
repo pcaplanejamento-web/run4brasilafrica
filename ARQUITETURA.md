@@ -591,7 +591,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   globais) `parceiros`, `kit`, `galeria`, `raceday`, `inscricao`; e por fim o próprio **Banner/Hero**
   (`sec-hero`). `SECTIONS` (registry built-in) agora está **vazio** — TODA seção é uma aba `custom:*`.
   `parceiros` carrega seus flags
-  (`sponsorsShowTier/Subtitle/ShowCta`) e o CTA respeita `sejaParceiroEnabled` (via `ctx`); `kit`
+  (`sponsorsShowTier/Subtitle/ShowCta`), usa o **"Título da aba"** como tópico (`SectionEyebrow`,
+  fallback `"Parceiros"`) — mesma lógica de `raceday`/`inscricao` — e o CTA respeita
+  `sejaParceiroEnabled` (via `ctx`); `kit`
   lê `ctx.lotes`; `galeria`/`raceday`/`inscricao` são marcadores globais (fotos/lotes/inscrição
   nunca duplicados — `/admin/galeria` e `/admin/links` seguem como editores globais, e a barra fixa
   `RaceCountdownBar` continua lendo `c.inscricao`).

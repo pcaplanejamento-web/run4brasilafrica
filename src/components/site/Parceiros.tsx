@@ -55,18 +55,21 @@ export default function Parceiros({
   showTier,
   subtitle,
   showCta,
+  title,
 }: {
   sponsors: Sponsor[];
   showTier?: boolean;
   subtitle?: string;
   showCta?: boolean;
+  /** O "Título da aba" criado no ADM — vira o tópico da seção (fallback: "Parceiros"). */
+  title?: string;
 }) {
   if (sponsors.length === 0) return null;
 
   return (
     <section id="parceiros" className="bg-ink px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <SectionEyebrow as="h2">Parceiros</SectionEyebrow>
+        <SectionEyebrow as="h2">{title?.trim() || "Parceiros"}</SectionEyebrow>
         {showCta && (
           <a
             href="#seja-parceiro"
