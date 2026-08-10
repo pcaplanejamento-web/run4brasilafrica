@@ -14,19 +14,14 @@ const MAX_FAILS = 5; // failures before a temporary lock (per e-mail)
 const LOCK_SECONDS = 15 * 60; // 15 min
 
 export async function POST(req: Request) {
-  // Blindagem: qualquer exceção não tratada vira JSON (nunca HTML/500 cru), para
-  // o cliente mostrar uma mensagem clara e o erro ser registrado (visível no
-  // `wrangler tail`). `detail` é temporário — ajuda a diagnosticar em produção.
+  // Blindagem: qualquer exceção não tratada vira JSON (nunca HTML/500 cru), para o
+  // cliente mostrar uma mensagem clara e o erro ser registrado (`wrangler tail`).
   try {
     return await handleLogin(req);
   } catch (err) {
     console.error("login route failed:", err);
     return NextResponse.json(
-      {
-        ok: false,
-        error: "Erro no servidor ao entrar. Tente novamente.",
-        detail: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
-      },
+      { ok: false, error: "Erro no servidor ao entrar. Tente novamente." },
       { status: 500 },
     );
   }
@@ -58,17 +53,28 @@ async function handleLogin(req: Request) {
   }
 
   // Brute-force protection: temporary lock after repeated failures (KV-backed).
+  // Todas as operações de KV são **best-effort**: o KV é um extra de segurança, não
+  // um pré-requisito do login. Se o KV falhar (indisponível ou cota diária de
+  // leitura/escrita/delete estourada), degrada em silêncio — o login NUNCA quebra.
   const kv = getMediaKV();
   const failKey = `login:fail:${email}`;
-  if (kv) {
-    const rec = (await kv.get(failKey, "json")) as { n: number; until?: number } | null;
-    if (rec?.until && Date.now() < rec.until) {
-      const mins = Math.ceil((rec.until - Date.now()) / 60000);
-      return NextResponse.json(
-        { ok: false, error: `Muitas tentativas. Tente novamente em ~${mins} min.` },
-        { status: 429 },
-      );
+  const kvGet = async (): Promise<{ n: number; until?: number } | null> => {
+    if (!kv) return null;
+    try {
+      return (await kv.get(failKey, "json")) as { n: number; until?: number } | null;
+    } catch (err) {
+      console.error("login kv.get failed (ignorado):", err);
+      return null;
     }
+  };
+
+  const locked = await kvGet();
+  if (locked?.until && Date.now() < locked.until) {
+    const mins = Math.ceil((locked.until - Date.now()) / 60000);
+    return NextResponse.json(
+      { ok: false, error: `Muitas tentativas. Tente novamente em ~${mins} min.` },
+      { status: 429 },
+    );
   }
 
   const user = await db
@@ -78,15 +84,26 @@ async function handleLogin(req: Request) {
 
   if (!user || !(await verifyPassword(password, user.password_hash))) {
     if (kv) {
-      const rec = (await kv.get(failKey, "json")) as { n: number } | null;
-      const n = (rec?.n ?? 0) + 1;
-      const until = n >= MAX_FAILS ? Date.now() + LOCK_SECONDS * 1000 : undefined;
-      await kv.put(failKey, JSON.stringify({ n, until }), { expirationTtl: LOCK_SECONDS });
+      try {
+        const rec = (await kvGet()) as { n: number } | null;
+        const n = (rec?.n ?? 0) + 1;
+        const until = n >= MAX_FAILS ? Date.now() + LOCK_SECONDS * 1000 : undefined;
+        await kv.put(failKey, JSON.stringify({ n, until }), { expirationTtl: LOCK_SECONDS });
+      } catch (err) {
+        console.error("login kv.put failed (ignorado):", err);
+      }
     }
     return NextResponse.json({ ok: false, error: "Credenciais inválidas" }, { status: 401 });
   }
 
-  if (kv) await kv.delete(failKey); // reset on success
+  // reset on success — best-effort (um estouro de cota de delete não pode barrar o login)
+  if (kv) {
+    try {
+      await kv.delete(failKey);
+    } catch (err) {
+      console.error("login kv.delete failed (ignorado):", err);
+    }
+  }
 
   const session = await createSession(user.id);
   if (!session) {
