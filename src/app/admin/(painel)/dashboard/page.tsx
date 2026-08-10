@@ -130,6 +130,34 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
     );
   }
 
+  /** Duplica uma aba INTEIRA: clona título + todos os blocos e suas configurações
+   *  (deep clone), com ids novos (bloco e aba) para não colidir, e insere a cópia
+   *  logo abaixo da original no layout, já ativa. */
+  async function duplicateAba(key: string) {
+    const id = customIdFromKey(key);
+    if (!id) return;
+    const src = customSections.find((c) => c.id === id);
+    if (!src) return;
+    const newId = uid();
+    const clone: CustomSection = {
+      ...structuredClone(src),
+      id: newId,
+      title: `${src.title?.trim() || "Aba"} (cópia)`,
+      blocks: (src.blocks ?? []).map((b) => ({ ...structuredClone(b), id: uid() })),
+    };
+    const idx = layout.findIndex((li) => li.key === key);
+    const nextLayout = [...layout];
+    nextLayout.splice(idx >= 0 ? idx + 1 : nextLayout.length, 0, {
+      key: customKey(newId),
+      enabled: true,
+    });
+    setLayout(nextLayout);
+    await save(
+      { customSections: [...customSections, clone], layout: nextLayout },
+      `Duplicou a aba "${src.title?.trim() || "sem título"}"`,
+    );
+  }
+
   return (
     <Card>
       <div className="mb-1 text-[14px] font-bold">Componentes da tela inicial</div>
@@ -172,9 +200,23 @@ function HomeLayoutCard({ initial }: { initial: LayoutItem[] }) {
               {custom && (
                 <button
                   type="button"
+                  onClick={() => duplicateAba(li.key)}
+                  aria-label={`Duplicar ${label}`}
+                  title="Duplicar aba (com todos os componentes)"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-adm-border text-adm-muted transition-colors hover:border-terracotta hover:text-terracotta"
+                >
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="11" height="11" rx="2" />
+                    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                  </svg>
+                </button>
+              )}
+              {custom && (
+                <button
+                  type="button"
                   onClick={() => deleteAba(li.key)}
                   aria-label={`Excluir ${label}`}
-                  className="grid h-9 w-9 place-items-center rounded-md border border-adm-border text-adm-muted transition-colors hover:border-red-400 hover:text-red-500"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-adm-border text-adm-muted transition-colors hover:border-red-400 hover:text-red-500"
                 >
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M3 6h18M8 6V4h8v2m-9 0v14a1 1 0 001 1h8a1 1 0 001-1V6" />

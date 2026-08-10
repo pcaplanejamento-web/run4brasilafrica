@@ -52,6 +52,21 @@ export function usedMediaKeys(content: unknown): Set<string> {
   return used;
 }
 
+/** Mensagem única para a cota diária de operações do KV (plano free) estourada. */
+export const KV_QUOTA_MESSAGE =
+  "Limite diário de exclusões do Cloudflare (KV) atingido. Tente novamente após a virada do dia (00:00 UTC).";
+
+/** True quando o erro é o limite diário de operações do KV (code 10048 / "usage limit"). */
+export function isKvQuotaError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err ?? "")).toLowerCase();
+  return (
+    msg.includes("10048") ||
+    msg.includes("usage limit") ||
+    msg.includes("free usage limit") ||
+    msg.includes("limit for this operation")
+  );
+}
+
 /** Human file size (e.g. "182 KB"). */
 export function formatBytes(bytes?: number): string {
   if (!bytes || bytes <= 0) return "—";
@@ -89,27 +104,42 @@ export async function fetchMediaList(): Promise<MediaListResult> {
   }
 }
 
-/** Delete one media file by key. */
-export async function deleteMedia(key: string): Promise<boolean> {
+/** Delete one media file by key. Devolve `ok` + a mensagem de erro (ex.: cota). */
+export async function deleteMedia(key: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(`/api/media/${encodeURIComponent(key)}`, { method: "DELETE" });
-    const data = (await res.json().catch(() => null)) as { ok?: boolean } | null;
-    return !!data?.ok;
+    const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+    if (data?.ok) return { ok: true };
+    return { ok: false, error: data?.error ?? "Não foi possível excluir." };
   } catch {
-    return false;
+    return { ok: false, error: "Falha de conexão." };
   }
 }
 
-/** Delete every media file not referenced by any content. Returns deleted keys. */
+/**
+ * Apaga TODOS os arquivos não referenciados, **em lotes** — o servidor deleta até
+ * ~40 por requisição (limite de subrequests do Worker) e devolve `remaining`;
+ * repetimos aqui até zerar. Para e reporta se a cota de KV estourar ou travar.
+ */
 export async function cleanupUnusedMedia(): Promise<{ ok: boolean; deleted: string[]; error?: string }> {
-  try {
-    const res = await fetch("/api/media/cleanup", { method: "POST" });
-    const data = (await res.json().catch(() => null)) as
-      | { ok?: boolean; deleted?: string[]; error?: string }
-      | null;
-    if (!data) return { ok: false, deleted: [] };
-    return { ok: !!data.ok, deleted: data.deleted ?? [], error: data.error };
-  } catch {
-    return { ok: false, deleted: [], error: "Falha de conexão." };
+  const all: string[] = [];
+  for (let i = 0; i < 200; i++) {
+    let data: { ok?: boolean; error?: string; deleted?: string[]; remaining?: number } | null;
+    try {
+      const res = await fetch("/api/media/cleanup", { method: "POST" });
+      data = (await res.json().catch(() => null)) as typeof data;
+    } catch {
+      return { ok: false, deleted: all, error: "Falha de conexão." };
+    }
+    if (!data) return { ok: false, deleted: all, error: "Resposta inválida do servidor." };
+    all.push(...(data.deleted ?? []));
+    if (!data.ok) return { ok: false, deleted: all, error: data.error ?? "Não foi possível limpar." };
+    const remaining = data.remaining ?? 0;
+    if (remaining === 0) return { ok: true, deleted: all }; // acabou
+    if ((data.deleted?.length ?? 0) === 0) {
+      // não apagou nada mas ainda há órfãos → travou (evita loop infinito)
+      return { ok: false, deleted: all, error: "Não foi possível remover alguns arquivos." };
+    }
   }
+  return { ok: true, deleted: all };
 }

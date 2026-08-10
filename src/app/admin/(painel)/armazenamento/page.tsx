@@ -95,13 +95,14 @@ export default function ArmazenamentoPage() {
       : "Excluir esta imagem do armazenamento? Esta ação não pode ser desfeita.";
     if (!window.confirm(msg)) return;
     setBusy(true);
-    const ok = await deleteMedia(it.key);
+    setError(null);
+    const r = await deleteMedia(it.key);
     setBusy(false);
-    if (ok) {
+    if (r.ok) {
       setItems((xs) => xs.filter((x) => x.key !== it.key));
-      setNotice("Imagem excluída.");
+      setNotice("Arquivo excluído.");
     } else {
-      setError("Não foi possível excluir.");
+      setError(r.error ?? "Não foi possível excluir.");
     }
   }
 
@@ -116,18 +117,23 @@ export default function ArmazenamentoPage() {
       return;
     setBusy(true);
     setNotice(null);
+    setError(null);
     const r = await cleanupUnusedMedia();
     setBusy(false);
     if (r.ok) {
       setNotice(
         r.deleted.length > 0
-          ? `${r.deleted.length} ${r.deleted.length === 1 ? "imagem removida" : "imagens removidas"}.`
+          ? `${r.deleted.length} ${r.deleted.length === 1 ? "arquivo removido" : "arquivos removidos"}.`
           : "Nada para remover.",
       );
-      refresh();
     } else {
-      setError(r.error ?? "Não foi possível limpar.");
+      // Pode ter removido alguns antes de travar (ex.: cota) — mostra o parcial + o motivo.
+      setError(
+        (r.deleted.length > 0 ? `${r.deleted.length} removido(s). ` : "") +
+          (r.error ?? "Não foi possível limpar."),
+      );
     }
+    refresh(); // reflete o que foi removido (mesmo parcial)
   }
 
   if (loading && items.length === 0) return <AdmLoading />;

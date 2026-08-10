@@ -154,7 +154,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   - **Espaço/tipos/exclusão**: o resumo mostra **espaço total** (o GET lê o `byteLength` real dos
     arquivos antigos sem `size` na metadata — só leitura) e a **divisão por tipo** (extensão · qtd ·
     tamanho). Cada arquivo tem **excluir individual sempre visível** (touch, não depende de hover) e
-    o botão **"Limpar não usadas"** apaga de uma vez os órfãos (`POST /api/media/cleanup`).
+    o botão **"Limpar não usadas"** apaga os órfãos.
+  - **Limites do KV (plano free) — importante**: o KV tem **cotas diárias por operação** (~1000
+    writes/dia, ~1000 deletes/dia) e o Worker tem **~50 subrequests por requisição**. Por isso:
+    (a) `POST /api/media/cleanup` apaga **em lotes** (`DELETE_CAP = 40`/requisição, devolve
+    `remaining`) e o cliente (`cleanupUnusedMedia`) **repete até zerar** — nunca estoura subrequests;
+    (b) quando a **cota de delete** do KV estoura, as rotas devolvem `code: "quota"` (429) e a UI
+    mostra a mensagem clara (`KV_QUOTA_MESSAGE`, `isKvQuotaError` detecta o `code 10048`) em vez de
+    falhar em silêncio; (c) **`scripts/refresh-cache.mjs` NÃO apaga mais o cache** no deploy — antes
+    fazia `kv bulk delete` de **milhares** de chaves por deploy, esgotando a cota de delete diária (e
+    era ela que o Armazenamento precisava). Agora só **aquece a home** (a home é ISR `revalidate=30`,
+    regenera do D1 vivo sozinha) — zero deletes de KV por deploy.
 - Componente `components/admin/ImageUpload.tsx` (prop `video`) faz o upload; a lógica de
   compressão/envio vive em `lib/uploadMedia.ts` (reusada por `ImageUpload` e `HeroImageField`).
 - Campos no conteúdo: mídia por slide (`hero.slides[].image`), mídia da seção A Causa

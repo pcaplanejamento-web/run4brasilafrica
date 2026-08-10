@@ -2,15 +2,21 @@ import { NextResponse } from "next/server";
 import { getMediaKV } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
 import { readContent } from "@/lib/content/db";
-import { isMediaKey, usedMediaKeys } from "@/lib/media";
+import { isKvQuotaError, isMediaKey, KV_QUOTA_MESSAGE, usedMediaKeys } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
+// Quantos deletes no MÁXIMO por requisição. O Worker tem limite de subrequests
+// (~50 no plano free): 1 leitura de conteúdo + 1 list + N deletes precisa caber.
+// O cliente chama de novo em lote até zerar (ver `cleanupUnusedMedia`).
+const DELETE_CAP = 40;
+
 /**
- * Delete every uploaded media file that is NOT referenced anywhere in the stored
- * content (all editions). Admin-only. Conservative by construction: it lists the
- * real usage from the content and only removes what's genuinely orphaned; each
- * delete is best-effort (a KV quota hiccup skips that file, never 500s).
+ * Apaga, EM LOTE, arquivos de mídia que NÃO são referenciados em nenhuma edição.
+ * Admin-only e conservador: só remove órfãos reais (varre o conteúdo). Devolve
+ * `remaining` (órfãos ainda restantes) para o cliente repetir sem estourar o
+ * limite de subrequests; e sinaliza `code: "quota"` quando a cota de delete do KV
+ * estoura (para a UI explicar, em vez de falhar em silêncio).
  */
 export async function POST() {
   const kv = getMediaKV();
@@ -40,15 +46,24 @@ export async function POST() {
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
 
-  const deleted: string[] = [];
-  for (const key of orphans) {
-    try {
-      await kv.delete(key);
-      deleted.push(key);
-    } catch (err) {
-      console.error("media cleanup delete failed (ignorado):", key, err);
-    }
+  // Só um LOTE por requisição (subrequest budget). Deletes em paralelo (allSettled
+  // → best-effort). Se a cota de KV estourar, para e avisa.
+  const batch = orphans.slice(0, DELETE_CAP);
+  const settled = await Promise.allSettled(batch.map((k) => kv.delete(k)));
+  const deleted = batch.filter((_, i) => settled[i].status === "fulfilled");
+  const failures = settled.filter((s) => s.status === "rejected") as PromiseRejectedResult[];
+  const quota = failures.some((f) => isKvQuotaError(f.reason));
+  if (failures.length && !quota) {
+    console.error("media cleanup: falhas ao excluir:", failures.length, failures[0]?.reason);
   }
 
-  return NextResponse.json({ ok: true, deleted, skipped: orphans.length - deleted.length });
+  const remaining = orphans.length - deleted.length; // órfãos ainda presentes
+
+  if (quota && deleted.length === 0) {
+    return NextResponse.json(
+      { ok: false, code: "quota", error: KV_QUOTA_MESSAGE, deleted, remaining },
+      { status: 429 },
+    );
+  }
+  return NextResponse.json({ ok: true, deleted, remaining, quota });
 }

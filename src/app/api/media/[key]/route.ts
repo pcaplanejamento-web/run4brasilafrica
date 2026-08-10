@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMediaKV } from "@/lib/cf";
 import { authConfigured, getSessionUser } from "@/lib/auth";
+import { isKvQuotaError, KV_QUOTA_MESSAGE } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,15 @@ export async function DELETE(
     return NextResponse.json({ ok: false, error: "não autenticado" }, { status: 401 });
   }
   const { key } = await params;
-  await kv.delete(key);
+  try {
+    await kv.delete(key);
+  } catch (err) {
+    // Cota diária de delete do KV estourada → mensagem clara (não 500 cru).
+    if (isKvQuotaError(err)) {
+      return NextResponse.json({ ok: false, code: "quota", error: KV_QUOTA_MESSAGE }, { status: 429 });
+    }
+    console.error("media delete failed:", key, err);
+    return NextResponse.json({ ok: false, error: "erro ao excluir" }, { status: 502 });
+  }
   return NextResponse.json({ ok: true });
 }
