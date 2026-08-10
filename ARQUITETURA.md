@@ -598,8 +598,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `resolveLayout(c.layout)`, pulando as desativadas. Seções sem dado (ex.: `playlist`,
   `raceday`) continuam se auto-ocultando.
 - **Dashboard** (`/admin/dashboard`): card **"Componentes da tela inicial"** (substitui o
-  "Acesso rápido") — lista reordenável (setas ↑/↓, alvos ~36px), toggle **Ativo/Oculto** e o
-  nome **linka para a página de configuração** da seção. Salva `{ layout }`.
+  "Acesso rápido") — lista reordenável (setas ↑/↓, alvos ~36px), toggle **Ativo/Oculto**, botões
+  **Duplicar** e **Excluir** por aba, e o nome **linka para a página de configuração** da seção.
+  Salva `{ layout }` (e `{ customSections }` ao criar/duplicar/excluir).
+- **Duplicar aba** (`duplicateAba`): clona a aba INTEIRA — título (` (cópia)`) + **todos os blocos e
+  suas configurações** via `structuredClone`, com **ids novos** (aba e cada bloco, `uid()`) para não
+  colidir — e insere a cópia **logo abaixo** da original no layout, já ativa. É por-edição (duplica
+  dentro da edição selecionada); a cópia de seções **entre** edições fica no gestor de Edições
+  (Configurações). Componentizado, sem tocar nos blocos originais.
 
 ## Abas personalizadas (construtor de seções no ADM)
 
