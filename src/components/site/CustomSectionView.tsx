@@ -8,6 +8,7 @@ import type {
   GalleryPhoto,
   Inscricao,
   Lote,
+  PercursoRoute,
 } from "@/lib/content/types";
 import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
 import SectionEyebrow from "./SectionEyebrow";
@@ -52,6 +53,10 @@ export interface SectionRenderCtx {
   galleryPhotos: GalleryPhoto[];
   /** "Seja um parceiro" CTA só funciona quando aquela seção está ativa. */
   sejaParceiroEnabled: boolean;
+  /** Logo do evento (para o estúdio de cards da Classificação). */
+  brandLogo?: string;
+  /** Rotas do Percurso (a imagem `fallbackImage` vira o mapa dos cards). */
+  percursoRoutes: PercursoRoute[];
   /** "Agora" do servidor (época ms) para o 1º paint dos lotes — o mesmo valor é
    *  reidratado no cliente (sem hydration mismatch) e o SSR já traz o link do
    *  lote aberto (SEO / sem-JS). O cliente refina ao vivo no efeito. */
@@ -131,7 +136,13 @@ function renderSection(
       );
     case "classificacao":
       return (
-        <Classificacao classificacao={block.classificacao} title={title} event={ctx.event} />
+        <Classificacao
+          classificacao={block.classificacao}
+          title={title}
+          event={ctx.event}
+          brandLogo={ctx.brandLogo}
+          routes={ctx.percursoRoutes}
+        />
       );
     default:
       return null;

@@ -5,6 +5,7 @@ import type {
   ClassificacaoDisplay,
   ClassificacaoSection,
   EventInfo,
+  PercursoRoute,
   RaceResultRow,
 } from "@/lib/content/types";
 import { fetchResults } from "@/lib/results/client";
@@ -35,10 +36,14 @@ export default function Classificacao({
   classificacao,
   title,
   event,
+  brandLogo,
+  routes,
 }: {
   classificacao?: ClassificacaoSection;
   title?: string;
   event?: EventInfo;
+  brandLogo?: string;
+  routes?: PercursoRoute[];
 }) {
   const cfg = classificacao;
   const cats = useMemo(() => cfg?.categories ?? [], [cfg]);
@@ -235,10 +240,13 @@ export default function Classificacao({
         }}
       />
       <RunnerModal
+        key={runner ? `${activeCat?.id}-${runner.pos}` : "none"}
         runner={runner}
         onClose={() => setRunner(null)}
         event={event}
         categoryLabel={activeCat?.label ?? ""}
+        brandLogo={brandLogo}
+        routes={routes ?? []}
       />
     </section>
   );

@@ -515,11 +515,36 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   (`SegmentedTabs`), **pódio animado** dos 3 primeiros (padrão de `Premiacao`, medalhas
   ouro/prata/bronze, respeita reduced-motion), **tabela** dos colocados até `initialCount`, e
   **"Ver classificação geral"** → modal (casca dos modais do site) com **busca por nome (sem
-  acento) ou número**. Clicar num corredor abre o **detalhe** (todos os campos) + o **gerador de
-  imagem**: o usuário escolhe uma foto e os dados são "colados" nela num `<canvas>` (1080×1350,
-  foto cover + gradiente + faixa/tempo/colocação + marca) — **100% no navegador**, com **Baixar**
-  (`toBlob`+download) e **Compartilhar** (`navigator.share` com o arquivo, senão WhatsApp). Nada é
-  enviado ao servidor. Some sozinho quando não há categorias.
+  acento) ou número**. Clicar num corredor abre o **detalhe** (todos os campos) + o **estúdio de
+  cards** (abaixo). Some sozinho quando não há categorias.
+
+### Estúdio de cards (`ShareCardStudio`, estilo Strava)
+
+Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: preview = export),
+**100% no navegador** — nada é enviado ao servidor. Núcleo puro em `src/lib/results/card.ts`
+(formatos, temas, pace, campos, `loadImageTaintSafe`, `drawCard`) + QR em `src/lib/results/qr.ts`
+(gerador mínimo MIT, **sem dependência** — respeita a CSP; validado decodificando via
+`BarcodeDetector`).
+
+- **Plumbing**: `SectionRenderCtx` ganhou `brandLogo` (`branding.logo`) e `percursoRoutes`
+  (`percurso.routes`), populados em `SiteContent.tsx` e repassados por `Classificacao` →
+  `RunnerModal` → `ShareCardStudio`.
+- **O USUÁRIO escolhe** o que aparece (chips toggle) — não o ADM (o `display` do ADM segue só p/
+  pódio/tabela). **Formatos**: Feed 4:5 (1080×1350) e Stories 9:16 (1080×1920). **Templates**:
+  Foto (foto full-bleed + scrim), Resultado (fundo do tema + nº gigante decorativo), Trajeto
+  (imagem do mapa do Percurso — `PercursoRoute.fallbackImage`, aparece só quando existe). **Temas**:
+  dourado/escuro/terracota.
+- **Logo fixa** (não removível): desenhada de `brandLogo` via `loadImageTaintSafe`
+  (`crossOrigin="anonymous"` — Cloudinary manda ACAO:*, /api/media é same-origin; falha → **fallback
+  ao nome do evento em texto**, nunca quebra o `toBlob`).
+- **Enquadrar** foto/mapa: pan por arraste (pointer events) + zoom por slider, **roda** e **pinça
+  (2 dedos)**; offsets clampados p/ cobrir (sem furos). Redesenho **síncrono** (não usa rAF, que
+  fica pausado quando a aba é considerada oculta).
+- **Fundo transparente**: exporta só as camadas gráficas (PNG com alpha) p/ usar depois. **Extras**:
+  pace (min/km, de modalidade+tempo), data/cidade, **selo** medalha ouro/prata/bronze (pódio) /
+  "FINISHER", **QR** para `#classificacao`. Preferências (template/formato/tema/campos) em
+  `localStorage`. **Baixar** (`toBlob`+download) e **Compartilhar** (`navigator.share` com o
+  arquivo, senão WhatsApp). Fontes garantidas com `document.fonts.load` antes de desenhar.
 
 ## Proteção de imagens
 

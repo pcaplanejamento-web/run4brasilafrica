@@ -56,6 +56,8 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     galleryPhotos: c.galleryPhotos ?? [],
     sejaParceiroEnabled,
     nowMs,
+    brandLogo: c.branding?.logo,
+    percursoRoutes: c.percurso?.routes ?? [],
   };
 
   // TODAS as seções renderizam via `custom:sec-*` (abas) — inclusive o Banner/Hero
