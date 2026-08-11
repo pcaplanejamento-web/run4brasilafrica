@@ -114,59 +114,75 @@ export function ParceirosEditor({
 
       <div className="overflow-hidden rounded-lg border border-adm-border bg-adm-card">
         {rows.map((sp, i) => {
-          // Robusto a dados sem nível (tier null/ausente, ex.: apoiador criado sem
-          // escolher tier): cai num padrão em vez de quebrar a tela toda.
-          const c = sponsorTierColors[sp.tier] ?? sponsorTierColors.Bronze;
           const social = sp.linkKind === "social";
+          const c = sponsorTierColors[sp.tier] ?? sponsorTierColors.Bronze;
           return (
             <div
               key={i}
-              className="grid grid-cols-1 gap-3 border-b border-adm-line px-5 py-4 md:grid-cols-[96px_1.1fr_0.8fr_0.8fr_1.1fr_0.9fr_88px] md:items-center md:gap-3"
+              className="flex flex-col gap-4 border-b border-adm-line px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-5 sm:px-5"
             >
-              <ImageUpload
-                value={sp.logo}
-                onChange={(url) => set(i, { logo: url })}
-                className="aspect-square w-full bg-white"
-                fit="contain"
-                label="logo"
-                cloudinary={cloudinary}
-              />
-              <TextInput value={sp.name} onChange={(e) => set(i, { name: e.target.value })} />
-              <div className="flex items-center gap-2">
-                <Select
-                  value={sp.tier ?? "Bronze"}
-                  onChange={(e) => set(i, { tier: e.target.value as SponsorTier })}
-                >
-                  {TIERS.map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </Select>
-                <span
-                  className="hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold lg:inline-block"
-                  style={{ background: c.bg, color: c.color }}
-                >
-                  {sp.tier}
-                </span>
+              {/* Logo AMPLIADO com "Escolher do armazenamento" sobre a imagem. */}
+              <div className="w-28 shrink-0 sm:w-32">
+                <ImageUpload
+                  value={sp.logo}
+                  onChange={(url) => set(i, { logo: url })}
+                  className="aspect-square w-full bg-white"
+                  fit="contain"
+                  label="logo"
+                  cloudinary={cloudinary}
+                  pickerOverlay
+                />
               </div>
-              <Select
-                value={sp.linkKind ?? "site"}
-                onChange={(e) => set(i, { linkKind: e.target.value as "site" | "social" })}
-              >
-                <option value="site">Site</option>
-                <option value="social">Rede social</option>
-              </Select>
-              <TextInput
-                value={sp.link}
-                onChange={(e) => set(i, { link: e.target.value })}
-                placeholder={social ? "@perfil ou link da rede" : "exemplo.com"}
-              />
-              <TextInput
-                value={sp.username ?? ""}
-                onChange={(e) => set(i, { username: e.target.value })}
-                placeholder={social ? "vazio = usa o link social" : "@usuario (opcional)"}
-              />
-              <div className="flex gap-2">
-                <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
+
+              {/* Campos rotulados — um único campo de link (tipo + valor). */}
+              <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <FieldLabel>Nome</FieldLabel>
+                  <TextInput value={sp.name} onChange={(e) => set(i, { name: e.target.value })} />
+                </div>
+                <div>
+                  <FieldLabel>Categoria</FieldLabel>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={sp.tier ?? "Bronze"}
+                      onChange={(e) => set(i, { tier: e.target.value as SponsorTier })}
+                    >
+                      {TIERS.map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </Select>
+                    {/* Bolinha da cor da categoria (indicador; some no público se
+                        "Mostrar categoria" estiver Não). */}
+                    <span
+                      className="h-4 w-4 shrink-0 rounded-full border border-black/10"
+                      style={{ background: c.bg }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel>Tipo de link</FieldLabel>
+                  <Select
+                    value={sp.linkKind ?? "site"}
+                    onChange={(e) => set(i, { linkKind: e.target.value as "site" | "social" })}
+                  >
+                    <option value="site">Site</option>
+                    <option value="social">Rede social (Instagram)</option>
+                  </Select>
+                </div>
+                <div>
+                  <FieldLabel>{social ? "Instagram (@perfil ou link)" : "Endereço do site"}</FieldLabel>
+                  <TextInput
+                    value={sp.link}
+                    onChange={(e) => set(i, { link: e.target.value })}
+                    placeholder={social ? "@perfil ou instagram.com/perfil" : "exemplo.com"}
+                  />
+                </div>
+                <div className="flex justify-end sm:col-span-2">
+                  <GhostButton onClick={() => remove(i)} className="px-3 py-2 text-[#c0392b]">
+                    Remover parceiro
+                  </GhostButton>
+                </div>
               </div>
             </div>
           );

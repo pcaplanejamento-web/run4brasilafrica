@@ -24,6 +24,10 @@ interface ImageUploadProps {
   fit?: "cover" | "contain";
   /** When set, uploads go to Cloudinary (unsigned) instead of /api/media. */
   cloudinary?: { cloudName?: string; uploadPreset?: string };
+  /** "Escolher do armazenamento" como botão SOBRE a imagem (overlay) em vez de
+   *  link abaixo. Use em caixas grandes o bastante p/ os 3 ícones (ex.: logo de
+   *  parceiro ampliado). Default: link abaixo (funciona em qualquer proporção). */
+  pickerOverlay?: boolean;
 }
 
 /**
@@ -39,8 +43,11 @@ export default function ImageUpload({
   video = false,
   fit = "cover",
   cloudinary,
+  pickerOverlay = false,
 }: ImageUploadProps) {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
+  const overlayBtn =
+    "grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60";
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,16 +95,29 @@ export default function ImageUpload({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt={label} className={`w-full ${fitClass} ${className}`} />
           )}
-          {/* Trocar (computador) + remover — sempre visíveis (2 botões cabem em
-              caixas pequenas; o "armazenamento" fica no link abaixo, sem cortar). */}
+          {/* Controles sobre a imagem: (armazenamento) + trocar + remover. O
+              picker só entra no overlay em `pickerOverlay` (caixa grande); senão
+              fica no link abaixo, para não cortar em caixas pequenas. */}
           <div className="absolute right-1.5 top-1.5 flex gap-1.5">
+            {pickerOverlay && (
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                disabled={busy}
+                aria-label="Escolher do armazenamento"
+                title="Escolher do armazenamento"
+                className={overlayBtn}
+              >
+                <ImagesIcon />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={busy}
               aria-label={`Trocar ${label.toLowerCase()}`}
               title="Trocar (enviar do computador)"
-              className="grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60"
+              className={overlayBtn}
             >
               {busy ? <SpinnerIcon className={svg} /> : <SwapIcon />}
             </button>
@@ -106,37 +126,55 @@ export default function ImageUpload({
               onClick={() => onChange("")}
               aria-label={`Remover ${label.toLowerCase()}`}
               title="Remover"
-              className="grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80"
+              className={overlayBtn}
             >
               <TrashIcon />
             </button>
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={busy}
-          aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
-          title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
-          className={`flex w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta ${className}`}
-        >
-          {busy ? <SpinnerIcon /> : <UploadIcon />}
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy}
+            aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
+            title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
+            className={`flex w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta ${className}`}
+          >
+            {busy ? <SpinnerIcon /> : <UploadIcon />}
+          </button>
+          {pickerOverlay && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPickerOpen(true);
+              }}
+              disabled={busy}
+              aria-label="Escolher do armazenamento"
+              title="Escolher do armazenamento"
+              className={`absolute right-1.5 top-1.5 ${overlayBtn}`}
+            >
+              <ImagesIcon />
+            </button>
+          )}
+        </div>
       )}
 
-      {/* "Escolher do armazenamento" — SEMPRE abaixo da caixa (cheia ou vazia),
-          então funciona em qualquer proporção (logo pequeno, banner grande) e no
-          toque; nunca é cortado pelo overflow da caixa. */}
-      <button
-        type="button"
-        onClick={() => setPickerOpen(true)}
-        disabled={busy}
-        className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
-      >
-        <ImagesIcon className="h-4 w-4" />
-        Escolher do armazenamento
-      </button>
+      {/* "Escolher do armazenamento" abaixo da caixa (padrão): funciona em qualquer
+          proporção e no toque; em `pickerOverlay` o botão já está sobre a imagem. */}
+      {!pickerOverlay && (
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          disabled={busy}
+          className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-[12px] font-medium text-terracotta hover:underline disabled:opacity-60"
+        >
+          <ImagesIcon className="h-4 w-4" />
+          Escolher do armazenamento
+        </button>
+      )}
 
       {error && <div className="mt-1.5 text-[12px] text-[#c0392b]">{error}</div>}
 

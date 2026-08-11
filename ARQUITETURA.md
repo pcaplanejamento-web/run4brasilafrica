@@ -546,6 +546,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   `sponsorTierColors[sp.tier] ?? sponsorTierColors.Bronze` e `value={sp.tier ?? "Bronze"}` — antes
   o `sponsorTierColors[null].bg` quebrava TODO o ADM (a árvore React desmontava → "This page
   couldn't load"). Regra geral: **todo lookup `MAP[campo].prop` num editor precisa de fallback**.
+  **Editor (linha por parceiro)**: layout `flex` (empilha no mobile, lado a lado no desktop) com o
+  **logo ampliado** (`w-28`/`w-32`, `pickerOverlay`) e os controles **sobre a imagem** (armazenamento
+  + trocar + remover) + **campos rotulados** (Nome, Categoria=`Select`+bolinha de cor, Tipo de link,
+  e **um único campo** de link cujo rótulo/placeholder muda com `linkKind`: site vs Instagram). O
+  campo `username` separado foi **removido** — o `link` é a fonte única (o público deriva o @perfil
+  dele). `ImageUpload` ganhou a prop **`pickerOverlay`**: quando ligada, "Escolher do armazenamento"
+  é botão **sobre a imagem** (caixas grandes); desligada (padrão), fica no **link abaixo** (funciona
+  em qualquer proporção sem cortar).
   Card com borda arredondada + hover (sobe/realce). Uma **legenda opcional**
   (`sponsorsSubtitle`) aparece abaixo do título "Parceiros".
 - **Botão "Seja um parceiro"** (`sponsorsShowCta`): opcional, na **mesma linha do título,
