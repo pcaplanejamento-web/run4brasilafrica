@@ -448,10 +448,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 - **`Galeria`** (client) mostra as seções em **ABAS**: cada seção (álbum) vira uma aba e o
   visitante **escolhe qual ver** — só as fotos daquela seção aparecem (`active` = índice da aba,
-  volta à 1ª página ao trocar). As abas usam `role="tablist"`/`role="tab"`, **rolam no toque**
-  (mobile) e a **ordem manda**: a **primeira seção é a que abre** (`sections` = `albums` na ordem
-  do ADM + álbuns legados só presentes em `galleryPhotos`, anexados ao fim). Com **1 seção** as
-  abas somem (nada a escolher).
+  volta à 1ª página ao trocar). Cada aba leva o **nome cadastrado** da seção (`album.name`). A
+  barra de abas é o **`SegmentedTabs`** — o **mesmo componente** usado em "O Percurso" (pílulas
+  `rounded-full`, ativa em `bg-gold`, `min-h-11` p/ toque, `role="tablist"` + `aria-current`,
+  `flex-wrap`). A **ordem manda**: a **primeira seção é a que abre** (`sections` = `albums` na
+  ordem do ADM + álbuns legados só presentes em `galleryPhotos`, anexados ao fim). Com **1 seção**
+  as abas somem (nada a escolher — o próprio `SegmentedTabs` se oculta).
 - Dentro da aba ativa, as fotos formam uma **grade que desliza** (paginada) de **colunas ×
   linhas** (config. por breakpoint em `content.gallery` — `slideCols/Rows` e
   `slideColsMobile/RowsMobile`, detecção via `matchMedia`), auto-avança (`slideSeconds`), com
@@ -505,8 +507,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   e são migrados para um único `routes[0]` via `percursoRoutes()` (`src/lib/content/percurso.ts`)
   — nada quebra em conteúdos já salvos.
 - Público: `Percurso` (server) mostra eyebrow + título da seção e delega a `PercursoRoutes`
-  (client). Com mais de um percurso, um **seletor** (abas, alvos ≥44px) troca o percurso e
-  atualiza o mapa e os dados. Cada percurso usa `RouteViewer`.
+  (client). Com mais de um percurso, um **seletor** troca o percurso e atualiza o mapa e os dados.
+  O seletor é o **`SegmentedTabs`** (abas em pílula, alvos ≥44px) — **o mesmo componente da
+  Galeria** (fonte única: `components/site/SegmentedTabs.tsx`). Cada percurso usa `RouteViewer`.
 - `RouteViewer` (client, por percurso): monta as visões disponíveis — **Strava**, **Garmin**
   e/ou **Mapa** (fallback). **Layout estável**: uma barra de provider de **altura fixa** sempre
   aparece (seletor quando há mais de uma visão; rótulo único quando há só uma).

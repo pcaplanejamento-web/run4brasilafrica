@@ -5,6 +5,7 @@ import type { Album, GalleryConfig, GalleryPhoto } from "@/lib/content/types";
 import ProtectedImage from "./ProtectedImage";
 import SlidePager from "./SlidePager";
 import SectionEyebrow from "./SectionEyebrow";
+import SegmentedTabs from "./SegmentedTabs";
 import { useDragTrack } from "@/lib/useDragTrack";
 
 interface GalleryItem {
@@ -189,34 +190,14 @@ export default function Galeria({
         )}
       </div>
 
-      {/* Abas das seções — o visitante escolhe qual ver. Rola no toque (mobile). */}
-      {sections.length > 1 && (
-        <div
-          role="tablist"
-          aria-label="Seções de fotos"
-          className="mb-7 flex flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap"
-        >
-          {sections.map((s, i) => {
-            const on = i === activeIdx;
-            return (
-              <button
-                key={`${s.name}-${i}`}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => selectAlbum(i)}
-                className={`shrink-0 rounded-full border px-4 py-2 text-[13px] font-bold uppercase tracking-[0.03em] transition-colors ${
-                  on
-                    ? "border-terracotta bg-terracotta text-white"
-                    : "border-line bg-ink-panel text-muted hover:border-terracotta hover:text-fg"
-                }`}
-              >
-                {s.name}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Abas das seções — MESMO componente de "O Percurso" (SegmentedTabs). O
+          visitante escolhe qual seção ver; cada aba leva o nome cadastrado. */}
+      <SegmentedTabs
+        items={sections.map((s) => s.name)}
+        active={activeIdx}
+        onSelect={selectAlbum}
+        ariaLabel="Seções de fotos"
+      />
 
       {hasPhotos ? (
         <div className="relative">
