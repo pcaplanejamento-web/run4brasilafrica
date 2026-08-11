@@ -247,6 +247,7 @@ export default function Classificacao({
         categoryLabel={activeCat?.label ?? ""}
         brandLogo={brandLogo}
         routes={routes ?? []}
+        display={display}
       />
     </section>
   );

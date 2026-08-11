@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import type { EventInfo, PercursoRoute, RaceResultRow } from "@/lib/content/types";
+import type {
+  ClassificacaoDisplay,
+  EventInfo,
+  PercursoRoute,
+  RaceResultRow,
+} from "@/lib/content/types";
 import ShareCardStudio from "./ShareCardStudio";
 
 /** Campos mostrados no detalhe (todos os disponíveis, com rótulo pt-BR). */
@@ -35,6 +40,7 @@ export default function RunnerModal({
   categoryLabel,
   brandLogo,
   routes,
+  display,
 }: {
   runner: RaceResultRow | null;
   onClose: () => void;
@@ -42,6 +48,7 @@ export default function RunnerModal({
   categoryLabel: string;
   brandLogo?: string;
   routes: PercursoRoute[];
+  display?: ClassificacaoDisplay;
 }) {
   const open = !!runner;
 
@@ -109,6 +116,7 @@ export default function RunnerModal({
               brandLogo={brandLogo}
               routes={routes}
               categoryLabel={categoryLabel}
+              display={display}
             />
           </div>
         </div>

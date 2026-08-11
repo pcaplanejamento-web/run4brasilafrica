@@ -528,23 +528,30 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
 
 - **Plumbing**: `SectionRenderCtx` ganhou `brandLogo` (`branding.logo`) e `percursoRoutes`
   (`percurso.routes`), populados em `SiteContent.tsx` e repassados por `Classificacao` →
-  `RunnerModal` → `ShareCardStudio`.
-- **O USUÁRIO escolhe** o que aparece (chips toggle) — não o ADM (o `display` do ADM segue só p/
-  pódio/tabela). **Formatos**: Feed 4:5 (1080×1350) e Stories 9:16 (1080×1920). **Templates**:
-  Foto (foto full-bleed + scrim), Resultado (fundo do tema + nº gigante decorativo), Trajeto
-  (imagem do mapa do Percurso — `PercursoRoute.fallbackImage`, aparece só quando existe). **Temas**:
-  dourado/escuro/terracota.
+  `RunnerModal` → `ShareCardStudio` (que também recebe `display` do ADM).
+- **Duas abas** (`SegmentedTabs`): **Fotos** (inicial) — componente de imagem **clicável**
+  (escolher uma foto) + **enquadramento** (pan/zoom); **Cards** — todos os **modelos prontos** para
+  baixar (`CardPreview` por template, cada um com Baixar/Compartilhar). **Formatos**: Feed 4:5
+  (1080×1350) e Stories 9:16 (1080×1920). **Templates**: Foto (foto full-bleed + scrim), Resultado
+  (fundo do tema + nº gigante), Trajeto (imagem do mapa do Percurso — `PercursoRoute.fallbackImage`,
+  só quando existe). **Temas**: dourado/escuro/terracota.
+- **Configurações por chaves**: ícone de engrenagem abre um painel com **switches** (`Switch`,
+  `role="switch"`) para ligar/desligar cada informação e extras (selo, QR, fundo transparente) +
+  tema. O **padrão vem do ADM** (`display`) — `defaultFields` mapeia netTime/team/bib/ageGroup/etc.
+  (pace ligado). O usuário sobrepõe ao vivo (todos os cards redesenham).
 - **Logo fixa** (não removível): desenhada de `brandLogo` via `loadImageTaintSafe`
   (`crossOrigin="anonymous"` — Cloudinary manda ACAO:*, /api/media é same-origin; falha → **fallback
   ao nome do evento em texto**, nunca quebra o `toBlob`).
-- **Enquadrar** foto/mapa: pan por arraste (pointer events) + zoom por slider, **roda** e **pinça
-  (2 dedos)**; offsets clampados p/ cobrir (sem furos). Redesenho **síncrono** (não usa rAF, que
-  fica pausado quando a aba é considerada oculta).
+- **Enquadrar** (foto na aba Fotos; mapa no card Trajeto): pan por arraste (`useLayerGesture`,
+  pointer events) + **pinça (2 dedos)** no celular + **roda** no desktop; o **slider de zoom** só
+  aparece no **desktop** (`hidden md:flex`) — no mobile é pinça (fora do painel de configurações).
+  Offsets clampados p/ cobrir (sem furos). Redesenho **síncrono** (não usa rAF, que fica pausado
+  quando a aba é considerada oculta).
 - **Fundo transparente**: exporta só as camadas gráficas (PNG com alpha) p/ usar depois. **Extras**:
   pace (min/km, de modalidade+tempo), data/cidade, **selo** medalha ouro/prata/bronze (pódio) /
-  "FINISHER", **QR** para `#classificacao`. Preferências (template/formato/tema/campos) em
-  `localStorage`. **Baixar** (`toBlob`+download) e **Compartilhar** (`navigator.share` com o
-  arquivo, senão WhatsApp). Fontes garantidas com `document.fonts.load` antes de desenhar.
+  "FINISHER", **QR** para `#classificacao`. Preferências (formato/tema/selo/QR) em `localStorage`
+  (os **campos** iniciam sempre do ADM). **Baixar** (`toBlob`+download) e **Compartilhar**
+  (`navigator.share` com o arquivo, senão WhatsApp). Fontes garantidas com `document.fonts.load`.
 
 ## Proteção de imagens
 

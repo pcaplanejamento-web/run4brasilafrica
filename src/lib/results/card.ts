@@ -225,7 +225,7 @@ export interface CardAssets {
 const MEDAL_COLORS: Record<number, string> = { 1: "#c8ce2e", 2: "#c9ccd2", 3: "#cd7f4d" };
 
 /** Desenha a imagem cobrindo o retângulo, com zoom e pan clampados (sem furos). */
-function drawCover(
+export function drawCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   rx: number,
