@@ -346,8 +346,11 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 
 - `content.lotes: Lote[]` (nome, texto, `ctaLabel`, url, **`openDate` abertura**, `date`
   encerramento, cores, `open` legado). A lógica fica em **`lib/content/lotes.ts`**:
-  `loteStatus` (upcoming/open/closed por datas, com fallback ao flag `open`), `activeLote`
-  (o aberto, senão o próximo), `loteCountdown` (alvo+rótulo) e `validateLotes` (regras).
+  `loteStatus` (**100% pelas datas** → upcoming/open/closed; abre e fecha sozinho; só cai no
+  flag `open` quando NÃO há nenhuma data — inclui os casos de só-abertura ou só-encerramento),
+  `activeLote` (o aberto, senão o próximo, senão o último), `loteCountdown` (alvo+rótulo) e
+  `validateLotes` (regras). Fuso ancorado em **−03:00 (Brasília)** via `parseBR` (`datetime.ts`),
+  então SSR/cliente/contagem/.ics concordam; datas exibidas em **DD/MM/YYYY**.
 - **`InscricaoCTA`** (client, tempo real): a faixa principal é o lote ativo com suas cores;
   a contagem (`Countdown`) aponta para a **abertura** ("Inscrições abrem em") enquanto está
   por vir, ou para o **encerramento** ("Inscrições encerram em") quando aberto. O título é
@@ -355,9 +358,12 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   situação, então nenhuma palavra de status é anexada ao lado do título (evita redundância; o
   mesmo vale no editor do ADM, que mostra só o nome do lote). Mostra Abertura/Encerramento por
   lote; a lista traz o status. Sem lotes → inscrição única. (SSR usa `now=0` → sem mismatch.)
-- Ordem dos lotes: `sortLotes` ordena pelo **número no nome** (Lote 1, 2, 3…), então a lista
-  lê sempre 1→N independentemente das datas/ordem do array; a faixa em destaque é o lote
-  **ativo** (`activeLote`).
+- Ordem dos lotes: `sortLotes` ordena por **DATA** — o 1º a **abrir** primeiro (sem abertura,
+  usa o encerramento); lotes sem nenhuma data vão ao fim (pelo nº do nome). É a ordem da tela
+  inicial: faixa em destaque = lote **ativo** (`activeLote`), demais em ordem regressiva de data
+  (`sortLotesDesc`). O **editor** (`InscricaoLotesEditor`) lista em ordem **crescente** de data e
+  mostra o **selo de status automático** (Aberto/Em breve/Encerrado, atualiza ao vivo) por lote —
+  **sem** botão de abrir/fechar manual (era contraditório: a flag era ignorada quando havia datas).
 - **`RaceDay`** (`content.inscricao.raceDate`, client): faixa **"Dia da Corrida"** com a data
   + contagem regressiva para a largada, logo antes de `InscricaoCTA` (Percurso e lotes seguem
   seções próprias).

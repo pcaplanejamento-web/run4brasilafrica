@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Inscricao, Lote } from "@/lib/content/types";
-import { sortLotesDesc, validateLotes } from "@/lib/content/lotes";
+import { loteStatus, sortLotes, validateLotes, type LoteStatus } from "@/lib/content/lotes";
 import { uid } from "@/lib/uid";
 import {
   Card,
@@ -19,6 +20,13 @@ const EMPTY_INSCRICAO: Inscricao = {
   platform: "",
   url: "",
   raceDate: "",
+};
+
+/** Rótulo + cores do selo de status (igual ao público, para o ADM prever). */
+const STATUS_UI: Record<LoteStatus, { label: string; bg: string; color: string }> = {
+  open: { label: "Aberto", bg: "#e7f6ec", color: "#2f7a45" },
+  upcoming: { label: "Em breve", bg: "#fdf2e3", color: "#9a6b12" },
+  closed: { label: "Encerrado", bg: "#f0eeec", color: "#6b6a67" },
 };
 
 /**
@@ -39,13 +47,19 @@ export function InscricaoLotesEditor({
   const inscricao = value.inscricao ?? EMPTY_INSCRICAO;
   const lotes = value.lotes ?? [];
 
+  // "Agora" para o selo de status refletir a abertura/fechamento automáticos ao
+  // vivo (atualiza a cada 30s — o status vem 100% das datas).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+
   const emit = (nextInscricao: Inscricao, nextLotes: Lote[]) =>
     onChange({ inscricao: nextInscricao, lotes: nextLotes });
   const setInsc = (patch: Partial<Inscricao>) => emit({ ...inscricao, ...patch }, lotes);
   const setLote = (i: number, patch: Partial<Lote>) =>
     emit(inscricao, lotes.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
-  const openOnly = (i: number) =>
-    emit(inscricao, lotes.map((l, idx) => ({ ...l, open: idx === i })));
   const remove = (i: number) => emit(inscricao, lotes.filter((_, idx) => idx !== i));
   const add = () =>
     emit(inscricao, [
@@ -64,7 +78,8 @@ export function InscricaoLotesEditor({
       },
     ]);
 
-  const ordered = sortLotesDesc(lotes).map((l) => ({ l, i: lotes.indexOf(l) }));
+  // Ordena por DATA (cronológico: 1º a abrir no topo) — igual à tela inicial.
+  const ordered = sortLotes(lotes).map((l) => ({ l, i: lotes.indexOf(l) }));
   const errors = validateLotes(lotes, raceDate);
 
   return (
@@ -90,9 +105,10 @@ export function InscricaoLotesEditor({
           </PrimaryButton>
         </div>
         <p className="mb-4 text-[12px] text-adm-muted">
-          Cada lote tem <strong>abertura</strong> e <strong>encerramento</strong>. O site decide
-          sozinho qual está aberto pelas datas e mostra a contagem regressiva. Os períodos não
-          podem se sobrepor — um lote de cada vez.
+          Cada lote <strong>abre e fecha sozinho</strong> pelas datas de{" "}
+          <strong>abertura</strong> e <strong>encerramento</strong> (fuso de Brasília). O site
+          ordena por data, destaca o que está aberto e mostra a contagem regressiva — não há
+          botão de abrir/fechar manual. Os períodos não podem se sobrepor — um lote de cada vez.
         </p>
 
         {errors.length > 0 && (
@@ -107,22 +123,32 @@ export function InscricaoLotesEditor({
         )}
 
         <div className="flex flex-col gap-4">
-          {ordered.map(({ l, i }) => (
+          {ordered.map(({ l, i }) => {
+            const st = loteStatus(l, now);
+            const ui = STATUS_UI[st];
+            return (
             <div
               key={l.id}
               className="rounded-lg border p-4"
-              style={{ borderColor: l.open ? "#4a9d5f" : "#e2e2dc", background: l.open ? "#f3faf4" : "#fff" }}
+              style={{
+                borderColor: st === "open" ? "#4a9d5f" : "#e2e2dc",
+                background: st === "open" ? "#f3faf4" : "#fff",
+              }}
             >
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[13px] font-bold text-adm-ink">{l.name}</span>
-                <div className="flex gap-2">
-                  {l.open ? (
-                    <GhostButton onClick={() => setLote(i, { open: false })}>Fechar lote</GhostButton>
-                  ) : (
-                    <GhostButton onClick={() => openOnly(i)}>Abrir lote</GhostButton>
-                  )}
-                  <GhostButton onClick={() => remove(i)}>Remover</GhostButton>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-bold text-adm-ink">{l.name}</span>
+                  {/* Selo automático (vem das datas) — o ADM prevê o que o site mostra. */}
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.04em]"
+                    style={{ background: ui.bg, color: ui.color }}
+                  >
+                    {ui.label}
+                  </span>
                 </div>
+                <GhostButton onClick={() => remove(i)} className="text-[#c0392b]">
+                  Remover
+                </GhostButton>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -167,7 +193,8 @@ export function InscricaoLotesEditor({
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
           {lotes.length === 0 && (
             <div className="text-[13px] text-adm-muted">Nenhum lote. Clique em &ldquo;+ Novo lote&rdquo;.</div>
           )}

@@ -37,9 +37,34 @@ describe("loteStatus", () => {
   it("depois do encerramento → closed", () => {
     expect(loteStatus(l, at("2026-04-02T00:00"))).toBe("closed");
   });
-  it("sem openDate cai no flag manual `open`", () => {
+  it("sem NENHUMA data cai no flag manual `open`", () => {
     expect(loteStatus(lote({ open: true }), 0)).toBe("open");
     expect(loteStatus(lote({ open: false }), 0)).toBe("upcoming");
+  });
+  it("só com encerramento → aberto até fechar, depois encerrado", () => {
+    const l = lote({ openDate: "", date: "2026-04-01T00:00" });
+    expect(loteStatus(l, at("2026-03-01T00:00"))).toBe("open");
+    expect(loteStatus(l, at("2026-04-02T00:00"))).toBe("closed");
+  });
+  it("só com abertura → em breve antes, aberto depois (sem fechar)", () => {
+    const l = lote({ openDate: "2026-03-01T00:00", date: "" });
+    expect(loteStatus(l, at("2026-02-01T00:00"))).toBe("upcoming");
+    expect(loteStatus(l, at("2026-05-01T00:00"))).toBe("open");
+  });
+});
+
+describe("sortLotes por DATA (tela inicial)", () => {
+  it("ordena pela abertura, não pelo número do nome", () => {
+    // nomes fora de ordem cronológica de propósito
+    const promo = lote({ id: "promo", name: "Lote Promocional", openDate: "2026-07-19T00:00" });
+    const l3 = lote({ id: "l3", name: "Lote 3", openDate: "2026-07-21T00:00" });
+    const kit = lote({ id: "kit", name: "Lote 3 ou Kit", openDate: "2026-08-03T00:00" });
+    expect(sortLotes([kit, l3, promo]).map((x) => x.id)).toEqual(["promo", "l3", "kit"]);
+  });
+  it("lote sem data vai para o fim", () => {
+    const a = lote({ id: "a", name: "Lote 1", openDate: "2026-01-01T00:00" });
+    const semData = lote({ id: "z", name: "Lote 2", openDate: "", date: "" });
+    expect(sortLotes([semData, a]).map((x) => x.id)).toEqual(["a", "z"]);
   });
 });
 

@@ -12,33 +12,46 @@ function loteNum(l: Lote): number {
   return m ? parseInt(m[1], 10) : Number.POSITIVE_INFINITY;
 }
 
+/** Chave cronológica de um lote: a **abertura**; sem ela, o **encerramento**. */
+function loteTime(l: Lote): number | null {
+  return ms(l.openDate) ?? ms(l.date);
+}
+
 /**
- * Order lotes by their number (Lote 1, 2, 3…) so the list always reads 1→N,
- * regardless of dates or array order; ties fall back to the opening date.
+ * Ordena os lotes por **DATA** — o primeiro a **abrir** vem primeiro (sem
+ * abertura, usa o encerramento). Lotes sem nenhuma data vão ao fim, na ordem do
+ * número do nome. Determinístico e independente da ordem do array — é a ordem
+ * que aparece na tela inicial.
  */
 export function sortLotes(lotes: Lote[]): Lote[] {
   return [...(lotes ?? [])].sort((a, b) => {
-    const na = loteNum(a);
-    const nb = loteNum(b);
-    if (na !== nb) return na - nb;
-    return (a.openDate || a.date || "").localeCompare(b.openDate || b.date || "");
+    const ta = loteTime(a);
+    const tb = loteTime(b);
+    if (ta !== null && tb !== null) return ta !== tb ? ta - tb : loteNum(a) - loteNum(b);
+    if (ta !== null) return -1; // com data vem antes de sem data
+    if (tb !== null) return 1;
+    return loteNum(a) - loteNum(b); // ambos sem data → nº do nome
   });
 }
 
-/** Same order as `sortLotes` but reversed (Lote N … 1) — newest/highest first. */
+/** Same order as `sortLotes` but reversed (mais recente primeiro). */
 export function sortLotesDesc(lotes: Lote[]): Lote[] {
   return sortLotes(lotes).reverse();
 }
 
-/** Status of a lote at time `now` (ms). Date-driven; falls back to `open` flag. */
+/**
+ * Status de um lote no instante `now` (ms) — **100% pelas datas** (abre e fecha
+ * automaticamente): `upcoming` antes da abertura, `closed` a partir do
+ * encerramento, `open` no período entre elas (ou quando só há uma das datas e
+ * ainda está no ar). Sem NENHUMA data, cai na flag manual legada `open`.
+ */
 export function loteStatus(l: Lote, now: number): LoteStatus {
   const openT = ms(l.openDate);
   const closeT = ms(l.date);
-  if (openT !== null && now < openT) return "upcoming";
-  if (closeT !== null && now >= closeT) return "closed";
-  if (openT !== null) return "open"; // openT <= now < closeT (or no close set)
-  // Legacy (no openDate): rely on the manual flag.
-  return l.open ? "open" : "upcoming";
+  if (openT !== null && now < openT) return "upcoming"; // antes de abrir
+  if (closeT !== null && now >= closeT) return "closed"; // já encerrou
+  if (openT !== null || closeT !== null) return "open"; // tem data e está no período
+  return l.open ? "open" : "upcoming"; // legado: sem datas → flag manual
 }
 
 /** The lote to feature: the open one, else the next upcoming, else the last. */
