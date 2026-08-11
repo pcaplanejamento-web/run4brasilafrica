@@ -319,7 +319,7 @@ function BlockFields({
     case "imagem":
       return (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px_140px]">
-          <ImageUpload value={block.imageUrl} onChange={(url) => set({ imageUrl: url })} aspect="video" label="imagem" cloudinary={cloudinary} />
+          <ImageUpload value={block.imageUrl} onChange={(url) => set({ imageUrl: url })} aspect="auto" ratio={block.aspectRatio || undefined} label="imagem" cloudinary={cloudinary} />
           <div>
             <FieldLabel>Proporção</FieldLabel>
             <Select value={block.aspectRatio ?? ""} onChange={(e) => set({ aspectRatio: e.target.value })}>

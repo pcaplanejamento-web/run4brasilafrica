@@ -137,8 +137,12 @@ export interface PlaylistSection {
 
 /** Gallery config: "buy photos" button + sliding-grid dimensions per breakpoint. */
 export interface GalleryConfig {
+  /** @deprecated Botão global "comprar fotos" (um p/ todos). Substituído pelo botão
+   *  próprio de cada `Album`; mantido só como fallback de migração. */
   buyEnabled?: boolean;
+  /** @deprecated ver `buyEnabled`. */
   buyLabel?: string;
+  /** @deprecated ver `buyEnabled`. */
   buyUrl?: string;
   /** Sliding grid: columns/rows per page on desktop and mobile, and autoplay. */
   slideCols?: number;
@@ -245,6 +249,11 @@ export interface Album {
   count: number;
   /** Public Google Photos album link — its photos are pulled into this section. */
   sourceUrl?: string;
+  /** Botão "comprar fotos" PRÓPRIO desta seção (cada álbum tem o seu). Quando não
+   *  definidos, herdam o botão global legado de `GalleryConfig` (migração suave). */
+  buyEnabled?: boolean;
+  buyLabel?: string;
+  buyUrl?: string;
 }
 
 export interface Sponsor {

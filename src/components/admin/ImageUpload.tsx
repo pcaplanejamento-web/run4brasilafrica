@@ -12,10 +12,13 @@ import {
   iconSm as svg,
 } from "./mediaIcons";
 
-/** Proporção da caixa — reflete o lugar real onde a imagem aparece. */
-export type ImageAspect = "square" | "video" | "wide" | "portrait" | "og";
+/** Proporção da caixa — reflete o lugar real onde a imagem aparece.
+ *  `"auto"` faz a caixa assumir a proporção REAL da foto enviada (sem corte). */
+export type ImageAspect = "square" | "video" | "wide" | "portrait" | "og" | "auto";
 
-const ASPECT_CLASS: Record<ImageAspect, string> = {
+/** Proporções nomeadas (as com medida fixa). `"auto"` não entra aqui: sua caixa
+ *  se molda à imagem, então não tem classe de aspecto própria. */
+const ASPECT_CLASS: Record<Exclude<ImageAspect, "auto">, string> = {
   square: "aspect-square", // logo de parceiro, favicon, foto de pessoa, item do kit
   video: "aspect-video", // 16:9 — imagem genérica, mapa do percurso, A Causa
   wide: "aspect-[16/6]", // logo horizontal do cabeçalho
@@ -26,8 +29,13 @@ const ASPECT_CLASS: Record<ImageAspect, string> = {
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
-  /** Proporção da caixa (reflete o local real). Default: "video" (16:9). */
+  /** Proporção da caixa (reflete o local real). Default: "video" (16:9).
+   *  Use `"auto"` para a caixa se moldar à proporção real da foto (sem corte). */
   aspect?: ImageAspect;
+  /** Proporção CSS explícita (ex.: `"16/9"`, `"3/4"`) — tem prioridade sobre
+   *  `aspect`. Serve para o preview espelhar EXATAMENTE a proporção escolhida no
+   *  editor (ex.: o seletor "Proporção" do bloco de imagem). Vazio → usa `aspect`. */
+  ratio?: string;
   /** Estilo extra da caixa (ex.: `bg-...`, `max-w-...`). A proporção vem de `aspect`. */
   className?: string;
   label?: string;
@@ -53,6 +61,7 @@ export default function ImageUpload({
   value,
   onChange,
   aspect = "video",
+  ratio,
   className = "",
   label = "Imagem",
   video = false,
@@ -61,7 +70,21 @@ export default function ImageUpload({
   pickerOverlay = true,
 }: ImageUploadProps) {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
-  const boxClass = `w-full ${ASPECT_CLASS[aspect]} ${className}`;
+  // Proporção efetiva:
+  // - `ratio` explícito vence tudo (aplicado por style — espelha o seletor do editor);
+  // - `auto` faz a caixa se moldar à foto (imagem: altura vem da própria; vídeo cai p/ 16:9);
+  // - nomeadas usam a classe fixa correspondente.
+  const usingRatio = !!ratio?.trim();
+  const isAuto = !usingRatio && aspect === "auto";
+  const namedClass = usingRatio || aspect === "auto" ? "" : ASPECT_CLASS[aspect];
+  const ratioStyle = usingRatio ? { aspectRatio: ratio } : undefined;
+  // Imagem "auto" com foto: a caixa não tem altura fixa (a foto a define, sem corte).
+  const autoImage = isAuto && !video;
+  // Caixa cheia: sem classe quando é imagem auto; vídeo auto cai p/ 16:9.
+  const filledAspect = autoImage ? "" : isAuto ? ASPECT_CLASS.video : namedClass;
+  // Dropzone (sem foto) sempre precisa de altura-alvo → auto usa 16:9.
+  const emptyAspect = isAuto ? ASPECT_CLASS.video : namedClass;
+  const boxClass = `w-full ${emptyAspect} ${className}`;
   const overlayBtn =
     "grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60";
   const inputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +137,10 @@ export default function ImageUpload({
       />
 
       {value ? (
-        <div className={`relative overflow-hidden rounded-lg border border-adm-border ${boxClass}`}>
+        <div
+          className={`relative overflow-hidden rounded-lg border border-adm-border w-full ${filledAspect} ${className}`}
+          style={ratioStyle}
+        >
           {video ? (
             <video
               src={value}
@@ -123,6 +149,10 @@ export default function ImageUpload({
               playsInline
               controls
             />
+          ) : autoImage ? (
+            // Proporção real da foto: largura total, altura automática, sem corte.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt={label} className="block h-auto w-full" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt={label} className={`h-full w-full ${fitClass}`} />
@@ -152,7 +182,7 @@ export default function ImageUpload({
           </div>
         </div>
       ) : (
-        <div className={`relative ${boxClass}`}>
+        <div className={`relative ${boxClass}`} style={ratioStyle}>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

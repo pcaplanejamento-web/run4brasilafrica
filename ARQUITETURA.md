@@ -155,11 +155,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     (`ImageUpload` e `HeroImageField`). Os controles (**escolher do armazenamento + trocar +
     remover**) ficam **SOBRE a imagem** (overlay) por padrão em todo lugar — `pickerOverlay=true` é o
     default do `ImageUpload`; só se desliga em caixas minúsculas (aí o link cai abaixo).
-  - **Proporção configurável** (`ImageUpload` prop `aspect`): a caixa reflete o **local real** —
-    `wide` (logo do cabeçalho), `square` (favicon, logo de parceiro, foto de pessoa, item do kit),
-    `og` (capa de compartilhamento 1200×630), `video` (16:9 — imagem genérica, mapa do percurso,
-    A Causa), `portrait` (3:4). A imagem preenche a caixa (`h-full w-full` + `object-cover/contain`)
-    e é grande o bastante para caber os 3 controles do overlay. Responsivo/touch em todas.
+  - **Proporção configurável** (`ImageUpload` props `aspect` + `ratio`): a caixa reflete o **local
+    real** — `wide` (logo do cabeçalho), `square` (favicon, logo de parceiro, foto de pessoa, item
+    do kit), `og` (capa de compartilhamento 1200×630), `video` (16:9 — mapa do percurso, A Causa),
+    `portrait` (3:4). Nesses, a imagem preenche a caixa (`h-full w-full` + `object-cover/contain`).
+    - **`aspect="auto"`**: a **caixa se molda à proporção REAL da foto** (imagem `block w-full
+      h-auto`, sem corte; sem foto, o dropzone cai p/ 16:9). É o modo do **bloco de imagem
+      genérico** quando a Proporção é "Automática".
+    - **`ratio` (string CSS, ex.: `"16/9"`, `"3/4"`)**: tem **prioridade** e aplica `aspect-ratio`
+      por `style`, para o preview do ADM **espelhar exatamente** o seletor "Proporção" do bloco de
+      imagem (o bloco passa `aspect="auto" ratio={block.aspectRatio || undefined}`) — vazio =
+      Automática (auto). A caixa é grande o bastante para caber os 3 controles do overlay.
+      Responsivo/touch em todas.
   - **Espaço/tipos/exclusão**: o resumo mostra **espaço total** (o GET lê o `byteLength` real dos
     arquivos antigos sem `size` na metadata — só leitura) e a **divisão por tipo** (extensão · qtd ·
     tamanho). Cada arquivo tem **excluir individual sempre visível** (touch, não depende de hover) e
@@ -437,33 +444,44 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   tom escuro original. Assim, definir só o fundo já pinta o header junto; header/rodapé podem
   ser sobrepostos individualmente sem afetar o resto.
 
-## Galeria (grade deslizante + Google Fotos + comprar)
+## Galeria (abas por seção + Google Fotos + comprar)
 
-- **`Galeria`** (client) mostra as fotos numa **grade que desliza** (paginada): junta as fotos
-  de todas as seções (Google Fotos + enviadas), quebra em páginas de **colunas × linhas**
-  (config. por breakpoint em `content.gallery` — `slideCols/Rows` e `slideColsMobile/RowsMobile`,
-  detecção via `matchMedia`), auto-avança (`slideSeconds`), com setas, bolinhas e **swipe**
-  (touch). O paginador não estoura a tela: com muitas páginas (>12) troca as bolinhas por um
-  contador **"X / Y"**; até 12, as bolinhas usam `flex-wrap`. **Sem lightbox / sem zoom**: `touch-action: pan-y` bloqueia pinça e duplo-toque;
-  imagens usam `ProtectedImage` (marca d'água, sem arraste/menu) e a seção é **escondida na
-  impressão** (`@media print #galeria`). ADM configura o tamanho da grade (desktop/mobile).
+- **`Galeria`** (client) mostra as seções em **ABAS**: cada seção (álbum) vira uma aba e o
+  visitante **escolhe qual ver** — só as fotos daquela seção aparecem (`active` = índice da aba,
+  volta à 1ª página ao trocar). As abas usam `role="tablist"`/`role="tab"`, **rolam no toque**
+  (mobile) e a **ordem manda**: a **primeira seção é a que abre** (`sections` = `albums` na ordem
+  do ADM + álbuns legados só presentes em `galleryPhotos`, anexados ao fim). Com **1 seção** as
+  abas somem (nada a escolher).
+- Dentro da aba ativa, as fotos formam uma **grade que desliza** (paginada) de **colunas ×
+  linhas** (config. por breakpoint em `content.gallery` — `slideCols/Rows` e
+  `slideColsMobile/RowsMobile`, detecção via `matchMedia`), auto-avança (`slideSeconds`), com
+  setas, bolinhas e **swipe** (touch). O paginador não estoura a tela: >12 páginas viram contador
+  **"X / Y"**; até 12, bolinhas com `flex-wrap`. **Sem lightbox / sem zoom**: `touch-action:
+  pan-y` bloqueia pinça/duplo-toque; imagens usam `ProtectedImage` (marca d'água, sem
+  arraste/menu) e a seção é **escondida na impressão** (`@media print #galeria`).
 - Cada seção pode ter
   um **link de álbum público do Google Fotos** (`album.sourceUrl`): o público busca as fotos em
   `/api/gphotos?url=…` (rota que **lê a página do álbum** e extrai as URLs `lh3.googleusercontent`
   — **não-oficial**, pode quebrar se o Google mudar; degrada para vazio). Sem `sourceUrl`, usa
-  fotos enviadas no site (`galleryPhotos`). Sem nada → tiles de placeholder.
-- **ADM** (`/admin/galeria`): **criar/renomear/excluir seções**, colar o link do Google Fotos e
-  **testar** (mostra quantas fotos foram encontradas). A rota `/api/gphotos` só aceita hosts do
-  Google Fotos (evita virar proxy aberto).
+  fotos enviadas no site (`galleryPhotos`). Seção sem fotos → tiles de placeholder (com o nome da
+  aba); enquanto busca → "Carregando fotos…"; se a busca falhar → aviso amigável.
+- **Botão "comprar fotos" POR SEÇÃO**: cada `Album` tem o **seu próprio** botão
+  (`album.buyEnabled/buyLabel/buyUrl`) — o CTA ao lado do título "Galeria" reflete a **aba ativa**
+  e abre o site de venda em nova aba. Não há mais um botão único p/ todos. **Migração suave**: o
+  botão global legado `content.gallery { buyEnabled, buyLabel, buyUrl }` (marcado `@deprecated`) é
+  usado só como **fallback** quando a seção não define o seu (`albumBuy()` resolve
+  `album.* ?? gallery.*`), preservando o link antigo até o ADM configurar por seção.
+- **ADM** (editor da aba `galeria`, `GalleryEditor`): **criar/renomear/excluir/reordenar** seções
+  (↑/↓; a 1ª ganha o selo **"Abre primeiro"**), colar o link do Google Fotos e **testar** (mostra
+  quantas fotos foram encontradas), e um card **"Botão comprar fotos desta seção"** (Mostrar? /
+  Texto / Link) por seção. "+ Nova seção" fica **abaixo** da lista. A rota `/api/gphotos` só aceita
+  hosts do Google Fotos (evita virar proxy aberto).
 - **Lightbox** (`Lightbox`, client): clicar numa foto abre o visualizador em tela cheia com a
   **mesma proteção** (`ProtectedImage`/marca d'água, sem arraste/menu, escondido na
   impressão), com fechar, ←/→ e navegação por teclado sobre **todas** as fotos.
-- **Botão "comprar fotos"**: `content.gallery { buyEnabled, buyLabel, buyUrl }` — quando
-  ligado, um CTA ao lado do título "Galeria" abre o site de venda em nova aba.
 - **Cloudinary (opcional)**: `content.cloudinary { cloudName, uploadPreset }` (Configurações).
   Quando preenchido, `ImageUpload` envia **direto do navegador** (unsigned) e guarda a
   `secure_url`; senão usa `/api/media`.
-- **ADM** (`/admin/galeria`): seções (álbuns) + upload por seção + bloco do botão de compra.
 
 ## Proteção de imagens
 
