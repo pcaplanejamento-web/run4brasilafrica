@@ -33,6 +33,7 @@ import Faq from "./Faq";
 import KitAtleta from "./KitAtleta";
 import Premiacao from "./Premiacao";
 import ShareEvent from "./ShareEvent";
+import Classificacao from "./Classificacao";
 
 const MEDIA_MAX_VH = 70;
 
@@ -127,6 +128,10 @@ function renderSection(
           photos={ctx.galleryPhotos}
           gallery={block.gallery ?? ctx.gallery}
         />
+      );
+    case "classificacao":
+      return (
+        <Classificacao classificacao={block.classificacao} title={title} event={ctx.event} />
       );
     default:
       return null;

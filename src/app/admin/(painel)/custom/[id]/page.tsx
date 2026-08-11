@@ -36,6 +36,7 @@ import { ParceirosEditor } from "@/components/admin/sections/ParceirosEditor";
 import { KitEditor } from "@/components/admin/sections/KitEditor";
 import { GalleryEditor } from "@/components/admin/sections/GalleryEditor";
 import { InscricaoLotesEditor } from "@/components/admin/sections/InscricaoLotesEditor";
+import { ClassificacaoEditor } from "@/components/admin/sections/ClassificacaoEditor";
 import HeroEditor from "@/components/admin/sections/HeroEditor";
 import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
 import {
@@ -154,6 +155,12 @@ function SectionEditor({
           value={{ inscricao: block.inscricao, lotes: block.lotes }}
           onChange={(v) => set(v)}
           raceDate={raceDate}
+        />
+      )}
+      {block.type === "classificacao" && (
+        <ClassificacaoEditor
+          value={block.classificacao ?? sectionDefaults("classificacao").classificacao!}
+          onChange={(classificacao) => set({ classificacao })}
         />
       )}
       {block.type === "raceday" && (

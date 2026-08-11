@@ -451,7 +451,8 @@ export type SectionKind =
   | "depoimentos"
   | "faq"
   | "kit"
-  | "compartilhar";
+  | "compartilhar"
+  | "classificacao";
 
 /**
  * Tipo de um bloco de aba. Tudo é componente: blocos de conteúdo livre
@@ -549,6 +550,60 @@ export interface CustomBlock {
   raceDate?: string;
   /** type "hero" (Banner / Hero — carrosséis agendados). */
   heroCarousels?: HeroCarousel[];
+  /** type "classificacao" (resultados pós-prova; as linhas ficam no KV, fora do
+   *  conteúdo — aqui só a config + a lista de categorias). */
+  classificacao?: ClassificacaoSection;
+}
+
+/** Seção "Classificação" — resultados por categoria (5KM M/F, 10KM M/F…). As
+ *  LINHAS de cada categoria NÃO ficam no conteúdo (são pesadas): vivem como blob
+ *  JSON no KV (`results/<id>.json`), buscadas em runtime. Aqui guardamos só a
+ *  configuração leve + a lista de categorias. */
+export interface ClassificacaoSection {
+  eyebrow?: string;
+  title?: string;
+  note?: string;
+  /** Quantos colocados aparecem na tabela inicial (antes de "ver geral"). Default 10. */
+  initialCount?: number;
+  /** Quais informações aparecem no pódio/tabela compacta (Posição e Nome sempre). */
+  display?: ClassificacaoDisplay;
+  categories: ResultCategory[];
+}
+
+/** Toggles de exibição — Posição e Nome são sempre mostrados. */
+export interface ClassificacaoDisplay {
+  team?: boolean; // Equipe
+  netTime?: boolean; // Tempo Líquido (oficial)
+  grossTime?: boolean; // Tempo Bruto
+  age?: boolean; // Idade
+  ageGroup?: boolean; // Código Faixa Etária
+  ageGroupPos?: boolean; // Colocação Faixa Etária
+  bib?: boolean; // Número
+}
+
+/** Uma categoria de resultados (uma planilha CSV enviada). O `id` é a chave no KV. */
+export interface ResultCategory {
+  id: string;
+  label: string;
+  /** Nº de linhas (preenchido no upload, para exibição no ADM). */
+  count?: number;
+  updatedAt?: string;
+}
+
+/** Uma linha de resultado (colocado). Espelha as colunas do CSV oficial. */
+export interface RaceResultRow {
+  pos: number; // Colocação Geral
+  bib: string; // Número
+  name: string; // Nome
+  sex?: string; // Sexo
+  age?: number; // Idade
+  ageGroup?: string; // Código Faixa Etária (ex.: M2529)
+  ageGroupPos?: string; // Colocação Faixa Etária ("-" ou número)
+  team?: string; // Equipe
+  modality?: string; // Descrição Modalidade (ex.: 5KM)
+  category?: string; // Descrição Categoria
+  timeGross?: string; // Tempo Bruto (HH:MM:SS)
+  timeNet?: string; // Tempo Líquido (HH:MM:SS)
 }
 
 export interface CustomSection {

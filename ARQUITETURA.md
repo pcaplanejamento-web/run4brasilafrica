@@ -487,6 +487,40 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   Quando preenchido, `ImageUpload` envia **direto do navegador** (unsigned) e guarda a
   `secure_url`; senão usa `/api/media`.
 
+## Classificação (resultados pós-prova)
+
+Seção `classificacao` (section kind auto-contida, como `faq`/`premiacao`): publica os resultados
+da corrida por categoria. **Onde ficam os dados**: as LINHAS (centenas por categoria) **não** vão
+para o JSON de conteúdo (que é hidratado a cada render) — cada categoria é um **blob JSON no KV**
+(`MEDIA_KV`, chave `results/<catId>.json`, sem novo binding). O bloco no conteúdo guarda só a
+config leve: `ClassificacaoSection { eyebrow, title, note, initialCount, display, categories[] }`
+onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV).
+
+- **Rota `/api/results`** (`src/app/api/results/route.ts`, molde de `partners`): `GET ?cat=<id>`
+  público (lê o blob); `POST { cat, rows }` e `DELETE ?cat=<id>` protegidos por `requireAdmin()`
+  (`authConfigured() && getSessionUser()`). O id é **sanitizado** (`[a-z0-9-]`) → chave
+  `results/<id>.json` (sem path traversal). Limite defensivo de 20k linhas.
+- **Parser** (`src/lib/results/parse.ts`, PURO/testável): `parseResultsCsv(text)` — detecta o
+  separador (`;`/`,`), casa colunas pelo **cabeçalho** (sem acento/caixa) com fallback à ordem
+  canônica, trata vazios/`-`, descarta linhas inválidas e ordena por colocação. Teste em
+  `tests/results-parse.test.ts` (com o CSV oficial como base). Leitura do arquivo com **fallback
+  de encoding** UTF-8→Windows-1252 fica em `src/lib/results/client.ts` (`readResultsFile`), junto
+  de `fetchResults`/`saveResults`/`deleteResults`. `RaceResultRow` = colunas do CSV oficial.
+- **ADM** (`ClassificacaoEditor`): título/nota, **quantos aparecem no início** (`initialCount`),
+  **toggles de "Informações exibidas"** (equipe, tempo líquido/bruto, nº peito, idade, faixa
+  etária, colocação na faixa — Posição e Nome sempre), e **categorias** (rótulo = aba; reorder
+  ↑/↓; "+ Nova categoria" abaixo). Cada categoria envia o **CSV** (parse no navegador →
+  `saveResults` → KV) e mostra "N corredores · atualizado em…".
+- **Público** (`Classificacao` + `ClassificacaoModal` + `RunnerModal`): abas por categoria
+  (`SegmentedTabs`), **pódio animado** dos 3 primeiros (padrão de `Premiacao`, medalhas
+  ouro/prata/bronze, respeita reduced-motion), **tabela** dos colocados até `initialCount`, e
+  **"Ver classificação geral"** → modal (casca dos modais do site) com **busca por nome (sem
+  acento) ou número**. Clicar num corredor abre o **detalhe** (todos os campos) + o **gerador de
+  imagem**: o usuário escolhe uma foto e os dados são "colados" nela num `<canvas>` (1080×1350,
+  foto cover + gradiente + faixa/tempo/colocação + marca) — **100% no navegador**, com **Baixar**
+  (`toBlob`+download) e **Compartilhar** (`navigator.share` com o arquivo, senão WhatsApp). Nada é
+  enviado ao servidor. Some sozinho quando não há categorias.
+
 ## Proteção de imagens
 
 - `ImageProtection` (global) bloqueia menu de contexto e arraste em imagens;

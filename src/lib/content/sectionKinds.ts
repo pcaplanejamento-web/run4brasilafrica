@@ -17,6 +17,7 @@ export const SECTION_KIND_LABEL: Record<SectionKind, string> = {
   faq: "Perguntas frequentes",
   kit: "Kit do atleta",
   compartilhar: "Compartilhar",
+  classificacao: "Classificação (resultados)",
 };
 
 /**
@@ -40,6 +41,7 @@ export const SECTION_ANCHOR: Record<SectionKind, string> = {
   faq: "faq",
   kit: "kit",
   compartilhar: "compartilhar",
+  classificacao: "classificacao",
 };
 
 /** Every section kind, as a Set for O(1) `isSectionKind` checks. */
@@ -108,5 +110,16 @@ export function sectionDefaults(kind: SectionKind): Partial<CustomBlock> {
       return { raceDate: "" };
     case "hero":
       return { heroCarousels: [] };
+    case "classificacao":
+      return {
+        classificacao: {
+          eyebrow: "CLASSIFICAÇÃO",
+          title: "Resultados",
+          note: "",
+          initialCount: 10,
+          display: { netTime: true, team: true },
+          categories: [],
+        },
+      };
   }
 }

@@ -48,6 +48,7 @@ export const SECTION_KIND_ORDER: SectionKind[] = [
   "parceiros",
   "kit",
   "galeria",
+  "classificacao",
   "raceday",
   "inscricao",
 ];
