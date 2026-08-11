@@ -6,6 +6,7 @@ import { garminView, hasStrava } from "@/lib/content/percurso";
 import StravaRoute from "./StravaRoute";
 import GarminRoute from "./GarminRoute";
 import GarminEvent from "./GarminEvent";
+import SegmentedTabs from "./SegmentedTabs";
 
 type View = "strava" | "garmin" | "fallback";
 
@@ -47,36 +48,26 @@ export default function RouteViewer({ route }: { route: PercursoRoute }) {
   return (
     <div className="flex w-full flex-col">
       {/* Toolbar — ALWAYS present (fixed height) so switching between routes with
-          or without Garmin never moves the map/facts. Toggle when >1 view, else
-          a static label of the single provider. */}
-      <div
-        className="flex min-h-11 items-stretch overflow-hidden border-b border-line-soft"
-        role={views.length > 1 ? "tablist" : undefined}
-        aria-label="Visualização do percurso"
-      >
-        {views.length > 1 ? (
-          views.map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              aria-current={active === v ? "true" : undefined}
-              onClick={() => setView(v)}
-              className={`min-h-11 flex-1 px-4 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors sm:flex-none ${
-                active === v
-                  ? "bg-gold text-gold-ink"
-                  : "bg-ink-panel text-muted-strong hover:text-cream"
-              }`}
-            >
-              {LABEL[v]}
-            </button>
-          ))
-        ) : (
+          or without Garmin never moves the map/facts. Com >1 visão é o
+          `SegmentedTabs` (mesmo seletor da Galeria); com 1 visão, um rótulo
+          estático do único provedor (mesma barra/altura). */}
+      {views.length > 1 ? (
+        <SegmentedTabs
+          items={views.map((v) => LABEL[v])}
+          active={views.indexOf(active)}
+          onSelect={(i) => setView(views[i])}
+          ariaLabel="Visualização do percurso"
+        />
+      ) : (
+        <div
+          className="flex min-h-11 items-stretch overflow-hidden border-b border-line-soft"
+          aria-label="Visualização do percurso"
+        >
           <span className="flex min-h-11 items-center px-4 text-[13px] font-bold uppercase tracking-[0.06em] text-muted-strong">
             {LABEL[views[0]]}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Map area — auto height. The Strava embed sizes itself to its width
           (responsive), so it fits at every proportion (no cut, no empty space).

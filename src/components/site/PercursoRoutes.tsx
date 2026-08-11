@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { PercursoRoute } from "@/lib/content/types";
 import Reveal from "./Reveal";
 import RouteViewer from "./RouteViewer";
-import SegmentedTabs from "./SegmentedTabs";
 
 /**
  * Course routes with a selector. When there's more than one route the visitor
@@ -26,12 +25,30 @@ export default function PercursoRoutes({ routes }: { routes: PercursoRoute[] }) 
 
   return (
     <>
-      <SegmentedTabs
-        items={routes.map((r, i) => r.title || `Percurso ${i + 1}`)}
-        active={active}
-        onSelect={setIdx}
-        ariaLabel="Escolha o percurso"
-      />
+      {multi && (
+        <div
+          className="mb-6 flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Escolha o percurso"
+        >
+          {routes.map((r, i) => (
+            <button
+              key={r.id}
+              type="button"
+              role="tab"
+              aria-current={i === active ? "true" : undefined}
+              onClick={() => setIdx(i)}
+              className={`min-h-11 rounded-full px-5 text-[13px] font-bold uppercase tracking-[0.04em] transition-colors ${
+                i === active
+                  ? "bg-gold text-gold-ink"
+                  : "bg-ink-panel text-muted-strong hover:text-cream"
+              }`}
+            >
+              {r.title || `Percurso ${i + 1}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr] md:gap-12">
         {/* The bordered box stays mounted (no reveal replay on switch); only the

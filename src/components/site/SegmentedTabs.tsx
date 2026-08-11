@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Abas segmentadas (pílulas) reutilizáveis — o **mesmo** seletor usado em "O
- * Percurso" e na "Galeria": o visitante troca entre opções (percursos, seções de
- * fotos…) e o conteúdo abaixo acompanha a escolha. Pílulas `rounded-full` com
- * `min-h-11` (alvo de toque ≥44px), ativa em `bg-gold`, `role="tablist"` +
- * `aria-current`, quebra em várias linhas no mobile (`flex-wrap`). Some sozinho
- * quando há **uma só** opção (nada a escolher).
+ * Barra de abas **segmentada** reutilizável — o **mesmo** seletor da barra
+ * "STRAVA / GARMIN" do `RouteViewer` ("O Percurso"), agora usado também na
+ * "Galeria". Segmentos **conectados** (sem espaço), largura cheia no mobile
+ * (`flex-1`, alvo de toque ≥44px) e largura natural no desktop (`sm:flex-none`),
+ * borda inferior (`border-b`), ativa em `bg-gold`. `role="tablist"` +
+ * `aria-current`. Some sozinho quando há **uma só** opção (nada a escolher).
  */
 export default function SegmentedTabs({
   items,
@@ -22,12 +22,16 @@ export default function SegmentedTabs({
   /** Chamado ao escolher uma aba. */
   onSelect: (index: number) => void;
   ariaLabel: string;
-  /** Estilo extra do contêiner (a margem padrão é `mb-6`). */
+  /** Estilo extra do contêiner (ex.: `mb-*` para espaçar do conteúdo abaixo). */
   className?: string;
 }) {
   if (items.length <= 1) return null;
   return (
-    <div className={`mb-6 flex flex-wrap gap-2 ${className}`} role="tablist" aria-label={ariaLabel}>
+    <div
+      className={`flex min-h-11 items-stretch overflow-hidden border-b border-line-soft ${className}`}
+      role="tablist"
+      aria-label={ariaLabel}
+    >
       {items.map((label, i) => (
         <button
           key={i}
@@ -35,7 +39,7 @@ export default function SegmentedTabs({
           role="tab"
           aria-current={i === active ? "true" : undefined}
           onClick={() => onSelect(i)}
-          className={`min-h-11 rounded-full px-5 text-[13px] font-bold uppercase tracking-[0.04em] transition-colors ${
+          className={`min-h-11 flex-1 px-4 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors sm:flex-none ${
             i === active
               ? "bg-gold text-gold-ink"
               : "bg-ink-panel text-muted-strong hover:text-cream"

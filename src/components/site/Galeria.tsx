@@ -197,6 +197,7 @@ export default function Galeria({
         active={activeIdx}
         onSelect={selectAlbum}
         ariaLabel="Seções de fotos"
+        className="mb-7 rounded-lg border border-line-soft"
       />
 
       {hasPhotos ? (
