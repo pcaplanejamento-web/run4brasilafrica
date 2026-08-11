@@ -61,7 +61,7 @@ export function DepoimentosEditor({
               <ImageUpload
                 value={t.photo}
                 onChange={(url) => set(i, { photo: url })}
-                className="h-32"
+                aspect="square"
                 label="foto"
                 cloudinary={cloudinary}
               />

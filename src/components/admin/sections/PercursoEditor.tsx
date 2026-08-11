@@ -63,12 +63,7 @@ export function PercursoEditor({
         />
       </Card>
 
-      <div className="flex items-center justify-between">
-        <SectionLabel>Percursos</SectionLabel>
-        <PrimaryButton onClick={addRoute} className="px-4 py-2 text-[13px]">
-          + Novo percurso
-        </PrimaryButton>
-      </div>
+      <SectionLabel>Percursos</SectionLabel>
       <p className="-mt-2 text-[12px] text-adm-muted">
         Um ou mais percursos. Com mais de um, o visitante troca entre eles na tela inicial.
       </p>
@@ -124,7 +119,7 @@ export function PercursoEditor({
               value={r.fallbackImage}
               onChange={(url) => setRoute(i, { fallbackImage: url })}
               label="imagem do mapa"
-              className="h-44"
+              aspect="video"
               cloudinary={cloudinary}
             />
           </div>
@@ -155,6 +150,13 @@ export function PercursoEditor({
           </div>
         </Card>
       ))}
+
+      {/* Adicionar ABAIXO do último percurso. */}
+      <div>
+        <PrimaryButton onClick={addRoute} className="px-4 py-2 text-[13px]">
+          + Novo percurso
+        </PrimaryButton>
+      </div>
     </div>
   );
 }

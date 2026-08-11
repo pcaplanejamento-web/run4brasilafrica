@@ -230,7 +230,9 @@ function ConfiguracoesForm({
               <ImageUpload
                 value={branding.logo}
                 onChange={(url) => setBranding({ ...branding, logo: url })}
-                className="h-20 bg-[#2b2118]"
+                aspect="wide"
+                fit="contain"
+                className="bg-[#2b2118]"
                 label="logo"
               />
               <p className="mt-1.5 text-[12px] text-adm-muted">
@@ -243,7 +245,9 @@ function ConfiguracoesForm({
               <ImageUpload
                 value={branding.favicon}
                 onChange={(url) => setBranding({ ...branding, favicon: url })}
-                className="h-20 w-20 bg-[#2b2118]"
+                aspect="square"
+                fit="contain"
+                className="max-w-[200px] bg-[#2b2118]"
                 label="favicon"
               />
               <p className="mt-1.5 text-[12px] text-adm-muted">
@@ -255,7 +259,8 @@ function ConfiguracoesForm({
               <ImageUpload
                 value={branding.ogImage}
                 onChange={(url) => setBranding({ ...branding, ogImage: url })}
-                className="h-40 bg-[#2b2118]"
+                aspect="og"
+                className="max-w-[520px] bg-[#2b2118]"
                 label="imagem de compartilhamento"
               />
               <p className="mt-1.5 text-[12px] text-adm-muted">
@@ -396,13 +401,14 @@ function ConfiguracoesForm({
               {orgPeople.map((p, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-1 gap-3 rounded-lg border border-adm-border bg-[#fbfbfa] p-4 sm:grid-cols-[110px_1fr]"
+                  className="grid grid-cols-1 gap-3 rounded-lg border border-adm-border bg-[#fbfbfa] p-4 sm:grid-cols-[140px_1fr]"
                 >
                   <ImageUpload
                     value={p.photo}
                     onChange={(url) => setOrg(i, { photo: url })}
-                    className="aspect-square w-full bg-white"
+                    aspect="square"
                     fit="cover"
+                    className="bg-white"
                     label="foto"
                     cloudinary={cloudinaryUpload}
                   />

@@ -86,11 +86,12 @@ function ItemsEditor({
             <summary className="cursor-pointer text-[12px] text-adm-muted">
               Ou enviar uma imagem própria
             </summary>
-            <div className="mt-2 w-[120px]">
+            <div className="mt-2 w-[140px]">
               <ImageUpload
                 value={it.image}
                 onChange={(url) => set(i, { image: url, icon: undefined })}
-                className="h-16"
+                aspect="square"
+                fit="contain"
                 label="imagem"
                 cloudinary={cloudinary}
               />

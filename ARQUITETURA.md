@@ -152,9 +152,14 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     órfãos; cada delete é best-effort — cota de KV não derruba a operação).
   - **`MediaPicker`** (`components/admin/MediaPicker.tsx`) — modal reutilizável: escolher uma
     imagem já enviada **ou** enviar do computador. Ligado a **todos** os campos de imagem
-    (`ImageUpload` e `HeroImageField`). O botão **"Escolher do armazenamento"** fica **abaixo da
-    caixa** (cheia ou vazia), nunca sobreposto — assim aparece e é tocável em **qualquer proporção**
-    (logo pequeno de parceiro, banner grande) sem ser cortado pelo `overflow` da caixa.
+    (`ImageUpload` e `HeroImageField`). Os controles (**escolher do armazenamento + trocar +
+    remover**) ficam **SOBRE a imagem** (overlay) por padrão em todo lugar — `pickerOverlay=true` é o
+    default do `ImageUpload`; só se desliga em caixas minúsculas (aí o link cai abaixo).
+  - **Proporção configurável** (`ImageUpload` prop `aspect`): a caixa reflete o **local real** —
+    `wide` (logo do cabeçalho), `square` (favicon, logo de parceiro, foto de pessoa, item do kit),
+    `og` (capa de compartilhamento 1200×630), `video` (16:9 — imagem genérica, mapa do percurso,
+    A Causa), `portrait` (3:4). A imagem preenche a caixa (`h-full w-full` + `object-cover/contain`)
+    e é grande o bastante para caber os 3 controles do overlay. Responsivo/touch em todas.
   - **Espaço/tipos/exclusão**: o resumo mostra **espaço total** (o GET lê o `byteLength` real dos
     arquivos antigos sem `size` na metadata — só leitura) e a **divisão por tipo** (extensão · qtd ·
     tamanho). Cada arquivo tem **excluir individual sempre visível** (touch, não depende de hover) e
@@ -645,6 +650,9 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   o wrapper `<section id="aba-…">`) — markup, padding e **anchor** (`#faq`, `#parceiros`, …)
   idênticos aos de hoje. Editor: cada seção é uma escolha direta do picker (`blockChoices.ts`) e usa
   seu editor controlado (`src/components/admin/sections/*Editor.tsx`) ligado aos campos do bloco.
+  **Convenção de usabilidade:** o botão **"+ Novo/Adicionar"** de listas fica **ABAIXO do último
+  item** (o item novo entra no fim, então já aparece ali) — vale em lotes, parceiros, percursos,
+  números, depoimentos, kit, organizadores, imagens de carrossel.
 - **Migração idempotente** (`migrate.ts`): `SECTION_MIGRATIONS` troca cada chave built-in por
   `custom:sec-<key>` **na posição** (preserva `enabled`), criando um bloco flat `{type: kind,
   ...dados}`; campos top-level ficam intactos (nada se perde). `flattenLegacySecao` converte os

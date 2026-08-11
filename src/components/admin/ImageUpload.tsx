@@ -12,10 +12,23 @@ import {
   iconSm as svg,
 } from "./mediaIcons";
 
+/** Proporção da caixa — reflete o lugar real onde a imagem aparece. */
+export type ImageAspect = "square" | "video" | "wide" | "portrait" | "og";
+
+const ASPECT_CLASS: Record<ImageAspect, string> = {
+  square: "aspect-square", // logo de parceiro, favicon, foto de pessoa, item do kit
+  video: "aspect-video", // 16:9 — imagem genérica, mapa do percurso, A Causa
+  wide: "aspect-[16/6]", // logo horizontal do cabeçalho
+  portrait: "aspect-[3/4]", // retrato vertical
+  og: "aspect-[1200/630]", // capa de compartilhamento (Open Graph)
+};
+
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
-  /** Tailwind height/aspect classes for the preview box. */
+  /** Proporção da caixa (reflete o local real). Default: "video" (16:9). */
+  aspect?: ImageAspect;
+  /** Estilo extra da caixa (ex.: `bg-...`, `max-w-...`). A proporção vem de `aspect`. */
   className?: string;
   label?: string;
   /** When true, accepts a video (mp4/webm/mov) and previews it. */
@@ -24,28 +37,31 @@ interface ImageUploadProps {
   fit?: "cover" | "contain";
   /** When set, uploads go to Cloudinary (unsigned) instead of /api/media. */
   cloudinary?: { cloudName?: string; uploadPreset?: string };
-  /** "Escolher do armazenamento" como botão SOBRE a imagem (overlay) em vez de
-   *  link abaixo. Use em caixas grandes o bastante p/ os 3 ícones (ex.: logo de
-   *  parceiro ampliado). Default: link abaixo (funciona em qualquer proporção). */
+  /** "Escolher do armazenamento" como botão SOBRE a imagem (padrão). Desligue
+   *  (`false`) só em caixas minúsculas onde os 3 ícones não caibam — aí o link
+   *  aparece abaixo. */
   pickerOverlay?: boolean;
 }
 
 /**
- * Uploads an image to /api/media (Cloudflare KV) and reports the served URL.
- * Shows a preview + replace/remove controls. In local dev (no media binding)
- * the API returns not_configured and we surface a friendly note.
+ * Campo de imagem do ADM: envia para /api/media (KV) e devolve a URL. A caixa tem
+ * **proporção configurável** (`aspect`) refletindo o local real, e os controles
+ * ficam **sobre a imagem** (escolher do armazenamento + trocar + remover). Em dev
+ * sem binding, a API responde not_configured e mostramos um aviso amigável.
  */
 export default function ImageUpload({
   value,
   onChange,
-  className = "h-40",
+  aspect = "video",
+  className = "",
   label = "Imagem",
   video = false,
   fit = "cover",
   cloudinary,
-  pickerOverlay = false,
+  pickerOverlay = true,
 }: ImageUploadProps) {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
+  const boxClass = `w-full ${ASPECT_CLASS[aspect]} ${className}`;
   const overlayBtn =
     "grid h-8 w-8 place-items-center rounded-md bg-black/60 text-white hover:bg-black/80 disabled:opacity-60";
   const inputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +83,22 @@ export default function ImageUpload({
     setBusy(false);
   }
 
+  const pickerBtn = (stop = false) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        if (stop) e.stopPropagation();
+        setPickerOpen(true);
+      }}
+      disabled={busy}
+      aria-label="Escolher do armazenamento"
+      title="Escolher do armazenamento"
+      className={overlayBtn}
+    >
+      <ImagesIcon />
+    </button>
+  );
+
   return (
     <div>
       <input
@@ -82,35 +114,22 @@ export default function ImageUpload({
       />
 
       {value ? (
-        <div className="relative overflow-hidden rounded-lg border border-adm-border">
+        <div className={`relative overflow-hidden rounded-lg border border-adm-border ${boxClass}`}>
           {video ? (
             <video
               src={value}
-              className={`w-full bg-black ${fitClass} ${className}`}
+              className={`h-full w-full bg-black ${fitClass}`}
               muted
               playsInline
               controls
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt={label} className={`w-full ${fitClass} ${className}`} />
+            <img src={value} alt={label} className={`h-full w-full ${fitClass}`} />
           )}
-          {/* Controles sobre a imagem: (armazenamento) + trocar + remover. O
-              picker só entra no overlay em `pickerOverlay` (caixa grande); senão
-              fica no link abaixo, para não cortar em caixas pequenas. */}
+          {/* Controles SOBRE a imagem: escolher do armazenamento + trocar + remover. */}
           <div className="absolute right-1.5 top-1.5 flex gap-1.5">
-            {pickerOverlay && (
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                disabled={busy}
-                aria-label="Escolher do armazenamento"
-                title="Escolher do armazenamento"
-                className={overlayBtn}
-              >
-                <ImagesIcon />
-              </button>
-            )}
+            {pickerOverlay && pickerBtn()}
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
@@ -133,37 +152,24 @@ export default function ImageUpload({
           </div>
         </div>
       ) : (
-        <div className="relative">
+        <div className={`relative ${boxClass}`}>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
             aria-label={busy ? "Enviando" : `Enviar ${label.toLowerCase()}`}
             title={busy ? "Enviando…" : `Enviar ${label.toLowerCase()}`}
-            className={`flex w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta ${className}`}
+            className="flex h-full w-full items-center justify-center rounded-lg border-2 border-dashed border-[#ccc] bg-[#fbfbfa] text-[#999] transition-colors hover:border-terracotta hover:text-terracotta"
           >
             {busy ? <SpinnerIcon /> : <UploadIcon />}
           </button>
           {pickerOverlay && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPickerOpen(true);
-              }}
-              disabled={busy}
-              aria-label="Escolher do armazenamento"
-              title="Escolher do armazenamento"
-              className={`absolute right-1.5 top-1.5 ${overlayBtn}`}
-            >
-              <ImagesIcon />
-            </button>
+            <div className="absolute right-1.5 top-1.5">{pickerBtn(true)}</div>
           )}
         </div>
       )}
 
-      {/* "Escolher do armazenamento" abaixo da caixa (padrão): funciona em qualquer
-          proporção e no toque; em `pickerOverlay` o botão já está sobre a imagem. */}
+      {/* Fallback: só quando o overlay está desligado (caixas minúsculas). */}
       {!pickerOverlay && (
         <button
           type="button"

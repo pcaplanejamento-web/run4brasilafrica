@@ -107,10 +107,7 @@ export function ParceirosEditor({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-bold text-adm-ink">Parceiros</span>
-        <PrimaryButton onClick={add}>+ Novo parceiro</PrimaryButton>
-      </div>
+      <span className="text-[13px] font-bold text-adm-ink">Parceiros</span>
 
       <div className="overflow-hidden rounded-lg border border-adm-border bg-adm-card">
         {rows.map((sp, i) => {
@@ -126,11 +123,11 @@ export function ParceirosEditor({
                 <ImageUpload
                   value={sp.logo}
                   onChange={(url) => set(i, { logo: url })}
-                  className="aspect-square w-full bg-white"
+                  aspect="square"
                   fit="contain"
+                  className="bg-white"
                   label="logo"
                   cloudinary={cloudinary}
-                  pickerOverlay
                 />
               </div>
 
@@ -190,6 +187,11 @@ export function ParceirosEditor({
         {rows.length === 0 && (
           <div className="px-5 py-4 text-[13px] text-adm-muted">Nenhum parceiro ainda.</div>
         )}
+      </div>
+
+      {/* Adicionar ABAIXO do último (novo parceiro entra no fim da lista). */}
+      <div>
+        <PrimaryButton onClick={add}>+ Novo parceiro</PrimaryButton>
       </div>
     </div>
   );

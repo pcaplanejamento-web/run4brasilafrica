@@ -98,11 +98,8 @@ export function InscricaoLotesEditor({
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3">
           <SectionLabel>Lotes de inscrição</SectionLabel>
-          <PrimaryButton onClick={add} className="px-4 py-2 text-[13px]">
-            + Novo lote
-          </PrimaryButton>
         </div>
         <p className="mb-4 text-[12px] text-adm-muted">
           Cada lote <strong>abre e fecha sozinho</strong> pelas datas de{" "}
@@ -199,6 +196,11 @@ export function InscricaoLotesEditor({
             <div className="text-[13px] text-adm-muted">Nenhum lote. Clique em &ldquo;+ Novo lote&rdquo;.</div>
           )}
         </div>
+
+        {/* Adicionar ABAIXO do último lote (novo lote entra no fim da lista). */}
+        <PrimaryButton onClick={add} className="mt-4 px-4 py-2 text-[13px]">
+          + Novo lote
+        </PrimaryButton>
       </Card>
     </div>
   );

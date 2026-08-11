@@ -319,7 +319,7 @@ function BlockFields({
     case "imagem":
       return (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px_140px]">
-          <ImageUpload value={block.imageUrl} onChange={(url) => set({ imageUrl: url })} className="h-40" label="imagem" cloudinary={cloudinary} />
+          <ImageUpload value={block.imageUrl} onChange={(url) => set({ imageUrl: url })} aspect="video" label="imagem" cloudinary={cloudinary} />
           <div>
             <FieldLabel>Proporção</FieldLabel>
             <Select value={block.aspectRatio ?? ""} onChange={(e) => set({ aspectRatio: e.target.value })}>
@@ -468,7 +468,7 @@ function BlockFields({
         <div className="flex flex-col gap-3">
           {images.map((im, i) => (
             <div key={i} className="grid grid-cols-[1fr_96px] items-center gap-3">
-              <ImageUpload value={im} onChange={(url) => setImg(i, url)} className="h-28" label="imagem" cloudinary={cloudinary} />
+              <ImageUpload value={im} onChange={(url) => setImg(i, url)} aspect="video" label="imagem" cloudinary={cloudinary} />
               <GhostButton onClick={() => set({ images: images.filter((_, idx) => idx !== i) })}>Remover</GhostButton>
             </div>
           ))}
