@@ -529,16 +529,23 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
 - **Plumbing**: `SectionRenderCtx` ganhou `brandLogo` (`branding.logo`) e `percursoRoutes`
   (`percurso.routes`), populados em `SiteContent.tsx` e repassados por `Classificacao` →
   `RunnerModal` → `ShareCardStudio` (que também recebe `display` do ADM).
-- **Duas abas** (`SegmentedTabs`): **Fotos** (inicial) — componente de imagem **clicável**
-  (escolher uma foto) + **enquadramento** (pan/zoom); **Cards** — todos os **modelos prontos** para
-  baixar (`CardPreview` por template, cada um com Baixar/Compartilhar). **Formatos**: Feed 4:5
-  (1080×1350) e Stories 9:16 (1080×1920). **Templates**: Foto (foto full-bleed + scrim), Resultado
-  (fundo do tema + nº gigante), Trajeto (imagem do mapa do Percurso — `PercursoRoute.fallbackImage`,
-  só quando existe). **Temas**: dourado/escuro/terracota.
+- **Duas abas** (`SegmentedTabs`): **Fotos** (inicial) — o card já traz as **informações** e o
+  usuário **sobe a foto que fica ao FUNDO** (componente **clicável** p/ escolher; enquadramento
+  pan/zoom). Pode **baixar sem foto** → `Baixar sem foto (transparente)` (PNG com alpha, off-screen)
+  para usar depois. **Cards** — **banners prontos** estilo Strava (`drawBanner`): **título grande +
+  grade rótulo/valor**, um por **tema** (`BANNER_THEMES` = escuro, **claro** e dourado — claro =
+  fundo branco/texto escuro, como os prints), cada um Baixar/Compartilhar; + card **Trajeto** (mapa
+  enquadrável) quando há `PercursoRoute.fallbackImage`. **Formatos** compartilhados: Feed 4:5
+  (1080×1350) e Stories 9:16 (1080×1920).
+- **Templates** (`drawCard` despacha): `foto` (foto/gradiente + scrim + sobreposição), `banner`
+  (card de estatísticas sem foto — no claro a logo ganha uma **pílula escura** p/ contraste),
+  `trajeto` (mapa de fundo + sobreposição). O **download** é off-screen (`renderBlob`), permitindo a
+  variante transparente sem sujar o preview.
 - **Configurações por chaves**: ícone de engrenagem abre um painel com **switches** (`Switch`,
-  `role="switch"`) para ligar/desligar cada informação e extras (selo, QR, fundo transparente) +
-  tema. O **padrão vem do ADM** (`display`) — `defaultFields` mapeia netTime/team/bib/ageGroup/etc.
-  (pace ligado). O usuário sobrepõe ao vivo (todos os cards redesenham).
+  `role="switch"`) para ligar/desligar cada informação + extras (selo, QR). O **padrão vem do ADM**
+  (`display`) — `defaultFields` mapeia netTime/team/bib/ageGroup/etc. (pace ligado). O usuário
+  sobrepõe ao vivo (todos os cards redesenham). O **fundo transparente** virou um **botão de
+  download** na aba Fotos (não é mais chave global).
 - **Logo fixa** (não removível): desenhada de `brandLogo` via `loadImageTaintSafe`
   (`crossOrigin="anonymous"` — Cloudinary manda ACAO:*, /api/media é same-origin; falha → **fallback
   ao nome do evento em texto**, nunca quebra o `toBlob`).

@@ -8,8 +8,8 @@ import type { EventInfo, PercursoRoute, RaceResultRow } from "@/lib/content/type
  */
 
 export type CardFormat = "feed" | "stories";
-export type CardTemplate = "foto" | "resultado" | "trajeto";
-export type CardTheme = "dourado" | "escuro" | "terracota";
+export type CardTemplate = "foto" | "banner" | "trajeto";
+export type CardTheme = "dourado" | "escuro" | "claro" | "terracota";
 
 /** Dimensões por formato (px). Feed 4:5 e Stories 9:16 (padrões do Instagram). */
 export const FORMATS: Record<CardFormat, { w: number; h: number; label: string }> = {
@@ -39,10 +39,18 @@ export const THEMES: Record<CardTheme, ThemeSpec> = {
   escuro: {
     bgTop: "#1d1310",
     bgBottom: "#050403",
-    accent: "#f4ede6",
+    accent: "#c8ce2e",
     accentInk: "#120805",
     text: "#f4ede6",
     sub: "#b2ada7",
+  },
+  claro: {
+    bgTop: "#ffffff",
+    bgBottom: "#f1ede6",
+    accent: "#8f7b00",
+    accentInk: "#ffffff",
+    text: "#141210",
+    sub: "#6b6a67",
   },
   terracota: {
     bgTop: "#d45b3d",
@@ -56,13 +64,14 @@ export const THEMES: Record<CardTheme, ThemeSpec> = {
 
 export const TEMPLATE_LABEL: Record<CardTemplate, string> = {
   foto: "Foto",
-  resultado: "Resultado",
+  banner: "Card",
   trajeto: "Trajeto",
 };
 
 export const THEME_LABEL: Record<CardTheme, string> = {
   dourado: "Dourado",
   escuro: "Escuro",
+  claro: "Claro",
   terracota: "Terracota",
 };
 
@@ -315,11 +324,187 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+/** Desenha o QR num painel branco (com borda), canto inferior direito. */
+function drawQr(ctx: CanvasRenderingContext2D, W: number, H: number, qr: boolean[][], pad: number) {
+  const qrSize = 190;
+  const n = qr.length;
+  const quiet = 4;
+  const total = n + quiet * 2;
+  const cell = Math.floor(qrSize / total);
+  const panel = cell * total;
+  const px = W - pad - panel;
+  const py = H - 60 - panel;
+  roundRect(ctx, px - 10, py - 10, panel + 20, panel + 20, 16);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(0,0,0,0.12)";
+  ctx.stroke();
+  ctx.fillStyle = "#000000";
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (qr[r][c]) ctx.fillRect(px + (c + quiet) * cell, py + (r + quiet) * cell, cell, cell);
+    }
+  }
+}
+
+/** Selo (medalha/finisher) no canto superior direito. `sh`/`nosh` aplicam sombra
+ *  (usada sobre foto/mapa; nos banners são no-op). */
+function drawBadge(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  model: CardModel,
+  pad: number,
+  logoTop: number,
+  th: ThemeSpec,
+  sh: () => void,
+  nosh: () => void,
+) {
+  if (!model.badge) return;
+  if (model.badge.kind === "medal") {
+    const col = MEDAL_COLORS[model.badge.place ?? 1] ?? MEDAL_COLORS[1];
+    const cx = W - pad - 66;
+    const cy = logoTop + 66;
+    ctx.save();
+    sh();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 66, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+    nosh();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.stroke();
+    ctx.fillStyle = "#161200";
+    ctx.font = `700 46px ${DISPLAY}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${model.badge.place}º`, cx, cy + 2);
+    ctx.restore();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+  } else {
+    const label = "FINISHER";
+    ctx.font = `700 30px ${DISPLAY}`;
+    const bw = ctx.measureText(label).width + 44;
+    const bx = W - pad - bw;
+    const by = logoTop + 10;
+    sh();
+    roundRect(ctx, bx, by, bw, 56, 28);
+    ctx.fillStyle = th.accent;
+    ctx.fill();
+    nosh();
+    ctx.fillStyle = th.accentInk;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, bx + bw / 2, by + 30);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+  }
+}
+
 /**
- * Desenha o card completo (fundo + conteúdo) no contexto 2D. WYSIWYG: o mesmo
- * desenho serve para preview e export. `assets` já vem com os bitmaps carregados.
+ * **Card/Banner de estatísticas** (estilo dos prints do Strava): título grande +
+ * grade de rótulo/valor, moderno, em tema claro ou escuro, **sem foto**. A logo
+ * do evento aparece no topo (em tema claro, sobre uma pílula escura p/ garantir
+ * contraste). QR e selo opcionais.
  */
-export function drawCard(
+function drawBanner(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  state: CardState,
+  model: CardModel,
+  assets: CardAssets,
+) {
+  const th = THEMES[state.theme];
+  const light = state.theme === "claro";
+  ctx.clearRect(0, 0, W, H);
+  if (!state.transparent) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, th.bgTop);
+    g.addColorStop(1, th.bgBottom);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+  const noop = () => {};
+  const pad = 84;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+
+  // Logo (pílula escura atrás no tema claro; fallback ao nome do evento).
+  const logoTop = 84;
+  if (assets.logo && assets.logo.width > 0) {
+    const lh = state.format === "stories" ? 92 : 80;
+    const lwFull = (assets.logo.width / assets.logo.height) * lh;
+    const cw = Math.min(lwFull, W * 0.5);
+    const ch = (cw / assets.logo.width) * assets.logo.height;
+    if (light) {
+      roundRect(ctx, pad - 16, logoTop - 12, cw + 32, ch + 24, 14);
+      ctx.fillStyle = "#141210";
+      ctx.fill();
+    }
+    ctx.drawImage(assets.logo, pad, logoTop, cw, ch);
+  } else if (model.brandName) {
+    ctx.font = `700 34px ${DISPLAY}`;
+    ctx.fillStyle = th.text;
+    ctx.fillText(model.brandName.toUpperCase(), pad, logoTop + 6);
+  }
+
+  drawBadge(ctx, W, model, pad, logoTop, th, noop, noop);
+
+  // Título: régua + categoria + nome.
+  let y = Math.round(H * 0.24);
+  ctx.fillStyle = th.accent;
+  ctx.fillRect(pad, y, 110, 10);
+  y += 34;
+  const cat = (model.categoryLabel || "").toUpperCase();
+  if (cat) {
+    ctx.font = `700 30px ${DISPLAY}`;
+    ctx.fillStyle = th.accent;
+    ctx.fillText(cat, pad, y);
+    y += 48;
+  }
+  const nameFont = state.format === "stories" ? 76 : 64;
+  ctx.font = `700 ${nameFont}px ${DISPLAY}`;
+  ctx.fillStyle = th.text;
+  for (const line of wrapText(ctx, model.name, W - pad * 2, 3)) {
+    ctx.fillText(line, pad, y);
+    y += nameFont + 8;
+  }
+  y += 44;
+
+  // Grade de estatísticas (rótulo em cima, valor grande embaixo).
+  const stats: { label: string; value: string }[] = [{ label: "Colocação", value: `${model.pos}º` }];
+  if (model.heroTime) stats.push({ label: "Tempo", value: model.heroTime });
+  stats.push(...model.chips);
+  const cols = 2;
+  const gap = 48;
+  const cellW = (W - pad * 2 - gap * (cols - 1)) / cols;
+  const valPx = state.format === "stories" ? 56 : 50;
+  const rowH = valPx + 80;
+  let col = 0;
+  let gx = pad;
+  let gy = y;
+  for (const s of stats) {
+    ctx.font = `600 24px ${DISPLAY}`;
+    ctx.fillStyle = th.sub;
+    ctx.fillText(s.label.toUpperCase(), gx, gy);
+    ctx.font = `700 ${valPx}px ${DISPLAY}`;
+    ctx.fillStyle = th.text;
+    ctx.fillText(wrapText(ctx, s.value, cellW, 1)[0], gx, gy + 36);
+    col++;
+    if (col >= cols) { col = 0; gx = pad; gy += rowH; } else { gx += cellW + gap; }
+  }
+
+  if (assets.qr) drawQr(ctx, W, H, assets.qr, pad);
+}
+
+/**
+ * Desenha o card com **foto/mapa** de fundo + sobreposição (nome/herói/chips).
+ * WYSIWYG: o mesmo desenho serve para preview e export.
+ */
+function drawPhotoCard(
   ctx: CanvasRenderingContext2D,
   W: number,
   H: number,
@@ -576,4 +761,20 @@ export function drawCard(
       }
     }
   }
+}
+
+/**
+ * Ponto de entrada do desenho — despacha pelo template: **banner** (card de
+ * estatísticas, sem foto) ou **foto/trajeto** (imagem de fundo + sobreposição).
+ */
+export function drawCard(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  state: CardState,
+  model: CardModel,
+  assets: CardAssets,
+) {
+  if (state.template === "banner") drawBanner(ctx, W, H, state, model, assets);
+  else drawPhotoCard(ctx, W, H, state, model, assets);
 }
