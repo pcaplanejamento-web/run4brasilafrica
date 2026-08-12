@@ -815,55 +815,101 @@ function drawMapaCard(
   ctx.textAlign = "left";
 }
 
+/** Métricas do lockup da **marca** (logo + nome do site) já ajustadas p/ caber. */
+interface BrandMetrics {
+  name: string;
+  hasLogo: boolean;
+  lw: number;
+  lh: number;
+  nameFontPx: number;
+  nameW: number;
+  gap: number;
+  dividerW: number;
+  /** Largura total ocupada (0 quando não há nem logo nem nome). */
+  total: number;
+}
+
 /**
- * **Marca** (logo do evento + nome do site) como um lockup compacto **alinhado à
- * direita** (terminando em `rightX`), centrado verticalmente em `centerY`. Usada
- * no rodapé do card de foto, ao lado da categoria. Sem logo → só o nome. Devolve
- * a largura ocupada (0 quando não há nem logo nem nome). O caller aplica a sombra.
+ * Mede o lockup da **marca** (logo do evento + nome do site) no tamanho pedido
+ * (`logoH`), reduzindo proporcionalmente se passar de `maxW`. Sem logo → só o
+ * nome. A medição é separada do desenho para o card reservar a altura da linha.
  */
-function drawBrandLockupRight(
+function measureBrandLockup(
   ctx: CanvasRenderingContext2D,
   assets: CardAssets,
   model: CardModel,
-  rightX: number,
-  centerY: number,
   logoH: number,
-  nameColor: string,
-): number {
+  maxW: number,
+): BrandMetrics {
   const name = (model.brandName || "").toUpperCase();
   const hasLogo = !!(assets.logo && assets.logo.width > 0);
-  if (!name && !hasLogo) return 0;
+  const empty: BrandMetrics = { name, hasLogo, lw: 0, lh: 0, nameFontPx: 0, nameW: 0, gap: 0, dividerW: 0, total: 0 };
+  if (!name && !hasLogo) return empty;
 
-  const nameFontPx = Math.round(logoH * 0.5);
-  ctx.save();
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-
-  let nameW = 0;
-  if (name) {
-    ctx.font = `700 ${nameFontPx}px ${DISPLAY}`;
-    nameW = ctx.measureText(name).width;
-  }
+  let lh = logoH;
   let lw = 0;
-  let lh = 0;
   if (hasLogo) {
-    lh = logoH;
     lw = (assets.logo!.width / assets.logo!.height) * lh;
-    const maxLogoW = logoH * 3.2; // não deixa a logo dominar a linha
+    const maxLogoW = logoH * 3.4;
     if (lw > maxLogoW) { lh *= maxLogoW / lw; lw = maxLogoW; }
   }
-  const gap = hasLogo && name ? Math.round(logoH * 0.32) : 0;
-  const total = lw + gap + nameW;
-  const startX = rightX - total;
+  let nameFontPx = Math.round(logoH * 0.5);
+  const both = hasLogo && !!name;
+  let gap = both ? Math.round(logoH * 0.3) : 0;
+  const dividerW = both ? Math.max(2, Math.round(logoH * 0.035)) : 0;
+  const measure = () => {
+    let nameW = 0;
+    if (name) { ctx.font = `800 ${nameFontPx}px ${DISPLAY}`; nameW = ctx.measureText(name).width; }
+    return nameW;
+  };
+  let nameW = measure();
+  let total = lw + (both ? gap * 2 + dividerW : 0) + nameW;
+  if (maxW > 0 && total > maxW) {
+    const k = maxW / total;
+    lh = Math.round(lh * k);
+    lw = Math.round(lw * k);
+    nameFontPx = Math.max(16, Math.round(nameFontPx * k));
+    gap = Math.round(gap * k);
+    nameW = measure();
+    total = lw + (both ? gap * 2 + dividerW : 0) + nameW;
+  }
+  return { name, hasLogo, lw, lh, nameFontPx, nameW, gap, dividerW, total };
+}
 
-  if (hasLogo) ctx.drawImage(assets.logo!, startX, centerY - lh / 2, lw, lh);
-  if (name) {
-    ctx.font = `700 ${nameFontPx}px ${DISPLAY}`;
+/**
+ * Desenha o lockup da **marca** medido por `measureBrandLockup`, **alinhado à
+ * direita** (terminando em `rightX`) e centrado em `centerY`. Um filete sutil
+ * separa a logo do nome (visual mais bonito). O caller aplica a sombra.
+ */
+function drawBrandLockup(
+  ctx: CanvasRenderingContext2D,
+  assets: CardAssets,
+  m: BrandMetrics,
+  rightX: number,
+  centerY: number,
+  nameColor: string,
+) {
+  if (!m.total) return;
+  ctx.save();
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  let x = rightX - m.total;
+  if (m.hasLogo) {
+    ctx.drawImage(assets.logo!, x, centerY - m.lh / 2, m.lw, m.lh);
+    x += m.lw;
+  }
+  if (m.hasLogo && m.name) {
+    x += m.gap;
+    ctx.fillStyle = nameColor === "#ffffff" ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.28)";
+    ctx.fillRect(x, centerY - m.lh * 0.34, m.dividerW, m.lh * 0.68);
+    x += m.dividerW + m.gap;
+  }
+  if (m.name) {
+    ctx.font = `800 ${m.nameFontPx}px ${DISPLAY}`;
     ctx.fillStyle = nameColor;
-    ctx.fillText(name, startX + lw + gap, centerY + 1);
+    ctx.fillText(m.name, x, centerY + 1);
   }
   ctx.restore();
-  return total;
 }
 
 /**
@@ -1005,41 +1051,47 @@ function drawPhotoCard(
   const nameLines = wrapText(ctx, (model.name || "").toUpperCase(), W - pad * 2, 2);
   const heroPx = state.format === "stories" ? 104 : 92;
 
+  // Marca (logo + nome do site) MAIOR — mede antes p/ reservar a altura da linha.
+  const brand = measureBrandLockup(
+    ctx, assets, model,
+    state.format === "stories" ? 84 : 74, // logo bem maior que antes
+    W * 0.62,
+  );
+  const catRowH = Math.max(60, brand.lh + 14);
+
   const blockH =
-    10 + // régua
-    46 + // categoria
+    30 + // régua + espaço
+    catRowH + // linha da categoria + marca
     nameLines.length * (nameFontPx + 6) +
-    24 +
-    heroPx +
-    (model.chips.length ? chipH + 28 : 0);
+    18 +
+    heroPx + 28 +
+    (model.chips.length ? chipH : 0);
   y = H - bottomReserve - blockH;
-  if (y < H * 0.32) y = H * 0.32; // não sobe demais
+  if (y < H * 0.3) y = H * 0.3; // não sobe demais
 
   // Régua
   ctx.fillStyle = accent;
   ctx.fillRect(pad, y, 96, 8);
   y += 30;
 
-  // Categoria (esq.) + MARCA: logo + nome do site (dir.) — "ao lado do 6KM".
+  // Categoria (esq.) + MARCA maior (logo + nome do site) à direita — "ao lado do 6KM".
   const catLine = [model.categoryLabel].filter(Boolean).join(" ").toUpperCase();
-  const brandCenterY = y + 16;
+  const rowCenter = y + catRowH / 2;
   shadow();
-  const brandW = drawBrandLockupRight(
-    ctx, assets, model, W - pad, brandCenterY,
-    state.format === "stories" ? 50 : 44, textColor,
-  );
+  drawBrandLockup(ctx, assets, brand, W - pad, rowCenter, textColor);
   noShadow();
   if (catLine) {
     ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.font = `700 30px ${DISPLAY}`;
+    ctx.textBaseline = "middle";
+    ctx.font = `700 ${state.format === "stories" ? 36 : 34}px ${DISPLAY}`;
     ctx.fillStyle = accent;
-    const catMaxW = W - pad * 2 - (brandW ? brandW + 28 : 0); // não colide com a marca
+    const catMaxW = W - pad * 2 - (brand.total ? brand.total + 28 : 0); // não colide com a marca
     shadow();
-    ctx.fillText(wrapText(ctx, catLine, catMaxW, 1)[0], pad, y);
+    ctx.fillText(wrapText(ctx, catLine, catMaxW, 1)[0], pad, rowCenter + 1);
     noShadow();
+    ctx.textBaseline = "top";
   }
-  y += 46;
+  y += catRowH;
 
   // Nome
   shadow();

@@ -568,8 +568,10 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
     `fallbackImage`); **Fundo** = `CardMode` **Escuro/Claro/Transparente** (`MODE_SPEC` mapeia modo →
     `{theme, transparent}`: transparente = tema escuro com `transparent:true`). Um único preview.
 - **Templates** (`drawCard` despacha por `state.template`): `foto` (foto/gradiente ao fundo +
-  infos; a **marca — logo + nome do site — fica no RODAPÉ, na linha da categoria**, à direita —
-  `drawBrandLockupRight`, ao lado do "6KM"; o topo leva só o selo), `banner` (grade rótulo/valor — no claro a logo ganha **pílula escura** p/ contraste),
+  infos; a **marca — logo + nome do site — fica no RODAPÉ, na linha da categoria**, à direita, ao
+  lado do "6KM"; o topo leva só o selo. Um lockup **grande** e bonito: `measureBrandLockup` mede/ajusta
+  (reduz p/ caber em `~0.62·W`) e reserva a altura da linha, `drawBrandLockup` desenha **logo + filete
+  divisor sutil + nome** (peso 800); sem logo → só o nome), `banner` (grade rótulo/valor — no claro a logo ganha **pílula escura** p/ contraste),
   `destaque` (centralizado: logo+nome, `NNº` gigante, tempo, chips) e `mapa` (**só o mapa** contido +
   categoria/nome/tempo em cima e **logo + nome da corrida centralizados** embaixo, com QR). O
   **download** é off-screen (`renderBlob`), permitindo a variante transparente sem sujar o preview.
