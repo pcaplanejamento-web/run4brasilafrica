@@ -157,13 +157,17 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     **xadrez** (mostra a transparência). Ações: **Editar imagem (recortar)**, **Excluir**.
   - **Editor de recorte** (`components/admin/MediaCropEditor.tsx`) — quadro de recorte com **8 alças
     + mover**, no **toque e no mouse** (Pointer Events; alças com alvo grande e `touch-action:none`;
-    `setPointerCapture` em try/catch). Trabalha em **px naturais** (fonte única p/ render via % e p/
-    exportação), com clamp e lado mínimo. **Preserva transparência**: o recorte é `drawImage` num
-    canvas **sem `fillRect`** → exporta **PNG com alpha**; o upload (`uploadMedia`) converte p/ WebP
-    **mantendo o alpha**. Salva como **nova imagem** (`POST /api/media`, key nova/imutável) — **não
-    sobrescreve** nada, então as referências existentes ficam intactas; só imagens `.png/.jpg/.webp`
-    são editáveis (SVG/GIF/vídeo não). Verificado: recorte de PNG transparente → canto com `alpha=0`,
-    miolo opaco.
+    `setPointerCapture` em try/catch). **Formatos** (chips): **Livre**, **1:1**, **4:5**, **3:4**,
+    **9:16**, **16:9** — escolher um snapa o recorte p/ a maior área centralizada naquela proporção e
+    **trava a proporção** ao arrastar (Livre = cada lado independente). A matemática é pura e testada
+    em **`lib/crop.ts`** (`resizeRect`/`fitAspect`/`clampRect`; `tests/crop.test.ts` cobre todas as
+    alças × formatos × arrastes: proporção mantida e **sempre dentro da imagem**, sem inverter). Trabalha
+    em **px naturais** (fonte única p/ render via % e p/ exportação), com clamp e lado mínimo.
+    **Preserva transparência**: o recorte é `drawImage` num canvas **sem `fillRect`** → exporta **PNG
+    com alpha**; o upload (`uploadMedia`) converte p/ WebP **mantendo o alpha**. Salva como **nova
+    imagem** (`POST /api/media`, key nova/imutável) — **não sobrescreve** nada, então as referências
+    existentes ficam intactas; só imagens `.png/.jpg/.webp` são editáveis (SVG/GIF/vídeo não).
+    Verificado: recorte de PNG transparente → canto com `alpha=0`, miolo opaco.
   - **`MediaPicker`** (`components/admin/MediaPicker.tsx`) — modal reutilizável: escolher uma
     imagem já enviada **ou** enviar do computador. Ligado a **todos** os campos de imagem
     (`ImageUpload` e `HeroImageField`). Os controles (**escolher do armazenamento + trocar +
