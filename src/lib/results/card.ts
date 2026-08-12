@@ -816,6 +816,57 @@ function drawMapaCard(
 }
 
 /**
+ * **Marca** (logo do evento + nome do site) como um lockup compacto **alinhado à
+ * direita** (terminando em `rightX`), centrado verticalmente em `centerY`. Usada
+ * no rodapé do card de foto, ao lado da categoria. Sem logo → só o nome. Devolve
+ * a largura ocupada (0 quando não há nem logo nem nome). O caller aplica a sombra.
+ */
+function drawBrandLockupRight(
+  ctx: CanvasRenderingContext2D,
+  assets: CardAssets,
+  model: CardModel,
+  rightX: number,
+  centerY: number,
+  logoH: number,
+  nameColor: string,
+): number {
+  const name = (model.brandName || "").toUpperCase();
+  const hasLogo = !!(assets.logo && assets.logo.width > 0);
+  if (!name && !hasLogo) return 0;
+
+  const nameFontPx = Math.round(logoH * 0.5);
+  ctx.save();
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+
+  let nameW = 0;
+  if (name) {
+    ctx.font = `700 ${nameFontPx}px ${DISPLAY}`;
+    nameW = ctx.measureText(name).width;
+  }
+  let lw = 0;
+  let lh = 0;
+  if (hasLogo) {
+    lh = logoH;
+    lw = (assets.logo!.width / assets.logo!.height) * lh;
+    const maxLogoW = logoH * 3.2; // não deixa a logo dominar a linha
+    if (lw > maxLogoW) { lh *= maxLogoW / lw; lw = maxLogoW; }
+  }
+  const gap = hasLogo && name ? Math.round(logoH * 0.32) : 0;
+  const total = lw + gap + nameW;
+  const startX = rightX - total;
+
+  if (hasLogo) ctx.drawImage(assets.logo!, startX, centerY - lh / 2, lw, lh);
+  if (name) {
+    ctx.font = `700 ${nameFontPx}px ${DISPLAY}`;
+    ctx.fillStyle = nameColor;
+    ctx.fillText(name, startX + lw + gap, centerY + 1);
+  }
+  ctx.restore();
+  return total;
+}
+
+/**
  * Desenha o card com **foto** de fundo + sobreposição (nome/herói/chips).
  * WYSIWYG: o mesmo desenho serve para preview e export.
  */
@@ -886,12 +937,9 @@ function drawPhotoCard(
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
 
-  // ---- Logo (fundo transparente) + opcional nome da corrida ao lado ----
+  // A **marca** (logo + nome do site) foi para o RODAPÉ, junto dos dados, ao lado
+  // da categoria (ver bloco de conteúdo). No topo fica só o selo.
   const logoTop = 74;
-  const logoH = state.format === "stories" ? 96 : 84;
-  shadow();
-  drawLogoName(ctx, assets, model, pad, logoTop, logoH, W * 0.5, textColor, !!state.showRaceName);
-  noShadow();
 
   // ---- Selo (medalha/finisher) top-right ----
   if (model.badge) {
@@ -972,16 +1020,26 @@ function drawPhotoCard(
   ctx.fillRect(pad, y, 96, 8);
   y += 30;
 
-  // Categoria + modalidade
+  // Categoria (esq.) + MARCA: logo + nome do site (dir.) — "ao lado do 6KM".
   const catLine = [model.categoryLabel].filter(Boolean).join(" ").toUpperCase();
+  const brandCenterY = y + 16;
+  shadow();
+  const brandW = drawBrandLockupRight(
+    ctx, assets, model, W - pad, brandCenterY,
+    state.format === "stories" ? 50 : 44, textColor,
+  );
+  noShadow();
   if (catLine) {
-    shadow();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
     ctx.font = `700 30px ${DISPLAY}`;
     ctx.fillStyle = accent;
-    ctx.fillText(catLine, pad, y);
+    const catMaxW = W - pad * 2 - (brandW ? brandW + 28 : 0); // não colide com a marca
+    shadow();
+    ctx.fillText(wrapText(ctx, catLine, catMaxW, 1)[0], pad, y);
     noShadow();
-    y += 46;
   }
+  y += 46;
 
   // Nome
   shadow();
