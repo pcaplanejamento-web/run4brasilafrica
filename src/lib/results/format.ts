@@ -8,9 +8,9 @@ export function primaryTime(row: RaceResultRow, d?: ClassificacaoDisplay): strin
   return row.timeGross;
 }
 
-/** minúsculas, sem acento — para busca tolerante a acentos. */
-export function foldText(s: string): string {
-  return s
+/** minúsculas, sem acento — para busca tolerante a acentos. Tolera `undefined`. */
+export function foldText(s?: string): string {
+  return (s ?? "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "");

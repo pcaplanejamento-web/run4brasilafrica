@@ -27,8 +27,13 @@ export async function GET(req: Request) {
   const key = keyFor(new URL(req.url).searchParams.get("cat"));
   if (!key) return NextResponse.json({ ok: false, error: "categoria inválida" }, { status: 400 });
 
-  const rows = (await kv.get(key, "json")) as RaceResultRow[] | null;
-  if (!rows) return NextResponse.json({ ok: false, rows: [] }, { status: 404 });
+  let rows: RaceResultRow[] | null = null;
+  try {
+    rows = (await kv.get(key, "json")) as RaceResultRow[] | null;
+  } catch (err) {
+    console.error("[api/results] get failed:", err);
+  }
+  if (!Array.isArray(rows)) return NextResponse.json({ ok: false, rows: [] }, { status: 404 });
   return NextResponse.json(
     { ok: true, rows },
     { headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" } },

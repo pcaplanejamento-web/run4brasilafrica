@@ -418,7 +418,6 @@ function drawBanner(
   assets: CardAssets,
 ) {
   const th = THEMES[state.theme];
-  const light = state.theme === "claro";
   ctx.clearRect(0, 0, W, H);
   if (!state.transparent) {
     const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -432,18 +431,14 @@ function drawBanner(
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
 
-  // Logo (pílula escura atrás no tema claro; fallback ao nome do evento).
+  // Logo com **fundo 100% transparente** (sem pílula/caixa atrás). Fallback ao
+  // nome do evento em texto quando não há logo.
   const logoTop = 84;
   if (assets.logo && assets.logo.width > 0) {
     const lh = state.format === "stories" ? 92 : 80;
     const lwFull = (assets.logo.width / assets.logo.height) * lh;
     const cw = Math.min(lwFull, W * 0.5);
     const ch = (cw / assets.logo.width) * assets.logo.height;
-    if (light) {
-      roundRect(ctx, pad - 16, logoTop - 12, cw + 32, ch + 24, 14);
-      ctx.fillStyle = "#141210";
-      ctx.fill();
-    }
     ctx.drawImage(assets.logo, pad, logoTop, cw, ch);
   } else if (model.brandName) {
     ctx.font = `700 34px ${DISPLAY}`;
@@ -468,7 +463,7 @@ function drawBanner(
   const nameFont = state.format === "stories" ? 76 : 64;
   ctx.font = `700 ${nameFont}px ${DISPLAY}`;
   ctx.fillStyle = th.text;
-  for (const line of wrapText(ctx, model.name, W - pad * 2, 3)) {
+  for (const line of wrapText(ctx, model.name || "", W - pad * 2, 3)) {
     ctx.fillText(line, pad, y);
     y += nameFont + 8;
   }
@@ -656,7 +651,7 @@ function drawPhotoCard(
   // Desenhamos top-down a partir de um y calculado.
   const nameFontPx = state.format === "stories" ? 68 : 60;
   ctx.font = `700 ${nameFontPx}px ${DISPLAY}`;
-  const nameLines = wrapText(ctx, model.name.toUpperCase(), W - pad * 2, 2);
+  const nameLines = wrapText(ctx, (model.name || "").toUpperCase(), W - pad * 2, 2);
   const heroPx = state.format === "stories" ? 104 : 92;
 
   const blockH =

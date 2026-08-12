@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ClassificacaoDisplay,
   ClassificacaoSection,
@@ -55,6 +55,11 @@ export default function Classificacao({
   const [cache, setCache] = useState<Record<string, RaceResultRow[]>>({});
   const [openFull, setOpenFull] = useState(false);
   const [runner, setRunner] = useState<RaceResultRow | null>(null);
+
+  // Handlers estáveis (evitam re-registrar listeners/scroll-lock dos modais a cada render).
+  const closeFull = useCallback(() => setOpenFull(false), []);
+  const closeRunner = useCallback(() => setRunner(null), []);
+  const pickFromModal = useCallback((r: RaceResultRow) => { setOpenFull(false); setRunner(r); }, []);
 
   // Pódio: revela quando entra na viewport (respeita reduced-motion).
   const podiumRef = useRef<HTMLDivElement>(null);
@@ -142,7 +147,7 @@ export default function Classificacao({
               return (
                 <button
                   type="button"
-                  key={row.pos}
+                  key={`${row.pos}-${row.bib}-${rank}`}
                   onClick={() => setRunner(row)}
                   className={`group flex flex-1 flex-col text-left sm:max-w-[300px] ${SM_ORDER[rank]}`}
                   aria-label={`${row.pos}º lugar: ${row.name}`}
@@ -208,8 +213,8 @@ export default function Classificacao({
           {/* Tabela inicial (colocados 4..N). */}
           {listRows.length > 0 && (
             <div className="overflow-hidden rounded-lg border border-line-soft bg-ink-panel">
-              {listRows.map((row) => (
-                <ResultRow key={row.pos} row={row} display={display} onClick={() => setRunner(row)} />
+              {listRows.map((row, i) => (
+                <ResultRow key={`${row.pos}-${row.bib}-${i}`} row={row} display={display} onClick={() => setRunner(row)} />
               ))}
             </div>
           )}
@@ -230,19 +235,16 @@ export default function Classificacao({
       {/* Modais. */}
       <ClassificacaoModal
         open={openFull}
-        onClose={() => setOpenFull(false)}
+        onClose={closeFull}
         rows={rows ?? []}
         categoryLabel={activeCat?.label ?? ""}
         display={display}
-        onPick={(r) => {
-          setOpenFull(false);
-          setRunner(r);
-        }}
+        onPick={pickFromModal}
       />
       <RunnerModal
         key={runner ? `${activeCat?.id}-${runner.pos}` : "none"}
         runner={runner}
-        onClose={() => setRunner(null)}
+        onClose={closeRunner}
         event={event}
         categoryLabel={activeCat?.label ?? ""}
         brandLogo={brandLogo}

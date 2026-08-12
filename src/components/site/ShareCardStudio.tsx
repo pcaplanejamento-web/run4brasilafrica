@@ -366,29 +366,54 @@ function CardPreview({
     c.height = h;
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    drawCard(ctx, w, h, state, model, assets);
+    try {
+      drawCard(ctx, w, h, state, model, assets);
+    } catch (e) {
+      console.error("[card] erro ao desenhar:", e);
+    }
   }, [state, model, assets, drawKey]);
 
-  /** Renderiza off-screen (permite variante transparente sem sujar o preview). */
+  /** Renderiza off-screen (permite variante transparente sem sujar o preview).
+   *  Blindado: se o canvas for "tainted" (imagem cross-origin sem CORS) o
+   *  `toBlob` lança — capturamos e devolvemos null, nunca quebrando a UI. */
   const renderBlob = (transparent: boolean) =>
     new Promise<Blob | null>((res) => {
-      const { w, h } = FORMATS[state.format];
-      const c = document.createElement("canvas");
-      c.width = w;
-      c.height = h;
-      const ctx = c.getContext("2d");
-      if (!ctx) return res(null);
-      drawCard(ctx, w, h, transparent ? { ...state, transparent: true } : state, model, assets);
-      c.toBlob(res, "image/png");
+      try {
+        const { w, h } = FORMATS[state.format];
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return res(null);
+        drawCard(ctx, w, h, transparent ? { ...state, transparent: true } : state, model, assets);
+        c.toBlob(res, "image/png");
+      } catch {
+        res(null);
+      }
     });
 
-  const doDownload = async (transparent: boolean) => {
+  /** Salva a imagem. No **celular** usa o compartilhamento nativo (com um toque em
+   *  "Salvar em Fotos" a imagem vai direto para a galeria); no **desktop** baixa
+   *  direto (sem prompt). */
+  const saveImage = async (transparent: boolean) => {
     const blob = await renderBlob(transparent);
     if (!blob) return;
+    const filename = `${filenameBase}${transparent ? "-transparente" : ""}.png`;
+    const file = new File([blob], filename, { type: "image/png" });
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    const coarse = typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches;
+    if (coarse && nav.canShare?.({ files: [file] })) {
+      try {
+        await nav.share({ files: [file] });
+        return;
+      } catch {
+        /* usuário cancelou → cai no download direto */
+      }
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filenameBase}${transparent ? "-transparente" : ""}.png`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -402,7 +427,7 @@ function CardPreview({
     if (nav.canShare?.({ files: [file] })) {
       try { await nav.share({ files: [file], title: "Meu resultado", text: shareText }); return; } catch { /* fallback */ }
     }
-    await doDownload(false);
+    await saveImage(false);
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
   };
 
@@ -425,11 +450,11 @@ function CardPreview({
         </div>
       )}
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={() => doDownload(false)} className="min-h-11 flex-1 rounded-lg bg-gold px-4 text-[13px] font-bold text-gold-ink transition-transform hover:-translate-y-0.5">Baixar</button>
+        <button type="button" onClick={() => saveImage(false)} className="min-h-11 flex-1 rounded-lg bg-gold px-4 text-[13px] font-bold text-gold-ink transition-transform hover:-translate-y-0.5">Baixar</button>
         <button type="button" onClick={share} className="min-h-11 rounded-lg border border-gold px-4 text-[13px] font-bold text-gold transition-colors hover:bg-gold hover:text-gold-ink">Compartilhar</button>
       </div>
       {extraDownloadLabel && (
-        <button type="button" onClick={() => doDownload(true)} className="mt-2 min-h-11 rounded-lg border border-line-soft px-4 text-[13px] font-bold text-muted-strong transition-colors hover:border-gold hover:text-cream">
+        <button type="button" onClick={() => saveImage(true)} className="mt-2 min-h-11 rounded-lg border border-line-soft px-4 text-[13px] font-bold text-muted-strong transition-colors hover:border-gold hover:text-cream">
           {extraDownloadLabel}
         </button>
       )}

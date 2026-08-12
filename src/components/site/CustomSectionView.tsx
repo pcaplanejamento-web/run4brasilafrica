@@ -11,6 +11,7 @@ import type {
   PercursoRoute,
 } from "@/lib/content/types";
 import { isSectionKind, sectionDefaults } from "@/lib/content/sectionKinds";
+import SectionErrorBoundary from "./SectionErrorBoundary";
 import SectionEyebrow from "./SectionEyebrow";
 import CtaButton from "./CtaButton";
 import YouTubePlayer from "./YouTubePlayer";
@@ -186,8 +187,10 @@ function hasContent(b: CustomBlock): boolean {
 }
 
 function Block({ block, ctx }: { block: CustomBlock; ctx: SectionRenderCtx }) {
-  // Section components (faq, parceiros, …) delegate to renderSection.
-  if (isSectionKind(block.type)) return renderSection(block, ctx);
+  // Section components (faq, parceiros, …) delegate to renderSection — isoladas
+  // por um error boundary para que uma falha não derrube a página inteira.
+  if (isSectionKind(block.type))
+    return <SectionErrorBoundary>{renderSection(block, ctx)}</SectionErrorBoundary>;
   switch (block.type) {
     case "subtitulo":
       return (
@@ -353,7 +356,9 @@ export default function CustomSectionView({
   if (blocks.length === 1 && isSectionKind(blocks[0].type)) {
     // Passa o "Título da aba" como tópico (usado por raceday/inscricao) — mesma
     // lógica do eyebrow das abas multi-bloco.
-    return <>{renderSection(blocks[0], ctx, section.title)}</>;
+    return (
+      <SectionErrorBoundary>{renderSection(blocks[0], ctx, section.title)}</SectionErrorBoundary>
+    );
   }
 
   return (

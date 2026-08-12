@@ -546,9 +546,15 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
   (`display`) — `defaultFields` mapeia netTime/team/bib/ageGroup/etc. (pace ligado). O usuário
   sobrepõe ao vivo (todos os cards redesenham). O **fundo transparente** virou um **botão de
   download** na aba Fotos (não é mais chave global).
-- **Logo fixa** (não removível): desenhada de `brandLogo` via `loadImageTaintSafe`
-  (`crossOrigin="anonymous"` — Cloudinary manda ACAO:*, /api/media é same-origin; falha → **fallback
-  ao nome do evento em texto**, nunca quebra o `toBlob`).
+- **Logo fixa** (não removível), com **fundo 100% transparente** (sem pílula/caixa atrás):
+  desenhada de `brandLogo` via `loadImageTaintSafe` (`crossOrigin="anonymous"` — Cloudinary manda
+  ACAO:*, /api/media é same-origin; falha → **fallback ao nome do evento em texto**, nunca quebra o
+  `toBlob`).
+- **Baixar direto para a galeria**: no **celular** (`pointer: coarse` + `navigator.canShare`) o
+  botão **Baixar** usa o compartilhamento nativo → o usuário toca em "Salvar em Fotos" e a imagem
+  vai para a galeria; no **desktop** baixa direto (âncora `download`, sem prompt). "Compartilhar"
+  segue com texto (WhatsApp de fallback). O `renderBlob`/`toBlob` são **blindados** (try/catch →
+  null) contra canvas "tainted".
 - **Enquadrar** (foto na aba Fotos; mapa no card Trajeto): pan por arraste (`useLayerGesture`,
   pointer events) + **pinça (2 dedos)** no celular + **roda** no desktop; o **slider de zoom** só
   aparece no **desktop** (`hidden md:flex`) — no mobile é pinça (fora do painel de configurações).
@@ -883,6 +889,11 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
   coluna, em ordem de leitura (célula esquerda e depois a direita). Ex.: vídeo à esquerda com
   textos/botão/formulário à direita. Lógica em `layoutSegments` no `CustomSectionView`; controle
   por bloco no editor (`PositionPicker`).
+- **Isolamento de falhas** (`SectionErrorBoundary`): cada seção renderizada em `CustomSectionView`
+  (tanto o atalho de bloco único quanto o `Block` de section kinds) fica **envolvida por um error
+  boundary**. Se um componente lançar erro em render/effect, **só aquela seção some** (fallback
+  `null`) em vez de derrubar a página inteira — os modais da Classificação são `fixed` inline (não
+  portais), então também ficam contidos.
 - **Renderização pública** (`CustomSectionView`, servidor): título via `SectionEyebrow as="h2"`
   + blocos na ordem. Cada bloco **reusa um componente do site** — `texto`/`subtitulo` (tipografia),
   `imagem` (`<img>` com **proporção** + **escala**: `CustomBlock.scale` = largura em % do container

@@ -34,7 +34,13 @@ export async function fetchResults(catId: string): Promise<RaceResultRow[]> {
   const r = await fetch(`/api/results?cat=${encodeURIComponent(id)}`);
   if (!r.ok) return [];
   const d = (await r.json()) as { ok: boolean; rows?: RaceResultRow[] };
-  return d.ok && Array.isArray(d.rows) ? d.rows : [];
+  if (!d.ok || !Array.isArray(d.rows)) return [];
+  // Saneamento defensivo: só linhas com colocação e nome válidos (blindando
+  // consumidores contra blobs de KV editados à mão / fora do parser).
+  return d.rows.filter(
+    (row): row is RaceResultRow =>
+      !!row && typeof row.pos === "number" && typeof row.name === "string" && row.name.trim().length > 0,
+  );
 }
 
 export interface SaveResult {

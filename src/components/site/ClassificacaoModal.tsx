@@ -120,12 +120,12 @@ export default function ClassificacaoModal({
               Nenhum corredor encontrado para &ldquo;{query}&rdquo;.
             </div>
           ) : (
-            filtered.map((row) => {
+            filtered.map((row, i) => {
               const time = primaryTime(row, display);
               return (
                 <button
                   type="button"
-                  key={row.pos}
+                  key={`${row.pos}-${row.bib}-${i}`}
                   onClick={() => onPick(row)}
                   className="flex w-full items-center gap-3 border-b border-line-soft px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5"
                 >
