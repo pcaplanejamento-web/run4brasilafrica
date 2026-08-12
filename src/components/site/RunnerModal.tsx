@@ -7,6 +7,7 @@ import type {
   PercursoRoute,
   RaceResultRow,
 } from "@/lib/content/types";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import ShareCardStudio from "./ShareCardStudio";
 
 /** Campos mostrados no detalhe (todos os disponíveis, com rótulo pt-BR). */
@@ -70,7 +71,13 @@ export default function RunnerModal({
         pushed.current = false;
       }
     }
-    const onPop = () => { pushed.current = false; onClose(); };
+    // Fecha só quando a entrada atual do histórico não é mais a nossa (simétrico
+    // ao modal da classificação geral, que pode estar aberto por baixo).
+    const onPop = () => {
+      if (window.history.state?.r4baRunner) return;
+      pushed.current = false;
+      onClose();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (pushed.current) window.history.back();
@@ -78,13 +85,13 @@ export default function RunnerModal({
     };
     window.addEventListener("popstate", onPop);
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("popstate", onPop);
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
     };
   }, [open, onClose]);
+
+  useBodyScrollLock(open);
 
   /** Fecha "voltando" no histórico (aciona o popstate → onClose). */
   const requestClose = () => {

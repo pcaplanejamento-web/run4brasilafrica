@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClassificacaoDisplay, RaceResultRow } from "@/lib/content/types";
 import { foldText, matchesQuery, primaryTime } from "@/lib/results/format";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 /**
  * Modal da **classificação geral**: lista completa da categoria com **busca por
@@ -25,17 +26,49 @@ export default function ClassificacaoModal({
   onPick: (row: RaceResultRow) => void;
 }) {
   const [query, setQuery] = useState("");
+  // Entrada de histórico: o botão Voltar do aparelho fecha ESTE modal e volta à
+  // seção; e permite abrir o detalhe do corredor POR CIMA (sem fechar este),
+  // então ao voltar do atleta a classificação geral continua **no mesmo lugar**.
+  const pushed = useRef(false);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    if (!pushed.current) {
+      try {
+        window.history.pushState({ r4baGeral: true }, "");
+        pushed.current = true;
+      } catch {
+        pushed.current = false;
+      }
+    }
+    // Só fecha quando a entrada ATUAL do histórico não é mais a nossa. Assim,
+    // com o detalhe do corredor aberto por cima (que empurra a própria entrada),
+    // o `back()` que fecha o corredor volta para a nossa entrada — e este modal
+    // continua aberto no mesmo lugar (ambos escutam `popstate`).
+    const onPop = () => {
+      if (window.history.state?.r4baGeral) return;
+      pushed.current = false;
+      onClose();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (pushed.current) window.history.back();
+      else onClose();
+    };
+    window.addEventListener("popstate", onPop);
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
     return () => {
+      window.removeEventListener("popstate", onPop);
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
     };
   }, [open, onClose]);
+
+  useBodyScrollLock(open);
+
+  const requestClose = () => {
+    if (pushed.current) window.history.back();
+    else onClose();
+  };
 
   const folded = foldText(query.trim());
   const filtered = useMemo(
@@ -52,7 +85,7 @@ export default function ClassificacaoModal({
       aria-modal="true"
       aria-label={`Classificação geral — ${categoryLabel}`}
     >
-      <button type="button" aria-label="Fechar" onClick={onClose} className="absolute inset-0 bg-black/70" />
+      <button type="button" aria-label="Fechar" onClick={requestClose} className="absolute inset-0 bg-black/70" />
       <div className="relative z-10 flex max-h-[88vh] w-full max-w-[720px] flex-col overflow-hidden rounded-2xl border border-line-soft bg-ink-panel shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
         {/* Cabeçalho + busca (sticky). */}
         <div className="border-b border-line-soft px-5 py-4 sm:px-6">
@@ -62,7 +95,7 @@ export default function ClassificacaoModal({
             </h2>
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               aria-label="Fechar"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-cream transition-colors hover:bg-white/10"
             >
@@ -93,7 +126,8 @@ export default function ClassificacaoModal({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nome ou número…"
               aria-label="Buscar por nome ou número"
-              className="min-h-11 w-full rounded-lg border border-line-soft bg-ink px-10 py-2.5 text-[14px] text-cream outline-none transition-colors placeholder:text-muted focus:border-gold"
+              // text-[16px]: fontes < 16px fazem o iOS dar zoom ao focar o input.
+              className="min-h-11 w-full rounded-lg border border-line-soft bg-ink px-10 py-2.5 text-[16px] text-cream outline-none transition-colors placeholder:text-muted focus:border-gold"
             />
             {query && (
               <button

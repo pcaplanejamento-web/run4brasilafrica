@@ -8,8 +8,9 @@ import Reveal from "./Reveal";
 import YouTubePlayer from "./YouTubePlayer";
 import { youtubeId, isVerticalYouTube } from "@/lib/youtube";
 
+// text-[16px]: fontes < 16px fazem o iOS dar zoom ao focar o campo no mobile.
 const inputClass =
-  "min-h-11 w-full rounded-lg border border-line bg-ink-panel px-3.5 text-[15px] text-cream outline-none transition-colors placeholder:text-muted focus:border-gold";
+  "min-h-11 w-full rounded-lg border border-line bg-ink-panel px-3.5 text-[16px] text-cream outline-none transition-colors placeholder:text-muted focus:border-gold";
 
 /** Portrait videos are capped by viewport height so they always fit (same as "A Causa"). */
 const MEDIA_MAX_VH = 70;

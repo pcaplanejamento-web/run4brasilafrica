@@ -59,7 +59,10 @@ export default function Classificacao({
   // Handlers estáveis (evitam re-registrar listeners/scroll-lock dos modais a cada render).
   const closeFull = useCallback(() => setOpenFull(false), []);
   const closeRunner = useCallback(() => setRunner(null), []);
-  const pickFromModal = useCallback((r: RaceResultRow) => { setOpenFull(false); setRunner(r); }, []);
+  // NÃO fecha a "classificação geral": o detalhe abre POR CIMA (com sua própria
+  // entrada de histórico), então ao Voltar do atleta a lista continua no mesmo
+  // lugar (busca/rolagem preservadas).
+  const pickFromModal = useCallback((r: RaceResultRow) => setRunner(r), []);
 
   // Pódio: revela quando entra na viewport (respeita reduced-motion).
   const podiumRef = useRef<HTMLDivElement>(null);

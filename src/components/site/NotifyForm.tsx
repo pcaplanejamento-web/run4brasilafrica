@@ -65,7 +65,8 @@ export default function NotifyForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="seu@email.com"
-          className="min-h-11 flex-1 rounded border border-black/20 bg-white/90 px-3 text-[14px] text-ink outline-none focus:border-black/50"
+          // text-[16px]: fontes < 16px fazem o iOS dar zoom ao focar o input.
+          className="min-h-11 flex-1 rounded border border-black/20 bg-white/90 px-3 text-[16px] text-ink outline-none focus:border-black/50"
         />
         <button
           type="submit"

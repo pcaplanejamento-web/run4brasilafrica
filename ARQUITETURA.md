@@ -529,54 +529,71 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
 - **Plumbing**: `SectionRenderCtx` ganhou `brandLogo` (`branding.logo`) e `percursoRoutes`
   (`percurso.routes`), populados em `SiteContent.tsx` e repassados por `Classificacao` →
   `RunnerModal` → `ShareCardStudio` (que também recebe `display` do ADM).
-- **Duas abas** (`SegmentedTabs`): **Fotos** (inicial) — o card já traz as **informações** e o
-  usuário **sobe a foto que fica ao FUNDO** (componente **clicável** p/ escolher; enquadramento
-  pan/zoom). Pode **baixar sem foto** → `Baixar sem foto (transparente)` (PNG com alpha, off-screen)
-  para usar depois. **Cards** — **banners prontos** estilo Strava (`drawBanner`): **título grande +
-  grade rótulo/valor**, um por **tema** (`BANNER_THEMES` = escuro, **claro** e dourado — claro =
-  fundo branco/texto escuro, como os prints), cada um Baixar/Compartilhar; + card **Trajeto** (mapa
-  enquadrável) quando há `PercursoRoute.fallbackImage`. **Formatos** compartilhados: Feed 4:5
-  (1080×1350) e Stories 9:16 (1080×1920).
-- **Templates** (`drawCard` despacha): `foto` (foto/gradiente + scrim + sobreposição), `banner`
-  (card de estatísticas sem foto — no claro a logo ganha uma **pílula escura** p/ contraste),
-  `trajeto` (mapa de fundo + sobreposição). O **download** é off-screen (`renderBlob`), permitindo a
-  variante transparente sem sujar o preview.
-- **Configurações por chaves**: ícone de engrenagem abre um painel com **switches** (`Switch`,
-  `role="switch"`) para ligar/desligar cada informação + extras (selo, QR). O **padrão vem do ADM**
-  (`display`) — `defaultFields` mapeia netTime/team/bib/ageGroup/etc. (pace ligado). O usuário
-  sobrepõe ao vivo (todos os cards redesenham). O **fundo transparente** virou um **botão de
-  download** na aba Fotos (não é mais chave global).
-- **Logo fixa** (não removível), com **fundo 100% transparente** (sem pílula/caixa atrás):
-  desenhada de `brandLogo` via `loadImageTaintSafe` (`crossOrigin="anonymous"` — Cloudinary manda
-  ACAO:*, /api/media é same-origin; falha → **fallback ao nome do evento em texto**, nunca quebra o
-  `toBlob`).
-- **Baixar direto para a galeria**: no **celular** (`pointer: coarse` + `navigator.canShare`) o
-  botão **Baixar** usa o compartilhamento nativo → o usuário toca em "Salvar em Fotos" e a imagem
-  vai para a galeria; no **desktop** baixa direto (âncora `download`, sem prompt). "Compartilhar"
-  segue com texto (WhatsApp de fallback). O `renderBlob`/`toBlob` são **blindados** (try/catch →
-  null) contra canvas "tainted".
-- **Mapa da prova** (`ShareCardStudio` chave "Mapa da prova (na foto)" + card **Trajeto**): a
-  imagem do mapa é o `fallbackImage` da rota do **bloco `sec-percurso`** (fonte de verdade — o
-  percurso NÃO é espelhado para o global `c.percurso`; `SiteContent.tsx` lê `percursoRoutes` do
-  bloco). Ligado, `drawMapInset` desenha o mapa como **inset arredondado SOBRE a foto**; o card
-  **Trajeto** usa o mapa como fundo. A chave só aparece quando há `fallbackImage`.
-- **Enquadrar** (foto na aba Fotos; mapa no card Trajeto) SEM roubar o **scroll**: fora do modo
-  edição o canvas é `touch-action: pan-y` (o dedo **rola a página** por cima da imagem) e os gestos
-  ficam desligados no toque; tocar **"Reposicionar"** entra no modo edição (`touch-action: none`,
-  arraste + **pinça** + roda + slider de zoom no desktop) e **"Concluir"** volta a rolar. Mouse
-  arrasta sempre (`useLayerGesture` só ignora o TOQUE fora da edição). Offsets clampados p/ cobrir.
-  Redesenho **síncrono** (não usa rAF, que fica pausado quando a aba é considerada oculta).
-- **Detalhe do corredor como PÁGINA no mobile** (`RunnerModal`): no celular vira **tela cheia**
-  (sem card flutuante nem backdrop) com uma seta **Voltar**; no desktop segue **modal flutuante**.
-  Integra a **History API** — ao abrir empurra uma entrada (`pushState`, guardado contra o
-  double-invoke do StrictMode); o **botão Voltar do aparelho** (`popstate`) fecha o detalhe e
-  retorna à lista **no estado em que estava** (a home nunca é desmontada). Todo fechar passa pelo
-  `history.back()`, então a entrada é sempre consumida (sem lixo no histórico).
-- **Fundo transparente**: exporta só as camadas gráficas (PNG com alpha) p/ usar depois. **Extras**:
-  pace (min/km, de modalidade+tempo), data/cidade, **selo** medalha ouro/prata/bronze (pódio) /
-  "FINISHER", **QR** para `#classificacao`. Preferências (formato/tema/selo/QR) em `localStorage`
-  (os **campos** iniciam sempre do ADM). **Baixar** (`toBlob`+download) e **Compartilhar**
-  (`navigator.share` com o arquivo, senão WhatsApp). Fontes garantidas com `document.fonts.load`.
+- **Duas abas** (`SegmentedTabs`) + **formatos** compartilhados (Feed 4:5 1080×1350, Stories 9:16
+  1080×1920):
+  - **Fotos** (inicial) — o card já traz as **informações** e o usuário **sobe a foto que fica ao
+    FUNDO** (canvas **clicável** p/ escolher; enquadramento pan/zoom). Pode **baixar sem foto** →
+    `Baixar sem foto (transparente)` (PNG com alpha, off-screen). O chip **"Mapa da prova"** fica
+    **FORA das configurações** (na própria aba) e, ligado, sobrepõe o mapa à foto + mostra o seletor
+    de **camada** (Foto/Mapa) que decide qual o gesto move.
+  - **Cards** — banners prontos estilo Strava, cruzando **Modelo × Fundo**: **Modelo** =
+    `TEMPLATE_LABEL` (Estatísticas/`banner`, Destaque/`destaque`, e **Mapa**/`mapa` quando há
+    `fallbackImage`); **Fundo** = `CardMode` **Escuro/Claro/Transparente** (`MODE_SPEC` mapeia modo →
+    `{theme, transparent}`: transparente = tema escuro com `transparent:true`). Um único preview.
+- **Templates** (`drawCard` despacha por `state.template`): `foto` (foto/gradiente ao fundo +
+  infos), `banner` (grade rótulo/valor — no claro a logo ganha **pílula escura** p/ contraste),
+  `destaque` (centralizado: logo+nome, `NNº` gigante, tempo, chips) e `mapa` (**só o mapa** contido +
+  categoria/nome/tempo em cima e **logo + nome da corrida centralizados** embaixo, com QR). O
+  **download** é off-screen (`renderBlob`), permitindo a variante transparente sem sujar o preview.
+- **Mapa nunca cortado**: todo desenho de mapa usa `drawContain` (imagem inteira, escala mínima,
+  **letterbox** — nunca `cover`/crop). Na aba Fotos, `drawMapLayer` desenha o mapa **SOBRE a foto
+  com fundo transparente** (sem caixa), posicionado por um `LayerTransform` próprio (`mapInset`) —
+  **reposicionável** (arraste) e **escalável** por **pinça de 2 dedos** (`0.3×`–`3×`). A imagem do
+  mapa é o `fallbackImage` da rota do **bloco `sec-percurso`** (fonte de verdade — o percurso NÃO é
+  espelhado para o global `c.percurso`; `SiteContent.tsx` lê `percursoRoutes` do bloco). Só aparece
+  quando há `fallbackImage`.
+- **Configurações por chaves** (engrenagem): painel de **switches** (`Switch`, `role="switch"`) das
+  informações + **Extras**: **"Nome da corrida ao lado da logo"** (`showRaceName` → desenha o
+  `brandName` ao lado/abaixo da logo via `drawLogoName`/`drawLogoNameCentered`), selo e QR. O
+  **padrão vem do ADM** (`display`); `defaultFields` mapeia netTime/team/bib/ageGroup/etc. (pace
+  ligado). O mapa **não** é mais chave aqui (saiu p/ a aba Fotos).
+- **Logo fixa** com **fundo 100% transparente**: de `brandLogo` via `loadImageTaintSafe`
+  (`crossOrigin="anonymous"`; falha → **fallback ao nome do evento em texto**, nunca quebra o
+  `toBlob`). `renderBlob`/`toBlob` **blindados** (try/catch → null) contra canvas "tainted".
+- **Salvar/compartilhar** (`tryNativeShare` + `downloadBlob`): no **celular** (`pointer: coarse`) só
+  existe **"Compartilhar"** (o **"Baixar"** e o "sem foto transparente" ficam **só no desktop**) — usa
+  o compartilhamento nativo (`navigator.share` com o arquivo → "Salvar em Fotos" leva à galeria).
+  **Cancelar a folha nativa (`AbortError`) é no-op** — não baixa sozinho nem abre WhatsApp, e não
+  dispara uma segunda folha (o bug do "meio quebrado"). Só quando o recurso é **indisponível** (ex.:
+  desktop) cai no fallback: `downloadBlob` + WhatsApp (texto). No desktop o "Baixar" baixa direto.
+- **Enquadrar** SEM roubar o **scroll**: fora do modo edição o canvas é `touch-action: pan-y` (o
+  dedo **rola a página** por cima da imagem) e os gestos ficam desligados no toque; **"Reposicionar
+  foto/Reposicionar mapa"** entra em edição (`touch-action: none`, arraste + **pinça** + roda +
+  slider no desktop) e **"Concluir"** volta a rolar. Mouse arrasta sempre (`useLayerGesture` só
+  ignora o TOQUE fora da edição). Redesenho **síncrono** (não usa rAF). Preferências
+  (formato/selo/QR/nome/modo/template) em `localStorage` (os **campos** iniciam sempre do ADM).
+
+### Modais empilhados, histórico e scroll (classificação geral + corredor)
+
+- **Detalhe do corredor como PÁGINA no mobile** (`RunnerModal`): no celular vira **tela cheia** (sem
+  card flutuante nem backdrop) com seta **Voltar**; no desktop segue **modal flutuante**.
+- **History API por modal**: `ClassificacaoModal` (empurra `{r4baGeral:true}`) e `RunnerModal`
+  (`{r4baRunner:true}`) empurram **uma** entrada ao abrir (guardado contra o double-invoke do
+  StrictMode via um ref `pushed`). O **botão Voltar do aparelho** (`popstate`) fecha a sobreposição e
+  volta ao estado anterior (a home nunca é desmontada; todo fechar passa por `history.back()`, então
+  a entrada é sempre consumida — sem lixo).
+- **Empilhamento correto** (correção): abrir o corredor a partir da **classificação geral** NÃO fecha
+  a geral (`Classificacao.pickFromModal` só faz `setRunner`), então ficam os **dois** modais e o
+  corredor por cima. Como ambos escutam `popstate`, cada `onPop` **só fecha se a entrada ATUAL do
+  histórico não for mais a sua** (`if (history.state?.r4baGeral) return` / `r4baRunner`) — assim o
+  Voltar que fecha o corredor **retorna à geral no mesmo lugar** (busca preservada), e o Voltar
+  seguinte fecha a geral.
+- **Trava de scroll com contador** (`useBodyScrollLock`, `src/lib/useBodyScrollLock.ts`): modais
+  empilhados não destravam o scroll ao fechar só um — um contador módulo-nível restaura o
+  `body.overflow` original só quando o **último** lock sai.
+- **Sem zoom do iOS ao focar campos** (correção): a busca da classificação e os inputs dos
+  formulários (`NotifyForm`, `SejaParceiro`) usam `text-[16px]` — fontes `< 16px` fazem o iOS dar
+  zoom automático ao focar no mobile.
 
 ## Proteção de imagens
 

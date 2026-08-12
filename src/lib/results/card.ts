@@ -8,8 +8,10 @@ import type { EventInfo, PercursoRoute, RaceResultRow } from "@/lib/content/type
  */
 
 export type CardFormat = "feed" | "stories";
-export type CardTemplate = "foto" | "banner" | "trajeto";
+export type CardTemplate = "foto" | "banner" | "destaque" | "mapa";
 export type CardTheme = "dourado" | "escuro" | "claro" | "terracota";
+/** Modo de fundo dos cards da aba Cards. */
+export type CardMode = "escuro" | "claro" | "transparente";
 
 /** Dimensões por formato (px). Feed 4:5 e Stories 9:16 (padrões do Instagram). */
 export const FORMATS: Record<CardFormat, { w: number; h: number; label: string }> = {
@@ -64,8 +66,22 @@ export const THEMES: Record<CardTheme, ThemeSpec> = {
 
 export const TEMPLATE_LABEL: Record<CardTemplate, string> = {
   foto: "Foto",
-  banner: "Card",
-  trajeto: "Trajeto",
+  banner: "Estatísticas",
+  destaque: "Destaque",
+  mapa: "Mapa",
+};
+
+/** Modo → tema + transparência para os cards da aba Cards. */
+export const MODE_SPEC: Record<CardMode, { theme: CardTheme; transparent: boolean }> = {
+  escuro: { theme: "escuro", transparent: false },
+  claro: { theme: "claro", transparent: false },
+  transparente: { theme: "escuro", transparent: true },
+};
+
+export const MODE_LABEL: Record<CardMode, string> = {
+  escuro: "Escuro",
+  claro: "Claro",
+  transparente: "Transparente",
 };
 
 export const THEME_LABEL: Record<CardTheme, string> = {
@@ -211,7 +227,8 @@ export interface CardModel {
   heroTime?: string;
   chips: { label: string; value: string }[];
   badge: CardBadge | null;
-  /** Nome do evento — desenhado como texto quando não há logo (fallback). */
+  /** Nome do evento — desenhado como texto quando não há logo (fallback) e ao
+   *  lado da logo quando `showRaceName` está ligado. */
   brandName?: string;
 }
 
@@ -222,8 +239,12 @@ export interface CardState {
   transparent: boolean;
   photo: LayerTransform;
   map: LayerTransform;
-  /** Desenha o **mapa da prova** como inset SOBRE a imagem (card de foto). */
+  /** Desenha o **mapa da prova** como camada SOBRE a foto (card de foto). */
   showMap?: boolean;
+  /** Posição/escala da camada do mapa sobre a foto (move + pinça). */
+  mapInset?: LayerTransform;
+  /** Mostra o nome da corrida ao lado da logo. */
+  showRaceName?: boolean;
 }
 
 export interface CardAssets {
@@ -350,34 +371,78 @@ function drawQr(ctx: CanvasRenderingContext2D, W: number, H: number, qr: boolean
   }
 }
 
-/** Desenha o **mapa da prova** como inset arredondado (cover), com borda de acento. */
-function drawMapInset(
+/** Desenha a imagem **inteira** (contain, nunca cortada) centrada num retângulo. */
+function drawContain(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  rx: number,
+  ry: number,
+  rw: number,
+  rh: number,
+) {
+  const base = Math.min(rw / img.width, rh / img.height);
+  const dw = img.width * base;
+  const dh = img.height * base;
+  ctx.drawImage(img, rx + (rw - dw) / 2, ry + (rh - dh) / 2, dw, dh);
+}
+
+/** Mapa da prova como camada **sobre a foto**: fundo **transparente**, o mapa
+ *  **inteiro** (nunca cortado) desenhado no tamanho/posição do transform (o
+ *  usuário move e usa pinça p/ escala). Sombra suave para legibilidade. */
+function drawMapLayer(
   ctx: CanvasRenderingContext2D,
   map: HTMLImageElement,
+  W: number,
+  H: number,
+  t: LayerTransform,
+) {
+  const w = W * 0.5 * t.zoom;
+  const h = w * (map.height / map.width);
+  // Posição padrão: centro-superior; o pan desloca; clampada para não sumir.
+  const cx = Math.max(w * 0.25, Math.min(W - w * 0.25, W / 2 + t.ox));
+  const cy = Math.max(h * 0.25, Math.min(H - h * 0.25, H * 0.24 + t.oy));
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.5)";
+  ctx.shadowBlur = 26;
+  ctx.drawImage(map, cx - w / 2, cy - h / 2, w, h); // mapa inteiro, sem corte
+  ctx.restore();
+}
+
+/** Logo do evento (fundo transparente) + opcionalmente o **nome da corrida** ao
+ *  lado. Fallback ao nome em texto quando não há logo. O caller aplica a sombra
+ *  (quando sobre foto). Devolve a altura ocupada. */
+function drawLogoName(
+  ctx: CanvasRenderingContext2D,
+  assets: CardAssets,
+  model: CardModel,
   x: number,
   y: number,
-  w: number,
   h: number,
-  accent: string,
-) {
-  ctx.save();
-  roundRect(ctx, x, y, w, h, 22);
-  // Fundo escuro sob o mapa (caso tenha transparência) + sombra do cartão.
-  ctx.shadowColor = "rgba(0,0,0,0.45)";
-  ctx.shadowBlur = 24;
-  ctx.fillStyle = "#0e0a06";
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.clip();
-  const base = Math.max(w / map.width, h / map.height);
-  const dw = map.width * base;
-  const dh = map.height * base;
-  ctx.drawImage(map, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
-  ctx.restore();
-  roundRect(ctx, x, y, w, h, 22);
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = accent;
-  ctx.stroke();
+  maxLogoW: number,
+  textColor: string,
+  showRaceName: boolean,
+): number {
+  if (assets.logo && assets.logo.width > 0) {
+    const lwFull = (assets.logo.width / assets.logo.height) * h;
+    const cw = Math.min(lwFull, maxLogoW);
+    const ch = (cw / assets.logo.width) * assets.logo.height;
+    ctx.drawImage(assets.logo, x, y, cw, ch);
+    if (showRaceName && model.brandName) {
+      ctx.font = `700 ${Math.round(h * 0.42)}px ${DISPLAY}`;
+      ctx.fillStyle = textColor;
+      ctx.textBaseline = "middle";
+      ctx.fillText(model.brandName.toUpperCase(), x + cw + 22, y + ch / 2);
+      ctx.textBaseline = "top";
+    }
+    return ch;
+  }
+  if (model.brandName) {
+    ctx.font = `700 34px ${DISPLAY}`;
+    ctx.fillStyle = textColor;
+    ctx.fillText(model.brandName.toUpperCase(), x, y + 6);
+    return 40;
+  }
+  return 0;
 }
 
 /** Selo (medalha/finisher) no canto superior direito. `sh`/`nosh` aplicam sombra
@@ -463,20 +528,10 @@ function drawBanner(
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
 
-  // Logo com **fundo 100% transparente** (sem pílula/caixa atrás). Fallback ao
-  // nome do evento em texto quando não há logo.
+  // Logo (fundo transparente) + opcional nome da corrida ao lado.
   const logoTop = 84;
-  if (assets.logo && assets.logo.width > 0) {
-    const lh = state.format === "stories" ? 92 : 80;
-    const lwFull = (assets.logo.width / assets.logo.height) * lh;
-    const cw = Math.min(lwFull, W * 0.5);
-    const ch = (cw / assets.logo.width) * assets.logo.height;
-    ctx.drawImage(assets.logo, pad, logoTop, cw, ch);
-  } else if (model.brandName) {
-    ctx.font = `700 34px ${DISPLAY}`;
-    ctx.fillStyle = th.text;
-    ctx.fillText(model.brandName.toUpperCase(), pad, logoTop + 6);
-  }
+  const logoH = state.format === "stories" ? 92 : 80;
+  drawLogoName(ctx, assets, model, pad, logoTop, logoH, W * 0.42, th.text, !!state.showRaceName);
 
   drawBadge(ctx, W, model, pad, logoTop, th, noop, noop);
 
@@ -527,8 +582,180 @@ function drawBanner(
   if (assets.qr) drawQr(ctx, W, H, assets.qr, pad);
 }
 
+/** Fundo do card (gradiente do tema) — pulado no modo transparente. */
+function drawThemeBg(ctx: CanvasRenderingContext2D, W: number, H: number, th: ThemeSpec, transparent: boolean) {
+  ctx.clearRect(0, 0, W, H);
+  if (transparent) return;
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, th.bgTop);
+  g.addColorStop(1, th.bgBottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+/** Logo + nome da corrida **centralizados** (lockup). Devolve a altura ocupada. */
+function drawLogoNameCentered(
+  ctx: CanvasRenderingContext2D,
+  assets: CardAssets,
+  model: CardModel,
+  cx: number,
+  y: number,
+  h: number,
+  textColor: string,
+): number {
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  if (assets.logo && assets.logo.width > 0) {
+    const w = (assets.logo.width / assets.logo.height) * h;
+    ctx.drawImage(assets.logo, cx - w / 2, y, w, h);
+    let bottom = y + h;
+    if (model.brandName) {
+      ctx.font = `700 30px ${DISPLAY}`;
+      ctx.fillStyle = textColor;
+      ctx.fillText(model.brandName.toUpperCase(), cx, y + h + 16);
+      bottom = y + h + 16 + 34;
+    }
+    return bottom - y;
+  }
+  if (model.brandName) {
+    ctx.font = `700 36px ${DISPLAY}`;
+    ctx.fillStyle = textColor;
+    ctx.fillText(model.brandName.toUpperCase(), cx, y);
+    return 44;
+  }
+  return 0;
+}
+
+/** Visualização **Destaque**: pódio/tempo em grande, centralizado. */
+function drawDestaque(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  state: CardState,
+  model: CardModel,
+  assets: CardAssets,
+) {
+  const th = THEMES[state.theme];
+  drawThemeBg(ctx, W, H, th, state.transparent);
+  const textCol = state.transparent ? "#ffffff" : th.text;
+  const noop = () => {};
+  const cx = W / 2;
+  const pad = 84;
+
+  // Logo (topo, alinhado à esquerda) + nome + selo à direita.
+  const logoTop = 84;
+  const logoH = state.format === "stories" ? 92 : 80;
+  ctx.textAlign = "left";
+  drawLogoName(ctx, assets, model, pad, logoTop, logoH, W * 0.42, textCol, !!state.showRaceName);
+  drawBadge(ctx, W, model, pad, logoTop, th, noop, noop);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  let y = Math.round(H * (state.format === "stories" ? 0.34 : 0.28));
+
+  const cat = (model.categoryLabel || "").toUpperCase();
+  if (cat) {
+    ctx.font = `700 32px ${DISPLAY}`;
+    ctx.fillStyle = th.accent;
+    ctx.fillText(cat, cx, y);
+    y += 52;
+  }
+  const nameFont = state.format === "stories" ? 68 : 58;
+  ctx.font = `700 ${nameFont}px ${DISPLAY}`;
+  ctx.fillStyle = textCol;
+  for (const line of wrapText(ctx, model.name || "", W - pad * 2, 2)) {
+    ctx.fillText(line, cx, y);
+    y += nameFont + 8;
+  }
+  y += 30;
+
+  // Colocação gigante.
+  const posPx = state.format === "stories" ? 220 : 190;
+  ctx.font = `700 ${posPx}px ${DISPLAY}`;
+  ctx.fillStyle = th.accent;
+  ctx.fillText(`${model.pos}º`, cx, y);
+  y += posPx + 6;
+
+  if (model.heroTime) {
+    ctx.font = `700 ${state.format === "stories" ? 72 : 60}px ${DISPLAY}`;
+    ctx.fillStyle = textCol;
+    ctx.fillText(model.heroTime, cx, y);
+    y += 90;
+  }
+  // Chips (pace/equipe…) em uma linha centralizada.
+  if (model.chips.length) {
+    const parts = model.chips.slice(0, 3).map((c) => `${c.label.toUpperCase()} ${c.value}`);
+    ctx.font = `600 28px ${DISPLAY}`;
+    ctx.fillStyle = state.transparent ? "rgba(255,255,255,0.8)" : th.sub;
+    ctx.fillText(parts.join("   ·   "), cx, y);
+  }
+
+  if (assets.qr) drawQr(ctx, W, H, assets.qr, pad);
+  ctx.textAlign = "left";
+}
+
+/** Visualização **Mapa**: o mapa da prova (inteiro, nunca cortado) + nome do
+ *  corredor/tempo e, embaixo, a logo + nome da corrida — tudo centralizado. */
+function drawMapaCard(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  state: CardState,
+  model: CardModel,
+  assets: CardAssets,
+) {
+  const th = THEMES[state.theme];
+  drawThemeBg(ctx, W, H, th, state.transparent);
+  const textCol = state.transparent ? "#ffffff" : th.text;
+  const cx = W / 2;
+  const pad = 84;
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  // Categoria + nome do corredor (topo).
+  let y = Math.round(H * 0.10);
+  const cat = (model.categoryLabel || "").toUpperCase();
+  if (cat) {
+    ctx.font = `700 30px ${DISPLAY}`;
+    ctx.fillStyle = th.accent;
+    ctx.fillText(cat, cx, y);
+    y += 46;
+  }
+  ctx.font = `700 ${state.format === "stories" ? 60 : 52}px ${DISPLAY}`;
+  ctx.fillStyle = textCol;
+  for (const line of wrapText(ctx, model.name || "", W - pad * 2, 2)) {
+    ctx.fillText(line, cx, y);
+    y += (state.format === "stories" ? 60 : 52) + 6;
+  }
+  if (model.heroTime) {
+    ctx.font = `700 ${state.format === "stories" ? 56 : 48}px ${DISPLAY}`;
+    ctx.fillStyle = th.accent;
+    ctx.fillText(model.heroTime, cx, y + 6);
+    y += 70;
+  }
+  y += 20;
+
+  // Mapa INTEIRO (contain, nunca cortado), centralizado, ocupando o miolo.
+  const mapAreaTop = y;
+  const mapAreaH = Math.round(H * (state.format === "stories" ? 0.42 : 0.38));
+  if (assets.map) drawContain(ctx, assets.map, pad, mapAreaTop, W - pad * 2, mapAreaH);
+  else {
+    ctx.font = `600 26px ${DISPLAY}`;
+    ctx.fillStyle = th.sub;
+    ctx.fillText("[ mapa do percurso ]", cx, mapAreaTop + mapAreaH / 2 - 16);
+  }
+
+  // Rodapé centralizado: logo + nome da corrida.
+  const footY = Math.round(H - (state.format === "stories" ? 300 : 220));
+  drawLogoNameCentered(ctx, assets, model, cx, footY, state.format === "stories" ? 96 : 84, textCol);
+
+  if (assets.qr) drawQr(ctx, W, H, assets.qr, pad);
+  ctx.textAlign = "left";
+}
+
 /**
- * Desenha o card com **foto/mapa** de fundo + sobreposição (nome/herói/chips).
+ * Desenha o card com **foto** de fundo + sobreposição (nome/herói/chips).
  * WYSIWYG: o mesmo desenho serve para preview e export.
  */
 function drawPhotoCard(
@@ -542,35 +769,23 @@ function drawPhotoCard(
   const th = THEMES[state.theme];
   ctx.clearRect(0, 0, W, H);
 
-  const overImage =
-    !state.transparent &&
-    ((state.template === "foto" && !!assets.photo) ||
-      (state.template === "trajeto" && !!assets.map));
-  // Sobre foto/mapa (ou transparente) usamos texto claro + sombra; no "resultado" as cores do tema.
+  const overImage = !state.transparent && !!assets.photo;
   const textColor = overImage || state.transparent ? "#ffffff" : th.text;
   const subColor = overImage || state.transparent ? "rgba(255,255,255,0.82)" : th.sub;
   const accent = th.accent;
 
   // ---- Fundo ----
   if (!state.transparent) {
-    if (state.template === "foto" && assets.photo) {
+    if (assets.photo) {
       drawCover(ctx, assets.photo, 0, 0, W, H, state.photo);
-    } else if (state.template === "trajeto" && assets.map) {
-      const g0 = ctx.createLinearGradient(0, 0, 0, H);
-      g0.addColorStop(0, th.bgTop);
-      g0.addColorStop(1, th.bgBottom);
-      ctx.fillStyle = g0;
-      ctx.fillRect(0, 0, W, H);
-      // Mapa ocupa a parte superior, enquadrável.
-      const mapH = Math.round(H * 0.62);
-      drawCover(ctx, assets.map, 0, 0, W, mapH, state.map);
     } else {
+      // Sem foto: gradiente do tema + número gigante decorativo (o card já mostra
+      // as informações; o usuário sobe a foto na aba Fotos).
       const g = ctx.createLinearGradient(0, 0, W, H);
       g.addColorStop(0, th.bgTop);
       g.addColorStop(1, th.bgBottom);
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
-      // Número gigante de fundo (decorativo) no "resultado".
       ctx.save();
       ctx.font = `700 ${Math.round(H * 0.42)}px ${DISPLAY}`;
       ctx.fillStyle = accent;
@@ -580,7 +795,6 @@ function drawPhotoCard(
       ctx.fillText(`${model.pos}`, W + 40, H * 0.72);
       ctx.restore();
     }
-    // Scrim inferior para legibilidade sobre foto/mapa.
     if (overImage) {
       const s = ctx.createLinearGradient(0, H * 0.38, 0, H);
       s.addColorStop(0, "rgba(8,6,3,0)");
@@ -591,11 +805,9 @@ function drawPhotoCard(
     }
   }
 
-  // ---- Mapa da prova SOBRE a imagem (inset), quando ligado no card de foto. ----
-  if (state.showMap && assets.map && state.template === "foto") {
-    const mw = Math.round(W * 0.6);
-    const mh = Math.round(mw * 0.6);
-    drawMapInset(ctx, assets.map, Math.round((W - mw) / 2), Math.round(H * 0.13), mw, mh, th.accent);
+  // ---- Mapa da prova SOBRE a foto (movível/pinça, transparente, inteiro). ----
+  if (state.showMap && assets.map) {
+    drawMapLayer(ctx, assets.map, W, H, state.mapInset ?? DEFAULT_LAYER);
   }
 
   const pad = 72;
@@ -613,21 +825,12 @@ function drawPhotoCard(
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
 
-  // ---- Logo (sempre; fallback ao nome do evento em texto) ----
+  // ---- Logo (fundo transparente) + opcional nome da corrida ao lado ----
   const logoTop = 74;
-  if (assets.logo && assets.logo.width > 0) {
-    const lh = state.format === "stories" ? 96 : 84;
-    const lw = (assets.logo.width / assets.logo.height) * lh;
-    shadow();
-    ctx.drawImage(assets.logo, pad, logoTop, Math.min(lw, W * 0.5), lw > W * 0.5 ? (W * 0.5 / assets.logo.width) * assets.logo.height : lh);
-    noShadow();
-  } else if (model.brandName) {
-    shadow();
-    ctx.font = `700 34px ${DISPLAY}`;
-    ctx.fillStyle = textColor;
-    ctx.fillText(model.brandName.toUpperCase(), pad, logoTop + 6);
-    noShadow();
-  }
+  const logoH = state.format === "stories" ? 96 : 84;
+  shadow();
+  drawLogoName(ctx, assets, model, pad, logoTop, logoH, W * 0.5, textColor, !!state.showRaceName);
+  noShadow();
 
   // ---- Selo (medalha/finisher) top-right ----
   if (model.badge) {
@@ -810,5 +1013,7 @@ export function drawCard(
   assets: CardAssets,
 ) {
   if (state.template === "banner") drawBanner(ctx, W, H, state, model, assets);
+  else if (state.template === "destaque") drawDestaque(ctx, W, H, state, model, assets);
+  else if (state.template === "mapa") drawMapaCard(ctx, W, H, state, model, assets);
   else drawPhotoCard(ctx, W, H, state, model, assets);
 }

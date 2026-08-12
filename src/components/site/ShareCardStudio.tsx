@@ -13,12 +13,16 @@ import {
   ensureFonts,
   FORMATS,
   loadImageTaintSafe,
+  MODE_LABEL,
+  MODE_SPEC,
+  TEMPLATE_LABEL,
   type CardAssets,
   type CardField,
   type CardFormat,
+  type CardMode,
   type CardModel,
   type CardState,
-  type CardTheme,
+  type CardTemplate,
   type LayerTransform,
 } from "@/lib/results/card";
 import { qrMatrix } from "@/lib/results/qr";
@@ -26,15 +30,51 @@ import SegmentedTabs from "./SegmentedTabs";
 
 const PREFS_KEY = "r4ba:card:prefs";
 const DEFAULT_T: LayerTransform = { ox: 0, oy: 0, zoom: 1 };
-/** Variações de banner mostradas na aba Cards (claro + escuros), como os prints. */
-const BANNER_THEMES: CardTheme[] = ["escuro", "claro", "dourado"];
 
-interface Prefs { format: CardFormat; showBadge: boolean; showQr: boolean }
+interface Prefs {
+  format: CardFormat;
+  showBadge: boolean;
+  showQr: boolean;
+  showRaceName: boolean;
+  mode: CardMode;
+  cardTemplate: CardTemplate;
+}
 function loadPrefs(): Partial<Prefs> {
   try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"); } catch { return {}; }
 }
 function slug(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+}
+
+type ShareOutcome = "shared" | "canceled" | "unavailable";
+/**
+ * Tenta o **compartilhamento nativo** de um arquivo. Distingue o usuário ter
+ * **cancelado** a folha (`AbortError`) — que NÃO deve disparar nenhum fallback
+ * (nada de baixar sozinho nem abrir o WhatsApp) — de o recurso estar
+ * **indisponível/falhar**, quando o chamador cai no plano B (baixar).
+ */
+async function tryNativeShare(file: File, extra?: { title?: string; text?: string }): Promise<ShareOutcome> {
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+  if (typeof nav.share !== "function" || !nav.canShare?.({ files: [file] })) return "unavailable";
+  try {
+    await nav.share({ files: [file], ...extra });
+    return "shared";
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") return "canceled";
+    return "unavailable";
+  }
+}
+
+/** Baixa um blob como arquivo (desktop, ou quando não há compartilhamento nativo). */
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 /** Campos ligados por padrão = a predefinição do ADM (`display`); pace ligado. */
@@ -63,10 +103,12 @@ function useLayerGesture(
   tRef: React.MutableRefObject<LayerTransform>,
   setT: (fn: (t: LayerTransform) => LayerTransform) => void,
   editingRef: React.MutableRefObject<boolean>,
+  minZoom = 1,
+  maxZoom = 4,
 ) {
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; zoom: number } | null>(null);
-  const clampZoom = (z: number) => Math.max(1, Math.min(4, z));
+  const clampZoom = (z: number) => Math.max(minZoom, Math.min(maxZoom, z));
   const acts = (e: React.PointerEvent) => e.pointerType === "mouse" || editingRef.current;
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!acts(e)) return; // toque fora do modo edição → deixa a página rolar
@@ -130,35 +172,39 @@ export default function ShareCardStudio({
   const available: CardField[] = useMemo(() => cardFieldOptions(runner, event, routes), [runner, event, routes]);
   const prefs = useMemo(() => (typeof window !== "undefined" ? loadPrefs() : {}), []);
 
+  const hasMap = mapRoutes.length > 0;
+
   const [tab, setTab] = useState(0); // 0 = Fotos, 1 = Cards
   const [format, setFormat] = useState<CardFormat>(prefs.format ?? "feed");
   const [showBadge, setShowBadge] = useState(prefs.showBadge ?? true);
   const [showQr, setShowQr] = useState(prefs.showQr ?? false);
-  const [showMap, setShowMap] = useState(false);
+  const [showRaceName, setShowRaceName] = useState(prefs.showRaceName ?? false);
+  const [showMap, setShowMap] = useState(false); // mapa sobre a foto (fora das configs)
+  const [mode, setMode] = useState<CardMode>(prefs.mode ?? "escuro"); // Cards: claro/escuro/transparente
+  const [cardTemplate, setCardTemplate] = useState<CardTemplate>(prefs.cardTemplate ?? "banner");
+  const [photoLayer, setPhotoLayer] = useState<"foto" | "mapa">("foto"); // camada ativa na aba Fotos
   const [fields, setFields] = useState<Record<string, boolean>>(() => defaultFields(available, display));
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [photoImg, setPhotoImg] = useState<HTMLImageElement | null>(null);
   const [photoT, setPhotoT] = useState<LayerTransform>(DEFAULT_T);
-  const [mapT, setMapT] = useState<LayerTransform>(DEFAULT_T);
+  const [mapInsetT, setMapInsetT] = useState<LayerTransform>(DEFAULT_T);
   const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null);
   const [mapImg, setMapImg] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
 
-  // Modo de "reposicionar": no toque, só enquadra quando ligado (senão a página
-  // rola por cima da imagem). No mouse, arrasta sempre.
+  // Modo de "reposicionar" da aba Fotos: no toque, só enquadra quando ligado
+  // (senão a página rola por cima da imagem). No mouse, arrasta sempre.
   const [photoEditing, setPhotoEditing] = useState(false);
-  const [mapEditing, setMapEditing] = useState(false);
   const photoTRef = useRef(photoT);
-  const mapTRef = useRef(mapT);
+  const mapInsetTRef = useRef(mapInsetT);
   const photoEditRef = useRef(photoEditing);
-  const mapEditRef = useRef(mapEditing);
   useEffect(() => { photoTRef.current = photoT; }, [photoT]);
-  useEffect(() => { mapTRef.current = mapT; }, [mapT]);
+  useEffect(() => { mapInsetTRef.current = mapInsetT; }, [mapInsetT]);
   useEffect(() => { photoEditRef.current = photoEditing; }, [photoEditing]);
-  useEffect(() => { mapEditRef.current = mapEditing; }, [mapEditing]);
   const photoGesture = useLayerGesture(photoTRef, setPhotoT, photoEditRef);
-  const mapGesture = useLayerGesture(mapTRef, setMapT, mapEditRef);
+  // O mapa sobre a foto pode diminuir (0,3×) e crescer (3×).
+  const mapInsetGesture = useLayerGesture(mapInsetTRef, setMapInsetT, photoEditRef, 0.3, 3);
 
   useEffect(() => { ensureFonts().then(() => setFontsReady(true)); }, []);
   useEffect(() => { loadImageTaintSafe(brandLogo).then(setLogoImg); }, [brandLogo]);
@@ -174,8 +220,13 @@ export default function ShareCardStudio({
   }, [showQr]);
 
   useEffect(() => {
-    try { localStorage.setItem(PREFS_KEY, JSON.stringify({ format, showBadge, showQr } as Prefs)); } catch { /* ignore */ }
-  }, [format, showBadge, showQr]);
+    try {
+      localStorage.setItem(
+        PREFS_KEY,
+        JSON.stringify({ format, showBadge, showQr, showRaceName, mode, cardTemplate } as Prefs),
+      );
+    } catch { /* ignore */ }
+  }, [format, showBadge, showQr, showRaceName, mode, cardTemplate]);
 
   const model: CardModel = useMemo(() => {
     const heroTime = fields.netTime ? runner.timeNet : fields.grossTime ? runner.timeGross : undefined;
@@ -208,8 +259,29 @@ export default function ShareCardStudio({
       active ? "bg-gold text-gold-ink" : "border border-line-soft bg-ink text-muted-strong hover:text-cream"
     }`;
 
-  const hasMap = mapRoutes.length > 0;
-  const fotoState: CardState = { template: "foto", format, theme: "dourado", transparent: false, photo: photoT, map: mapT, showMap: showMap && hasMap };
+  const fotoState: CardState = {
+    template: "foto", format, theme: "dourado", transparent: false,
+    photo: photoT, map: DEFAULT_T, mapInset: mapInsetT,
+    showMap: showMap && hasMap, showRaceName,
+  };
+
+  // Aba Cards: visualização (template) × modo (claro/escuro/transparente).
+  const cardTemplates: CardTemplate[] = hasMap ? ["banner", "destaque", "mapa"] : ["banner", "destaque"];
+  const activeTemplate = cardTemplates.includes(cardTemplate) ? cardTemplate : "banner";
+  const modeSpec = MODE_SPEC[mode];
+  const cardsState: CardState = {
+    template: activeTemplate, format, theme: modeSpec.theme, transparent: modeSpec.transparent,
+    photo: DEFAULT_T, map: DEFAULT_T, showRaceName,
+  };
+
+  // A camada ativa na aba Fotos (foto ou mapa) diz qual transform o gesto move.
+  const activeIsMap = photoLayer === "mapa" && showMap && hasMap;
+  const fotoGesture = activeIsMap ? mapInsetGesture : photoGesture;
+  const fotoZoom = activeIsMap ? mapInsetT.zoom : photoT.zoom;
+  const setFotoZoom = activeIsMap
+    ? (z: number) => setMapInsetT((t) => ({ ...t, zoom: z }))
+    : (z: number) => setPhotoT((t) => ({ ...t, zoom: z }));
+  const fotoMovable = !!photoImg || (showMap && hasMap);
 
   return (
     <div className="rounded-xl border border-line-soft bg-ink p-4">
@@ -242,9 +314,9 @@ export default function ShareCardStudio({
           </div>
           <div className="mb-2 mt-4 text-[12px] font-bold uppercase tracking-[0.05em] text-muted">Extras</div>
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            <Switch label="Nome da corrida ao lado da logo" on={showRaceName} onChange={setShowRaceName} />
             <Switch label={runner.pos <= 3 ? "Selo de medalha" : "Selo finisher"} on={showBadge} onChange={setShowBadge} />
             <Switch label="QR da classificação" on={showQr} onChange={setShowQr} />
-            {hasMap && <Switch label="Mapa da prova (na foto)" on={showMap} onChange={setShowMap} />}
           </div>
         </div>
       )}
@@ -252,7 +324,7 @@ export default function ShareCardStudio({
       <SegmentedTabs items={["Fotos", "Cards"]} active={tab} onSelect={setTab} ariaLabel="Fotos ou cards" className="mb-4 rounded-lg border border-line-soft" />
 
       {/* Formato (compartilhado). */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {(Object.keys(FORMATS) as CardFormat[]).map((f) => (
           <button key={f} type="button" onClick={() => setFormat(f)} className={chip(format === f)}>{FORMATS[f].label}</button>
         ))}
@@ -261,6 +333,19 @@ export default function ShareCardStudio({
       {tab === 0 ? (
         /* ---- Aba Fotos: o card leva as infos; o usuário sobe a foto ao fundo ---- */
         <div>
+          {/* Mapa da prova (FORA das configurações) + seletor de camada. */}
+          {hasMap && (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setShowMap((v) => !v)} className={chip(showMap)}>Mapa da prova</button>
+              {showMap && (
+                <>
+                  <span className="text-[11px] uppercase tracking-[0.05em] text-muted">Editar:</span>
+                  <button type="button" onClick={() => setPhotoLayer("foto")} className={chip(photoLayer === "foto")}>Foto</button>
+                  <button type="button" onClick={() => setPhotoLayer("mapa")} className={chip(photoLayer === "mapa")}>Mapa</button>
+                </>
+              )}
+            </div>
+          )}
           <CardPreview
             title="Sua foto com os dados"
             state={fotoState}
@@ -269,15 +354,16 @@ export default function ShareCardStudio({
             drawKey={drawKey}
             filenameBase={`card-${slug(runner.name)}-foto-${format}`}
             shareText={`${runner.name} — ${runner.pos}º lugar (${categoryLabel}).`}
-            movable={!!photoImg}
-            gesture={photoImg ? photoGesture : undefined}
-            zoom={photoImg ? photoT.zoom : undefined}
-            onZoom={photoImg ? (z) => setPhotoT((t) => ({ ...t, zoom: z })) : undefined}
-            onCanvasClick={!photoImg ? () => fileRef.current?.click() : undefined}
+            movable={fotoMovable}
+            gesture={fotoMovable ? fotoGesture : undefined}
+            zoom={fotoMovable ? fotoZoom : undefined}
+            onZoom={fotoMovable ? setFotoZoom : undefined}
+            onCanvasClick={!photoImg && photoLayer === "foto" ? () => fileRef.current?.click() : undefined}
             hint={!photoImg ? "Toque para escolher sua foto de fundo" : undefined}
             extraDownloadLabel="Baixar sem foto (transparente)"
             editing={photoEditing}
-            onToggleEdit={photoImg ? () => setPhotoEditing((v) => !v) : undefined}
+            onToggleEdit={fotoMovable ? () => setPhotoEditing((v) => !v) : undefined}
+            editLabel={activeIsMap ? "Reposicionar mapa" : "Reposicionar foto"}
           />
           <div className="mt-3 flex flex-wrap gap-2.5">
             <button type="button" onClick={() => fileRef.current?.click()} className={chip(false)}>{photoImg ? "Trocar foto" : "Escolher foto"}</button>
@@ -287,39 +373,30 @@ export default function ShareCardStudio({
           </div>
         </div>
       ) : (
-        /* ---- Aba Cards: banners prontos (temas claro/escuro) ---- */
+        /* ---- Aba Cards: visualização × modo (claro/escuro/transparente) ---- */
         <div>
-          <p className="mb-3 text-[12px] text-muted">Escolha um modelo e baixe/compartilhe. Ajuste as informações na engrenagem.</p>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {BANNER_THEMES.map((t) => (
-              <CardPreview
-                key={t}
-                title={`Banner ${t === "claro" ? "claro" : t === "escuro" ? "escuro" : "dourado"}`}
-                state={{ template: "banner", format, theme: t, transparent: false, photo: DEFAULT_T, map: DEFAULT_T }}
-                model={model}
-                assets={assets}
-                drawKey={drawKey}
-                filenameBase={`card-${slug(runner.name)}-${t}-${format}`}
-                shareText={`${runner.name} — ${runner.pos}º lugar (${categoryLabel}).`}
-              />
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="w-[70px] shrink-0 text-[11px] uppercase tracking-[0.05em] text-muted">Modelo</span>
+            {cardTemplates.map((t) => (
+              <button key={t} type="button" onClick={() => setCardTemplate(t)} className={chip(activeTemplate === t)}>{TEMPLATE_LABEL[t]}</button>
             ))}
-            {mapRoutes.length > 0 && (
-              <CardPreview
-                title="Trajeto (mapa)"
-                state={{ template: "trajeto", format, theme: "escuro", transparent: false, photo: DEFAULT_T, map: mapT }}
-                model={model}
-                assets={assets}
-                drawKey={drawKey}
-                filenameBase={`card-${slug(runner.name)}-trajeto-${format}`}
-                shareText={`${runner.name} — ${runner.pos}º lugar (${categoryLabel}).`}
-                movable
-                gesture={mapGesture}
-                zoom={mapT.zoom}
-                onZoom={(z) => setMapT((t) => ({ ...t, zoom: z }))}
-                editing={mapEditing}
-                onToggleEdit={() => setMapEditing((v) => !v)}
-              />
-            )}
+          </div>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="w-[70px] shrink-0 text-[11px] uppercase tracking-[0.05em] text-muted">Fundo</span>
+            {(Object.keys(MODE_LABEL) as CardMode[]).map((m) => (
+              <button key={m} type="button" onClick={() => setMode(m)} className={chip(mode === m)}>{MODE_LABEL[m]}</button>
+            ))}
+          </div>
+          <div className="mx-auto max-w-[460px]">
+            <CardPreview
+              title={`${TEMPLATE_LABEL[activeTemplate]} · ${MODE_LABEL[mode]}`}
+              state={cardsState}
+              model={model}
+              assets={assets}
+              drawKey={drawKey}
+              filenameBase={`card-${slug(runner.name)}-${activeTemplate}-${mode}-${format}`}
+              shareText={`${runner.name} — ${runner.pos}º lugar (${categoryLabel}).`}
+            />
           </div>
         </div>
       )}
@@ -363,6 +440,7 @@ function CardPreview({
   extraDownloadLabel,
   editing,
   onToggleEdit,
+  editLabel,
 }: {
   title: string;
   state: CardState;
@@ -380,8 +458,14 @@ function CardPreview({
   extraDownloadLabel?: string;
   editing?: boolean;
   onToggleEdit?: () => void;
+  editLabel?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  // No **celular** só oferecemos "Compartilhar" (que salva na galeria); o botão
+  // Baixar fica só no desktop.
+  const [coarse] = useState(
+    () => typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches,
+  );
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
@@ -423,35 +507,23 @@ function CardPreview({
     const blob = await renderBlob(transparent);
     if (!blob) return;
     const filename = `${filenameBase}${transparent ? "-transparente" : ""}.png`;
-    const file = new File([blob], filename, { type: "image/png" });
-    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-    const coarse = typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches;
-    if (coarse && nav.canShare?.({ files: [file] })) {
-      try {
-        await nav.share({ files: [file] });
-        return;
-      } catch {
-        /* usuário cancelou → cai no download direto */
-      }
+    // No celular tentamos a folha nativa (um toque em "Salvar em Fotos" leva à
+    // galeria). Cancelar NÃO baixa nada; só baixamos se o recurso não existir.
+    if (coarse) {
+      const r = await tryNativeShare(new File([blob], filename, { type: "image/png" }));
+      if (r === "shared" || r === "canceled") return;
     }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, filename);
   };
   const share = async () => {
     const blob = await renderBlob(false);
     if (!blob) return;
-    const file = new File([blob], `${filenameBase}.png`, { type: "image/png" });
-    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-    if (nav.canShare?.({ files: [file] })) {
-      try { await nav.share({ files: [file], title: "Meu resultado", text: shareText }); return; } catch { /* fallback */ }
-    }
-    await saveImage(false);
+    const filename = `${filenameBase}.png`;
+    const file = new File([blob], filename, { type: "image/png" });
+    const r = await tryNativeShare(file, { title: "Meu resultado", text: shareText });
+    if (r === "shared" || r === "canceled") return; // compartilhou ou cancelou → fim
+    // Sem compartilhamento nativo (ex.: desktop): baixa a imagem e abre o WhatsApp.
+    downloadBlob(blob, filename);
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
   };
 
@@ -469,7 +541,7 @@ function CardPreview({
               editing ? "bg-gold text-gold-ink" : "border border-line-soft text-muted-strong hover:text-cream"
             }`}
           >
-            {editing ? "Concluir" : "Reposicionar"}
+            {editing ? "Concluir" : (editLabel ?? "Reposicionar")}
           </button>
         )}
       </div>
@@ -500,10 +572,13 @@ function CardPreview({
         </div>
       )}
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={() => saveImage(false)} className="min-h-11 flex-1 rounded-lg bg-gold px-4 text-[13px] font-bold text-gold-ink transition-transform hover:-translate-y-0.5">Baixar</button>
-        <button type="button" onClick={share} className="min-h-11 rounded-lg border border-gold px-4 text-[13px] font-bold text-gold transition-colors hover:bg-gold hover:text-gold-ink">Compartilhar</button>
+        {/* No mobile só "Compartilhar" (que salva na galeria); "Baixar" só no desktop. */}
+        {!coarse && (
+          <button type="button" onClick={() => saveImage(false)} className="min-h-11 flex-1 rounded-lg bg-gold px-4 text-[13px] font-bold text-gold-ink transition-transform hover:-translate-y-0.5">Baixar</button>
+        )}
+        <button type="button" onClick={share} className={`min-h-11 rounded-lg text-[13px] font-bold transition-colors ${coarse ? "flex-1 bg-gold px-4 text-gold-ink hover:-translate-y-0.5" : "border border-gold px-4 text-gold hover:bg-gold hover:text-gold-ink"}`}>Compartilhar</button>
       </div>
-      {extraDownloadLabel && (
+      {extraDownloadLabel && !coarse && (
         <button type="button" onClick={() => saveImage(true)} className="mt-2 min-h-11 rounded-lg border border-line-soft px-4 text-[13px] font-bold text-muted-strong transition-colors hover:border-gold hover:text-cream">
           {extraDownloadLabel}
         </button>
