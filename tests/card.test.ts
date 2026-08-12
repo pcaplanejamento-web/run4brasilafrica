@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { paceFromModality, kmFromText, secsFromTime } from "@/lib/results/card";
+import {
+  paceFromModality,
+  kmFromText,
+  secsFromTime,
+  clampCover,
+  clampMapLayer,
+  mapLayerRect,
+  PHOTO_ZOOM,
+  MAP_ZOOM,
+} from "@/lib/results/card";
 import { qrMatrix } from "@/lib/results/qr";
 
 describe("pace", () => {
@@ -31,6 +40,57 @@ describe("pace", () => {
   it("sem distância ou tempo → undefined", () => {
     expect(paceFromModality(undefined, undefined, "00:15:00")).toBeUndefined();
     expect(paceFromModality("5KM", undefined, undefined)).toBeUndefined();
+  });
+});
+
+describe("clampCover (foto — sempre cobre, sem furos nem zona morta)", () => {
+  const W = 1080, H = 1350, iw = 2000, ih = 1000; // paisagem
+
+  it("prende o zoom em [1,4] e nunca deixa < 1 (sem furo)", () => {
+    expect(clampCover({ ox: 0, oy: 0, zoom: 0.2 }, iw, ih, W, H).zoom).toBe(PHOTO_ZOOM.min);
+    expect(clampCover({ ox: 0, oy: 0, zoom: 99 }, iw, ih, W, H).zoom).toBe(PHOTO_ZOOM.max);
+  });
+
+  it("prende offsets exagerados aos limites reais (a imagem ainda cobre)", () => {
+    const c = clampCover({ ox: 999999, oy: -999999, zoom: 1 }, iw, ih, W, H);
+    const base = Math.max(W / iw, H / ih);
+    const maxX = (iw * base - W) / 2;
+    expect(c.ox).toBeCloseTo(maxX, 3);
+    expect(c.oy).toBeCloseTo(0, 3); // no eixo sem folga, offset zera (não some)
+  });
+
+  it("saneia NaN/Infinity (nunca vira desenho quebrado)", () => {
+    const c = clampCover({ ox: NaN, oy: Infinity, zoom: NaN }, iw, ih, W, H);
+    expect(Number.isFinite(c.ox)).toBe(true);
+    expect(Number.isFinite(c.oy)).toBe(true);
+    expect(c.zoom).toBe(PHOTO_ZOOM.min);
+  });
+});
+
+describe("mapLayerRect / clampMapLayer (mapa — inteiro e sempre 100% na tela)", () => {
+  const W = 1080, H = 1350, mw = 1600, mh = 900;
+
+  it("o mapa fica sempre inteiramente dentro do card, para qualquer offset", () => {
+    for (const t of [
+      { ox: 0, oy: 0, zoom: 1 },
+      { ox: 99999, oy: 99999, zoom: 2 },
+      { ox: -99999, oy: -99999, zoom: 0.3 },
+    ]) {
+      const r = mapLayerRect(W, H, mw, mh, t);
+      expect(r.x).toBeGreaterThanOrEqual(-0.01);
+      expect(r.y).toBeGreaterThanOrEqual(-0.01);
+      expect(r.x + r.w).toBeLessThanOrEqual(W + 0.01);
+      expect(r.y + r.h).toBeLessThanOrEqual(H + 0.01);
+      expect(r.w).toBeGreaterThan(0);
+      expect(r.h).toBeGreaterThan(0);
+    }
+  });
+
+  it("clampMapLayer prende o zoom em [0.3,2] e saneia NaN", () => {
+    expect(clampMapLayer({ ox: 0, oy: 0, zoom: 9 }, mw, mh, W, H).zoom).toBe(MAP_ZOOM.max);
+    expect(clampMapLayer({ ox: 0, oy: 0, zoom: 0.01 }, mw, mh, W, H).zoom).toBe(MAP_ZOOM.min);
+    const c = clampMapLayer({ ox: NaN, oy: NaN, zoom: NaN }, mw, mh, W, H);
+    expect(Number.isFinite(c.ox) && Number.isFinite(c.oy)).toBe(true);
   });
 });
 

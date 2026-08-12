@@ -9,10 +9,13 @@ import type {
 } from "@/lib/content/types";
 import {
   cardFieldOptions,
+  clampCover,
+  clampMapLayer,
   drawCard,
   ensureFonts,
   FORMATS,
   loadImageTaintSafe,
+  mapLayerRect,
   MODE_LABEL,
   MODE_SPEC,
   TEMPLATE_LABEL,
@@ -96,53 +99,116 @@ function defaultFields(available: CardField[], d?: ClassificacaoDisplay): Record
   return out;
 }
 
-/** Gestos de enquadramento (arraste + pinça de 2 dedos + roda). No **toque**, só
- *  age quando `editingRef` está ligado (fora disso o dedo **rola a página** —
- *  `touch-action: pan-y`); com **mouse** age sempre. */
-function useLayerGesture(
-  tRef: React.MutableRefObject<LayerTransform>,
-  setT: (fn: (t: LayerTransform) => LayerTransform) => void,
-  editingRef: React.MutableRefObject<boolean>,
-  minZoom = 1,
-  maxZoom = 4,
-) {
+const imgSize = (img: HTMLImageElement) => ({
+  w: img.naturalWidth || img.width || 1,
+  h: img.naturalHeight || img.height || 1,
+});
+
+interface EditorOpts {
+  enabled: boolean;
+  showMap: boolean;
+  photoImg: HTMLImageElement | null;
+  mapImg: HTMLImageElement | null;
+  mapT: LayerTransform;
+  setPhotoT: (fn: (t: LayerTransform) => LayerTransform) => void;
+  setMapT: (fn: (t: LayerTransform) => LayerTransform) => void;
+}
+
+/**
+ * Editor de enquadramento no `<canvas>` — **sem modo e sem seleção de camada**
+ * (lógica profissional): **dois dedos** (ou o **mouse**) editam a camada que
+ * está **sob o gesto** (o mapa se o toque cai sobre ele, senão a foto); **um
+ * dedo rola a página**. Zoom por **pinça** (celular) ou **roda** (desktop). Todo
+ * transform sai **clampado** (a camada nunca some nem trava). Devolve os handlers
+ * de ponteiro + `wheelZoom` (ligado nativamente p/ poder `preventDefault`).
+ */
+function useCanvasEditor(canvasRef: React.RefObject<HTMLCanvasElement | null>, opts: EditorOpts) {
   const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const pinch = useRef<{ dist: number; zoom: number } | null>(null);
-  const clampZoom = (z: number) => Math.max(minZoom, Math.min(maxZoom, z));
-  const acts = (e: React.PointerEvent) => e.pointerType === "mouse" || editingRef.current;
-  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!acts(e)) return; // toque fora do modo edição → deixa a página rolar
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size === 2) {
-      const [a, b] = [...pointers.current.values()];
-      pinch.current = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom: tRef.current.zoom };
+  const target = useRef<"photo" | "map" | null>(null);
+  const last = useRef<{ cx: number; cy: number; dist: number } | null>(null);
+
+  const scale = () => {
+    const c = canvasRef.current!;
+    const rect = c.getBoundingClientRect();
+    return { rect, s: rect.width ? c.width / rect.width : 1 };
+  };
+  const mapRectNow = () => {
+    const c = canvasRef.current;
+    if (!c || !opts.enabled || !opts.showMap || !opts.mapImg) return null;
+    const { w, h } = imgSize(opts.mapImg);
+    return mapLayerRect(c.width, c.height, w, h, opts.mapT);
+  };
+  /** Escolhe a camada tocada: mapa se o ponto cai sobre ele, senão a foto. */
+  const pick = (x: number, y: number) => {
+    const r = mapRectNow();
+    if (r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) target.current = "map";
+    else if (opts.photoImg) target.current = "photo";
+    else target.current = r ? "map" : null;
+  };
+  const apply = (fn: (t: LayerTransform) => LayerTransform) => {
+    const c = canvasRef.current;
+    if (!c || !target.current) return;
+    if (target.current === "map" && opts.mapImg) {
+      const { w, h } = imgSize(opts.mapImg);
+      opts.setMapT((t) => clampMapLayer(fn(t), w, h, c.width, c.height));
+    } else if (target.current === "photo" && opts.photoImg) {
+      const { w, h } = imgSize(opts.photoImg);
+      opts.setPhotoT((t) => clampCover(fn(t), w, h, c.width, c.height));
     }
   };
-  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!pointers.current.has(e.pointerId)) return;
-    const prev = pointers.current.get(e.pointerId)!;
+  const centroid = () => {
+    const pts = [...pointers.current.values()];
+    const a = pts[0];
+    const b = pts[1] ?? pts[0];
+    return {
+      cx: (a.x + b.x) / 2,
+      cy: (a.y + b.y) / 2,
+      dist: pts.length >= 2 ? Math.hypot(a.x - b.x, a.y - b.y) : 0,
+    };
+  };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!opts.enabled) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size >= 2 && pinch.current) {
-      const [a, b] = [...pointers.current.values()];
-      const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      setT((t) => ({ ...t, zoom: clampZoom((pinch.current!.zoom * dist) / pinch.current!.dist) }));
-    } else {
-      const canvas = e.currentTarget;
-      const rect = canvas.getBoundingClientRect();
-      const s = canvas.width / rect.width;
-      setT((t) => ({ ...t, ox: t.ox + (e.clientX - prev.x) * s, oy: t.oy + (e.clientY - prev.y) * s }));
-    }
+    // No toque, só edita com 2 dedos (1 dedo rola a página); mouse/caneta editam.
+    if (e.pointerType === "touch" && pointers.current.size < 2) return;
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* ponteiro já inativo */ }
+    const { rect, s } = scale();
+    const g = centroid();
+    pick((g.cx - rect.left) * s, (g.cy - rect.top) * s);
+    last.current = g;
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!opts.enabled || !pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (e.pointerType === "touch" && pointers.current.size < 2) return; // 1 dedo rola
+    if (!last.current || !target.current) return;
+    const { s } = scale();
+    const g = centroid();
+    const dx = (g.cx - last.current.cx) * s;
+    const dy = (g.cy - last.current.cy) * s;
+    const zf = last.current.dist > 0 && g.dist > 0 ? g.dist / last.current.dist : 1;
+    apply((t) => ({ ox: t.ox + dx, oy: t.oy + dy, zoom: t.zoom * zf }));
+    last.current = g;
   };
   const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) pinch.current = null;
+    if (pointers.current.size < 2) {
+      last.current = null;
+      target.current = null;
+    }
   };
-  const onWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    if (!editingRef.current) return; // fora da edição a roda rola a página
-    setT((t) => ({ ...t, zoom: clampZoom(t.zoom - e.deltaY * 0.001) }));
+  /** Zoom por roda (desktop) na camada sob o cursor. Chamado por listener nativo
+   *  (não-passivo) p/ `preventDefault` — evita rolar a página ao dar zoom. */
+  const wheelZoom = (e: WheelEvent) => {
+    if (!opts.enabled) return;
+    const { rect, s } = scale();
+    pick((e.clientX - rect.left) * s, (e.clientY - rect.top) * s);
+    const factor = Math.exp(-e.deltaY * 0.0015);
+    apply((t) => ({ ...t, zoom: t.zoom * factor }));
   };
-  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp, onWheel };
+
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp, wheelZoom };
 }
 
 /**
@@ -182,7 +248,6 @@ export default function ShareCardStudio({
   const [showMap, setShowMap] = useState(false); // mapa sobre a foto (fora das configs)
   const [mode, setMode] = useState<CardMode>(prefs.mode ?? "escuro"); // Cards: claro/escuro/transparente
   const [cardTemplate, setCardTemplate] = useState<CardTemplate>(prefs.cardTemplate ?? "banner");
-  const [photoLayer, setPhotoLayer] = useState<"foto" | "mapa">("foto"); // camada ativa na aba Fotos
   const [fields, setFields] = useState<Record<string, boolean>>(() => defaultFields(available, display));
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -192,19 +257,6 @@ export default function ShareCardStudio({
   const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null);
   const [mapImg, setMapImg] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
-
-  // Modo de "reposicionar" da aba Fotos: no toque, só enquadra quando ligado
-  // (senão a página rola por cima da imagem). No mouse, arrasta sempre.
-  const [photoEditing, setPhotoEditing] = useState(false);
-  const photoTRef = useRef(photoT);
-  const mapInsetTRef = useRef(mapInsetT);
-  const photoEditRef = useRef(photoEditing);
-  useEffect(() => { photoTRef.current = photoT; }, [photoT]);
-  useEffect(() => { mapInsetTRef.current = mapInsetT; }, [mapInsetT]);
-  useEffect(() => { photoEditRef.current = photoEditing; }, [photoEditing]);
-  const photoGesture = useLayerGesture(photoTRef, setPhotoT, photoEditRef);
-  // O mapa sobre a foto pode diminuir (0,3×) e crescer (3×).
-  const mapInsetGesture = useLayerGesture(mapInsetTRef, setMapInsetT, photoEditRef, 0.3, 3);
 
   useEffect(() => { ensureFonts().then(() => setFontsReady(true)); }, []);
   useEffect(() => { loadImageTaintSafe(brandLogo).then(setLogoImg); }, [brandLogo]);
@@ -274,14 +326,8 @@ export default function ShareCardStudio({
     photo: DEFAULT_T, map: DEFAULT_T, showRaceName,
   };
 
-  // A camada ativa na aba Fotos (foto ou mapa) diz qual transform o gesto move.
-  const activeIsMap = photoLayer === "mapa" && showMap && hasMap;
-  const fotoGesture = activeIsMap ? mapInsetGesture : photoGesture;
-  const fotoZoom = activeIsMap ? mapInsetT.zoom : photoT.zoom;
-  const setFotoZoom = activeIsMap
-    ? (z: number) => setMapInsetT((t) => ({ ...t, zoom: z }))
-    : (z: number) => setPhotoT((t) => ({ ...t, zoom: z }));
-  const fotoMovable = !!photoImg || (showMap && hasMap);
+  // A aba Fotos é editável quando há foto e/ou o mapa está ligado.
+  const fotoEditable = !!photoImg || (showMap && hasMap);
 
   return (
     <div className="rounded-xl border border-line-soft bg-ink p-4">
@@ -333,17 +379,10 @@ export default function ShareCardStudio({
       {tab === 0 ? (
         /* ---- Aba Fotos: o card leva as infos; o usuário sobe a foto ao fundo ---- */
         <div>
-          {/* Mapa da prova (FORA das configurações) + seletor de camada. */}
+          {/* Mapa da prova (FORA das configurações). */}
           {hasMap && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => setShowMap((v) => !v)} className={chip(showMap)}>Mapa da prova</button>
-              {showMap && (
-                <>
-                  <span className="text-[11px] uppercase tracking-[0.05em] text-muted">Editar:</span>
-                  <button type="button" onClick={() => setPhotoLayer("foto")} className={chip(photoLayer === "foto")}>Foto</button>
-                  <button type="button" onClick={() => setPhotoLayer("mapa")} className={chip(photoLayer === "mapa")}>Mapa</button>
-                </>
-              )}
             </div>
           )}
           <CardPreview
@@ -354,21 +393,27 @@ export default function ShareCardStudio({
             drawKey={drawKey}
             filenameBase={`card-${slug(runner.name)}-foto-${format}`}
             shareText={`${runner.name} — ${runner.pos}º lugar (${categoryLabel}).`}
-            movable={fotoMovable}
-            gesture={fotoMovable ? fotoGesture : undefined}
-            zoom={fotoMovable ? fotoZoom : undefined}
-            onZoom={fotoMovable ? setFotoZoom : undefined}
-            onCanvasClick={!photoImg && photoLayer === "foto" ? () => fileRef.current?.click() : undefined}
+            editable={fotoEditable}
+            editor={{
+              enabled: fotoEditable,
+              showMap: showMap && hasMap,
+              photoImg,
+              mapImg,
+              mapT: mapInsetT,
+              setPhotoT,
+              setMapT: setMapInsetT,
+            }}
+            onCanvasClick={!photoImg ? () => fileRef.current?.click() : undefined}
             hint={!photoImg ? "Toque para escolher sua foto de fundo" : undefined}
             extraDownloadLabel="Baixar sem foto (transparente)"
-            editing={photoEditing}
-            onToggleEdit={fotoMovable ? () => setPhotoEditing((v) => !v) : undefined}
-            editLabel={activeIsMap ? "Reposicionar mapa" : "Reposicionar foto"}
           />
           <div className="mt-3 flex flex-wrap gap-2.5">
             <button type="button" onClick={() => fileRef.current?.click()} className={chip(false)}>{photoImg ? "Trocar foto" : "Escolher foto"}</button>
             {photoImg && (
               <button type="button" onClick={() => { setPhotoImg(null); setPhotoT(DEFAULT_T); }} className={chip(false)}>Remover foto</button>
+            )}
+            {showMap && hasMap && (mapInsetT.ox !== 0 || mapInsetT.oy !== 0 || mapInsetT.zoom !== 1) && (
+              <button type="button" onClick={() => setMapInsetT(DEFAULT_T)} className={chip(false)}>Centralizar mapa</button>
             )}
           </div>
         </div>
@@ -421,8 +466,8 @@ function Switch({ label, on, onChange }: { label: string; on: boolean; onChange:
   );
 }
 
-/** Um card (canvas WYSIWYG) + baixar/compartilhar. Opcionalmente enquadrável
- *  (arraste/zoom) e/ou clicável para escolher a foto. */
+/** Um card (canvas WYSIWYG) + baixar/compartilhar. Opcionalmente **editável**
+ *  (arraste/pinça/roda direto no card, sem modo) e/ou clicável p/ escolher a foto. */
 function CardPreview({
   title,
   state,
@@ -431,16 +476,11 @@ function CardPreview({
   drawKey,
   filenameBase,
   shareText,
-  movable,
-  gesture,
-  zoom,
-  onZoom,
+  editable,
+  editor,
   onCanvasClick,
   hint,
   extraDownloadLabel,
-  editing,
-  onToggleEdit,
-  editLabel,
 }: {
   title: string;
   state: CardState;
@@ -449,16 +489,11 @@ function CardPreview({
   drawKey: number;
   filenameBase: string;
   shareText: string;
-  movable?: boolean;
-  gesture?: ReturnType<typeof useLayerGesture>;
-  zoom?: number;
-  onZoom?: (z: number) => void;
+  editable?: boolean;
+  editor?: EditorOpts;
   onCanvasClick?: () => void;
   hint?: string;
   extraDownloadLabel?: string;
-  editing?: boolean;
-  onToggleEdit?: () => void;
-  editLabel?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   // No **celular** só oferecemos "Compartilhar" (que salva na galeria); o botão
@@ -527,49 +562,51 @@ function CardPreview({
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
   };
 
-  const canEdit = movable && !!onToggleEdit;
+  const inertEditor: EditorOpts = { enabled: false, showMap: false, photoImg: null, mapImg: null, mapT: DEFAULT_T, setPhotoT: () => {}, setMapT: () => {} };
+  const ed = useCanvasEditor(ref, editor ?? inertEditor);
+  // Handlers nativos (não-passivos) p/ poder `preventDefault`: a **roda** dá zoom
+  // sem rolar a página, e **dois dedos** editam sem a página rolar (um dedo rola).
+  const wheelRef = useRef(ed.wheelZoom);
+  useEffect(() => { wheelRef.current = ed.wheelZoom; });
+  useEffect(() => {
+    const c = ref.current;
+    if (!c || !editable) return;
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); wheelRef.current(e); };
+    const onTouchMove = (e: TouchEvent) => { if (e.touches.length >= 2) e.preventDefault(); };
+    c.addEventListener("wheel", onWheel, { passive: false });
+    c.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      c.removeEventListener("wheel", onWheel);
+      c.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [editable]);
+
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">{title}</span>
-        {canEdit && (
-          <button
-            type="button"
-            onClick={onToggleEdit}
-            aria-pressed={!!editing}
-            className={`min-h-9 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.03em] transition-colors ${
-              editing ? "bg-gold text-gold-ink" : "border border-line-soft text-muted-strong hover:text-cream"
-            }`}
-          >
-            {editing ? "Concluir" : (editLabel ?? "Reposicionar")}
-          </button>
-        )}
       </div>
       <canvas
         ref={ref}
-        {...(movable && gesture ? gesture : {})}
+        onPointerDown={editable ? ed.onPointerDown : undefined}
+        onPointerMove={editable ? ed.onPointerMove : undefined}
+        onPointerUp={editable ? ed.onPointerUp : undefined}
+        onPointerCancel={editable ? ed.onPointerCancel : undefined}
         onClick={onCanvasClick}
-        className={`mt-1.5 w-full rounded-lg border ${editing ? "border-gold" : "border-line-soft"} ${movable && editing ? "cursor-grab active:cursor-grabbing" : ""} ${onCanvasClick ? "cursor-pointer" : ""}`}
+        className={`mt-1.5 w-full rounded-lg border border-line-soft ${editable ? "cursor-grab active:cursor-grabbing" : ""} ${onCanvasClick ? "cursor-pointer" : ""}`}
         style={{
           aspectRatio: `${FORMATS[state.format].w} / ${FORMATS[state.format].h}`,
-          // Fora do modo edição, o toque ROLA a página (pan-y); em edição, gestos.
-          touchAction: movable ? (editing ? "none" : "pan-y") : undefined,
+          // 1 dedo ROLA a página (pan-y); 2 dedos editam (bloqueado no touchmove nativo).
+          touchAction: editable ? "pan-y" : undefined,
         }}
         aria-label={`Card ${title}`}
       />
       {hint && <p className="mt-1 text-[11px] text-muted">{hint}</p>}
-      {canEdit && (
+      {editable && (
         <p className="mt-1 text-[11px] text-muted">
-          {editing
-            ? "Arraste para reposicionar · pinça (celular) para zoom · toque em Concluir para rolar"
-            : "Toque em Reposicionar para enquadrar (fora disso, a página rola normalmente)"}
+          Toque o mapa ou a foto e ajuste: <strong className="font-semibold text-muted-strong">dois dedos</strong> movem e dão zoom
+          <span className="hidden md:inline"> (no computador, arraste e use a roda)</span>; um dedo rola a página.
         </p>
-      )}
-      {movable && editing && (
-        <div className="mt-1.5 hidden items-center gap-3 md:flex">
-          <span className="w-[54px] shrink-0 text-[11px] uppercase tracking-[0.05em] text-muted">Zoom</span>
-          <input type="range" min={1} max={4} step={0.02} value={zoom ?? 1} onChange={(e) => onZoom?.(Number(e.target.value))} className="h-2 w-full accent-gold" aria-label="Zoom" />
-        </div>
       )}
       <div className="mt-2 flex flex-wrap gap-2">
         {/* No mobile só "Compartilhar" (que salva na galeria); "Baixar" só no desktop. */}

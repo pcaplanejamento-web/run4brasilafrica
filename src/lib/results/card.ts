@@ -256,6 +256,34 @@ export interface CardAssets {
 
 const MEDAL_COLORS: Record<number, string> = { 1: "#c8ce2e", 2: "#c9ccd2", 3: "#cd7f4d" };
 
+const clampNum = (min: number, max: number, v: number) =>
+  Math.max(min, Math.min(max, Number.isFinite(v) ? v : 0));
+
+/** Limites de zoom por camada (fonte única p/ desenho e para os gestos). */
+export const PHOTO_ZOOM = { min: 1, max: 4 } as const;
+export const MAP_ZOOM = { min: 0.3, max: 2 } as const;
+
+function imgWH(img: HTMLImageElement): { w: number; h: number } {
+  return { w: img.naturalWidth || img.width || 1, h: img.naturalHeight || img.height || 1 };
+}
+
+/** Escala/pan **cover** clampados p/ a imagem SEMPRE cobrir o retângulo (sem
+ *  furos e sem "zona morta": o offset já vem preso aos limites reais). */
+export function clampCover(
+  t: LayerTransform,
+  imgW: number,
+  imgH: number,
+  rw: number,
+  rh: number,
+): LayerTransform {
+  const zoom = clampNum(PHOTO_ZOOM.min, PHOTO_ZOOM.max, t.zoom || 1);
+  const base = Math.max(rw / imgW, rh / imgH);
+  const scale = base * zoom;
+  const maxX = Math.max(0, (imgW * scale - rw) / 2);
+  const maxY = Math.max(0, (imgH * scale - rh) / 2);
+  return { zoom, ox: clampNum(-maxX, maxX, t.ox), oy: clampNum(-maxY, maxY, t.oy) };
+}
+
 /** Desenha a imagem cobrindo o retângulo, com zoom e pan clampados (sem furos). */
 export function drawCover(
   ctx: CanvasRenderingContext2D,
@@ -266,17 +294,14 @@ export function drawCover(
   rh: number,
   t: LayerTransform,
 ) {
-  const base = Math.max(rw / img.width, rh / img.height);
-  const scale = base * Math.max(1, t.zoom);
-  const dw = img.width * scale;
-  const dh = img.height * scale;
-  // Centraliza e aplica o pan, clampando para cobrir o retângulo.
-  const maxX = (dw - rw) / 2;
-  const maxY = (dh - rh) / 2;
-  const ox = Math.max(-maxX, Math.min(maxX, t.ox));
-  const oy = Math.max(-maxY, Math.min(maxY, t.oy));
-  const dx = rx + (rw - dw) / 2 + ox;
-  const dy = ry + (rh - dh) / 2 + oy;
+  const { w: iw, h: ih } = imgWH(img);
+  const c = clampCover(t, iw, ih, rw, rh);
+  const base = Math.max(rw / iw, rh / ih);
+  const scale = base * c.zoom;
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const dx = rx + (rw - dw) / 2 + c.ox;
+  const dy = ry + (rh - dh) / 2 + c.oy;
   ctx.save();
   ctx.beginPath();
   ctx.rect(rx, ry, rw, rh);
@@ -386,6 +411,45 @@ function drawContain(
   ctx.drawImage(img, rx + (rw - dw) / 2, ry + (rh - dh) / 2, dw, dh);
 }
 
+/** Retângulo do **mapa sobre a foto** (fonte única p/ desenho e hit-test dos
+ *  gestos): mapa **inteiro** (contain), tamanho por zoom, **sempre 100% dentro
+ *  do card** (o centro é clampado para nunca sumir). */
+export function mapLayerRect(
+  W: number,
+  H: number,
+  mapW: number,
+  mapH: number,
+  t: LayerTransform,
+): { x: number; y: number; w: number; h: number } {
+  const zoom = clampNum(MAP_ZOOM.min, MAP_ZOOM.max, t.zoom || 1);
+  const aspect = mapH / mapW;
+  let w = W * 0.5 * zoom;
+  let h = w * aspect;
+  const maxW = W * 0.96;
+  const maxH = H * 0.9;
+  if (w > maxW) { w = maxW; h = w * aspect; }
+  if (h > maxH) { h = maxH; w = h / aspect; }
+  // Centro preso ao card inteiro → o mapa nunca sai da tela.
+  const cx = clampNum(w / 2, W - w / 2, W / 2 + (t.ox || 0));
+  const cy = clampNum(h / 2, H - h / 2, H * 0.24 + (t.oy || 0));
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+
+/** Offset/zoom do mapa clampados aos limites reais (sem "zona morta"). */
+export function clampMapLayer(t: LayerTransform, mapW: number, mapH: number, W: number, H: number): LayerTransform {
+  const zoom = clampNum(MAP_ZOOM.min, MAP_ZOOM.max, t.zoom || 1);
+  const aspect = mapH / mapW;
+  let w = W * 0.5 * zoom;
+  let h = w * aspect;
+  const maxW = W * 0.96;
+  const maxH = H * 0.9;
+  if (w > maxW) { w = maxW; h = w * aspect; }
+  if (h > maxH) { h = maxH; w = h / aspect; }
+  const ox = clampNum(w / 2 - W / 2, W / 2 - w / 2, t.ox);
+  const oy = clampNum(h / 2 - H * 0.24, H - h / 2 - H * 0.24, t.oy);
+  return { zoom, ox, oy };
+}
+
 /** Mapa da prova como camada **sobre a foto**: fundo **transparente**, o mapa
  *  **inteiro** (nunca cortado) desenhado no tamanho/posição do transform (o
  *  usuário move e usa pinça p/ escala). Sombra suave para legibilidade. */
@@ -396,15 +460,12 @@ function drawMapLayer(
   H: number,
   t: LayerTransform,
 ) {
-  const w = W * 0.5 * t.zoom;
-  const h = w * (map.height / map.width);
-  // Posição padrão: centro-superior; o pan desloca; clampada para não sumir.
-  const cx = Math.max(w * 0.25, Math.min(W - w * 0.25, W / 2 + t.ox));
-  const cy = Math.max(h * 0.25, Math.min(H - h * 0.25, H * 0.24 + t.oy));
+  const { w: mw, h: mh } = imgWH(map);
+  const r = mapLayerRect(W, H, mw, mh, t);
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.5)";
   ctx.shadowBlur = 26;
-  ctx.drawImage(map, cx - w / 2, cy - h / 2, w, h); // mapa inteiro, sem corte
+  ctx.drawImage(map, r.x, r.y, r.w, r.h); // mapa inteiro, sem corte
   ctx.restore();
 }
 

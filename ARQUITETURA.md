@@ -532,10 +532,11 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
 - **Duas abas** (`SegmentedTabs`) + **formatos** compartilhados (Feed 4:5 1080×1350, Stories 9:16
   1080×1920):
   - **Fotos** (inicial) — o card já traz as **informações** e o usuário **sobe a foto que fica ao
-    FUNDO** (canvas **clicável** p/ escolher; enquadramento pan/zoom). Pode **baixar sem foto** →
-    `Baixar sem foto (transparente)` (PNG com alpha, off-screen). O chip **"Mapa da prova"** fica
-    **FORA das configurações** (na própria aba) e, ligado, sobrepõe o mapa à foto + mostra o seletor
-    de **camada** (Foto/Mapa) que decide qual o gesto move.
+    FUNDO** (canvas **clicável** p/ escolher; enquadramento direto — ver `useCanvasEditor`). Pode
+    **baixar sem foto** → `Baixar sem foto (transparente)` (PNG com alpha, off-screen). O chip
+    **"Mapa da prova"** fica **FORA das configurações** (na própria aba) e, ligado, sobrepõe o mapa à
+    foto (+ botão **"Centralizar mapa"** quando ele foi movido). **Sem seletor de camada nem botão de
+    modo**: o gesto edita o que está **sob ele**.
   - **Cards** — banners prontos estilo Strava, cruzando **Modelo × Fundo**: **Modelo** =
     `TEMPLATE_LABEL` (Estatísticas/`banner`, Destaque/`destaque`, e **Mapa**/`mapa` quando há
     `fallbackImage`); **Fundo** = `CardMode` **Escuro/Claro/Transparente** (`MODE_SPEC` mapeia modo →
@@ -566,11 +567,15 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
   **Cancelar a folha nativa (`AbortError`) é no-op** — não baixa sozinho nem abre WhatsApp, e não
   dispara uma segunda folha (o bug do "meio quebrado"). Só quando o recurso é **indisponível** (ex.:
   desktop) cai no fallback: `downloadBlob` + WhatsApp (texto). No desktop o "Baixar" baixa direto.
-- **Enquadrar** SEM roubar o **scroll**: fora do modo edição o canvas é `touch-action: pan-y` (o
-  dedo **rola a página** por cima da imagem) e os gestos ficam desligados no toque; **"Reposicionar
-  foto/Reposicionar mapa"** entra em edição (`touch-action: none`, arraste + **pinça** + roda +
-  slider no desktop) e **"Concluir"** volta a rolar. Mouse arrasta sempre (`useLayerGesture` só
-  ignora o TOQUE fora da edição). Redesenho **síncrono** (não usa rAF). Preferências
+- **Enquadrar (edição direta, `useCanvasEditor`)** — lógica de site profissional, **sem modo e sem
+  seleção de camada**: **um dedo rola a página** (`touch-action: pan-y`); **dois dedos** movem +
+  dão **zoom por pinça**; o **mouse** arrasta e a **roda** dá zoom. O gesto edita a **camada sob
+  ele** (hit-test do centroide contra o retângulo do mapa via `mapLayerRect` → mapa; senão foto).
+  Zoom/roda e o gesto de dois dedos são ligados por **listeners nativos não-passivos** (`wheel`,
+  `touchmove`) só p/ `preventDefault` (a página não rola ao dar zoom / com dois dedos). `setPointerCapture`
+  em try/catch. Todo transform sai **clampado** (`clampCover` p/ a foto SEMPRE cobrir; `clampMapLayer`
+  p/ o mapa ficar SEMPRE 100% dentro do card) — **a camada nunca some nem trava em "zona morta"**,
+  e NaN/Infinity são saneados. Redesenho **síncrono** (não usa rAF). Preferências
   (formato/selo/QR/nome/modo/template) em `localStorage` (os **campos** iniciam sempre do ADM).
 
 ### Modais empilhados, histórico e scroll (classificação geral + corredor)
