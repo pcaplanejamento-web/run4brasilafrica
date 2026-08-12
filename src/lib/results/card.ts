@@ -222,6 +222,8 @@ export interface CardState {
   transparent: boolean;
   photo: LayerTransform;
   map: LayerTransform;
+  /** Desenha o **mapa da prova** como inset SOBRE a imagem (card de foto). */
+  showMap?: boolean;
 }
 
 export interface CardAssets {
@@ -346,6 +348,36 @@ function drawQr(ctx: CanvasRenderingContext2D, W: number, H: number, qr: boolean
       if (qr[r][c]) ctx.fillRect(px + (c + quiet) * cell, py + (r + quiet) * cell, cell, cell);
     }
   }
+}
+
+/** Desenha o **mapa da prova** como inset arredondado (cover), com borda de acento. */
+function drawMapInset(
+  ctx: CanvasRenderingContext2D,
+  map: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  accent: string,
+) {
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 22);
+  // Fundo escuro sob o mapa (caso tenha transparência) + sombra do cartão.
+  ctx.shadowColor = "rgba(0,0,0,0.45)";
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = "#0e0a06";
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.clip();
+  const base = Math.max(w / map.width, h / map.height);
+  const dw = map.width * base;
+  const dh = map.height * base;
+  ctx.drawImage(map, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  ctx.restore();
+  roundRect(ctx, x, y, w, h, 22);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = accent;
+  ctx.stroke();
 }
 
 /** Selo (medalha/finisher) no canto superior direito. `sh`/`nosh` aplicam sombra
@@ -557,6 +589,13 @@ function drawPhotoCard(
       ctx.fillStyle = s;
       ctx.fillRect(0, H * 0.38, W, H * 0.62);
     }
+  }
+
+  // ---- Mapa da prova SOBRE a imagem (inset), quando ligado no card de foto. ----
+  if (state.showMap && assets.map && state.template === "foto") {
+    const mw = Math.round(W * 0.6);
+    const mh = Math.round(mw * 0.6);
+    drawMapInset(ctx, assets.map, Math.round((W - mw) / 2), Math.round(H * 0.13), mw, mh, th.accent);
   }
 
   const pad = 72;

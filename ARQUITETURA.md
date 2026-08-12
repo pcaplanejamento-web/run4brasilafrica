@@ -555,11 +555,23 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
   vai para a galeria; no **desktop** baixa direto (âncora `download`, sem prompt). "Compartilhar"
   segue com texto (WhatsApp de fallback). O `renderBlob`/`toBlob` são **blindados** (try/catch →
   null) contra canvas "tainted".
-- **Enquadrar** (foto na aba Fotos; mapa no card Trajeto): pan por arraste (`useLayerGesture`,
-  pointer events) + **pinça (2 dedos)** no celular + **roda** no desktop; o **slider de zoom** só
-  aparece no **desktop** (`hidden md:flex`) — no mobile é pinça (fora do painel de configurações).
-  Offsets clampados p/ cobrir (sem furos). Redesenho **síncrono** (não usa rAF, que fica pausado
-  quando a aba é considerada oculta).
+- **Mapa da prova** (`ShareCardStudio` chave "Mapa da prova (na foto)" + card **Trajeto**): a
+  imagem do mapa é o `fallbackImage` da rota do **bloco `sec-percurso`** (fonte de verdade — o
+  percurso NÃO é espelhado para o global `c.percurso`; `SiteContent.tsx` lê `percursoRoutes` do
+  bloco). Ligado, `drawMapInset` desenha o mapa como **inset arredondado SOBRE a foto**; o card
+  **Trajeto** usa o mapa como fundo. A chave só aparece quando há `fallbackImage`.
+- **Enquadrar** (foto na aba Fotos; mapa no card Trajeto) SEM roubar o **scroll**: fora do modo
+  edição o canvas é `touch-action: pan-y` (o dedo **rola a página** por cima da imagem) e os gestos
+  ficam desligados no toque; tocar **"Reposicionar"** entra no modo edição (`touch-action: none`,
+  arraste + **pinça** + roda + slider de zoom no desktop) e **"Concluir"** volta a rolar. Mouse
+  arrasta sempre (`useLayerGesture` só ignora o TOQUE fora da edição). Offsets clampados p/ cobrir.
+  Redesenho **síncrono** (não usa rAF, que fica pausado quando a aba é considerada oculta).
+- **Detalhe do corredor como PÁGINA no mobile** (`RunnerModal`): no celular vira **tela cheia**
+  (sem card flutuante nem backdrop) com uma seta **Voltar**; no desktop segue **modal flutuante**.
+  Integra a **History API** — ao abrir empurra uma entrada (`pushState`, guardado contra o
+  double-invoke do StrictMode); o **botão Voltar do aparelho** (`popstate`) fecha o detalhe e
+  retorna à lista **no estado em que estava** (a home nunca é desmontada). Todo fechar passa pelo
+  `history.back()`, então a entrada é sempre consumida (sem lixo no histórico).
 - **Fundo transparente**: exporta só as camadas gráficas (PNG com alpha) p/ usar depois. **Extras**:
   pace (min/km, de modalidade+tempo), data/cidade, **selo** medalha ouro/prata/bronze (pódio) /
   "FINISHER", **QR** para `#classificacao`. Preferências (formato/tema/selo/QR) em `localStorage`

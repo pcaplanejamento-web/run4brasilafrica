@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type {
   ClassificacaoDisplay,
   EventInfo,
@@ -51,17 +51,46 @@ export default function RunnerModal({
   display?: ClassificacaoDisplay;
 }) {
   const open = !!runner;
+  // Marcador para saber se empurramos uma entrada de histórico (para o botão
+  // "Voltar" do navegador/Android fechar a página em vez de sair do site).
+  const pushed = useRef(false);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    // Empurra UMA entrada de histórico (guardado contra o double-invoke do
+    // StrictMode): no mobile o detalhe vira uma PÁGINA — o botão Voltar do
+    // aparelho retorna à lista **no estado em que estava** (a home nunca é
+    // desmontada; só fechamos a sobreposição). Todo fechar passa pelo `back()`,
+    // então a entrada é sempre consumida por uma navegação real (sem lixo).
+    if (!pushed.current) {
+      try {
+        window.history.pushState({ r4baRunner: true }, "");
+        pushed.current = true;
+      } catch {
+        pushed.current = false;
+      }
+    }
+    const onPop = () => { pushed.current = false; onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (pushed.current) window.history.back();
+      else onClose();
+    };
+    window.addEventListener("popstate", onPop);
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
+      window.removeEventListener("popstate", onPop);
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
   }, [open, onClose]);
+
+  /** Fecha "voltando" no histórico (aciona o popstate → onClose). */
+  const requestClose = () => {
+    if (pushed.current) window.history.back();
+    else onClose();
+  };
 
   if (!runner) return null;
 
@@ -69,15 +98,27 @@ export default function RunnerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-end justify-center p-3 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[110] flex sm:items-center sm:justify-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={`Resultado de ${runner.name}`}
     >
-      <button type="button" aria-label="Fechar" onClick={onClose} className="absolute inset-0 bg-black/70" />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-[600px] flex-col overflow-hidden rounded-2xl border border-line-soft bg-ink-panel shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
-        <div className="flex items-start justify-between gap-4 border-b border-line-soft px-5 py-4 sm:px-6">
-          <div className="min-w-0">
+      {/* Backdrop só no desktop (no mobile é uma página cheia). */}
+      <button type="button" aria-label="Fechar" onClick={requestClose} className="absolute inset-0 hidden bg-black/70 sm:block" />
+      <div className="relative z-10 flex h-full w-full flex-col overflow-hidden border-line-soft bg-ink-panel sm:h-auto sm:max-h-[90vh] sm:max-w-[600px] sm:rounded-2xl sm:border sm:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)]">
+        <div className="flex items-center gap-2 border-b border-line-soft px-3 py-3 sm:px-6 sm:py-4">
+          {/* Voltar (mobile) */}
+          <button
+            type="button"
+            onClick={requestClose}
+            aria-label="Voltar"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-cream transition-colors hover:bg-white/10 sm:hidden"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <div className="min-w-0 flex-1">
             <div className="text-[12px] uppercase tracking-[0.06em] text-gold">
               {runner.pos}º lugar{categoryLabel ? ` · ${categoryLabel}` : ""}
             </div>
@@ -85,11 +126,12 @@ export default function RunnerModal({
               {runner.name}
             </h2>
           </div>
+          {/* Fechar (desktop) */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Fechar"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-cream transition-colors hover:bg-white/10"
+            className="hidden h-10 w-10 shrink-0 place-items-center rounded-full text-cream transition-colors hover:bg-white/10 sm:grid"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
@@ -97,7 +139,7 @@ export default function RunnerModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           {/* Dados completos. */}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
             {fields.map((f) => (

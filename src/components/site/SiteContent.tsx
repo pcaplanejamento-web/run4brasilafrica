@@ -45,6 +45,14 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
   // eslint-disable-next-line react-hooks/purity
   const nowMs = Date.now();
 
+  // O percurso (com a imagem do mapa `fallbackImage`) mora no BLOCO `sec-percurso`
+  // — não é espelhado para o topo (`c.percurso` é o global legado). Lemos do bloco
+  // e caímos para o global só como fallback.
+  const percursoBlock = customSections
+    .flatMap((s) => s.blocks ?? [])
+    .find((b) => b.type === "percurso" && b.percurso);
+  const percursoRoutes = percursoBlock?.percurso?.routes ?? c.percurso?.routes ?? [];
+
   // Global content that `secao` blocks (inside abas) may need at render time.
   const ctx: SectionRenderCtx = {
     lotes: c.lotes ?? [],
@@ -57,7 +65,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     sejaParceiroEnabled,
     nowMs,
     brandLogo: c.branding?.logo,
-    percursoRoutes: c.percurso?.routes ?? [],
+    percursoRoutes,
   };
 
   // TODAS as seções renderizam via `custom:sec-*` (abas) — inclusive o Banner/Hero

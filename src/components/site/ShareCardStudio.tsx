@@ -56,15 +56,20 @@ function defaultFields(available: CardField[], d?: ClassificacaoDisplay): Record
   return out;
 }
 
-/** Gestos de enquadramento (arraste + pinça de 2 dedos + roda). */
+/** Gestos de enquadramento (arraste + pinça de 2 dedos + roda). No **toque**, só
+ *  age quando `editingRef` está ligado (fora disso o dedo **rola a página** —
+ *  `touch-action: pan-y`); com **mouse** age sempre. */
 function useLayerGesture(
   tRef: React.MutableRefObject<LayerTransform>,
   setT: (fn: (t: LayerTransform) => LayerTransform) => void,
+  editingRef: React.MutableRefObject<boolean>,
 ) {
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; zoom: number } | null>(null);
   const clampZoom = (z: number) => Math.max(1, Math.min(4, z));
+  const acts = (e: React.PointerEvent) => e.pointerType === "mouse" || editingRef.current;
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!acts(e)) return; // toque fora do modo edição → deixa a página rolar
     e.currentTarget.setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2) {
@@ -92,6 +97,7 @@ function useLayerGesture(
     if (pointers.current.size < 2) pinch.current = null;
   };
   const onWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    if (!editingRef.current) return; // fora da edição a roda rola a página
     setT((t) => ({ ...t, zoom: clampZoom(t.zoom - e.deltaY * 0.001) }));
   };
   return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp, onWheel };
@@ -128,6 +134,7 @@ export default function ShareCardStudio({
   const [format, setFormat] = useState<CardFormat>(prefs.format ?? "feed");
   const [showBadge, setShowBadge] = useState(prefs.showBadge ?? true);
   const [showQr, setShowQr] = useState(prefs.showQr ?? false);
+  const [showMap, setShowMap] = useState(false);
   const [fields, setFields] = useState<Record<string, boolean>>(() => defaultFields(available, display));
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -138,12 +145,20 @@ export default function ShareCardStudio({
   const [mapImg, setMapImg] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
 
+  // Modo de "reposicionar": no toque, só enquadra quando ligado (senão a página
+  // rola por cima da imagem). No mouse, arrasta sempre.
+  const [photoEditing, setPhotoEditing] = useState(false);
+  const [mapEditing, setMapEditing] = useState(false);
   const photoTRef = useRef(photoT);
   const mapTRef = useRef(mapT);
+  const photoEditRef = useRef(photoEditing);
+  const mapEditRef = useRef(mapEditing);
   useEffect(() => { photoTRef.current = photoT; }, [photoT]);
   useEffect(() => { mapTRef.current = mapT; }, [mapT]);
-  const photoGesture = useLayerGesture(photoTRef, setPhotoT);
-  const mapGesture = useLayerGesture(mapTRef, setMapT);
+  useEffect(() => { photoEditRef.current = photoEditing; }, [photoEditing]);
+  useEffect(() => { mapEditRef.current = mapEditing; }, [mapEditing]);
+  const photoGesture = useLayerGesture(photoTRef, setPhotoT, photoEditRef);
+  const mapGesture = useLayerGesture(mapTRef, setMapT, mapEditRef);
 
   useEffect(() => { ensureFonts().then(() => setFontsReady(true)); }, []);
   useEffect(() => { loadImageTaintSafe(brandLogo).then(setLogoImg); }, [brandLogo]);
@@ -193,7 +208,8 @@ export default function ShareCardStudio({
       active ? "bg-gold text-gold-ink" : "border border-line-soft bg-ink text-muted-strong hover:text-cream"
     }`;
 
-  const fotoState: CardState = { template: "foto", format, theme: "dourado", transparent: false, photo: photoT, map: mapT };
+  const hasMap = mapRoutes.length > 0;
+  const fotoState: CardState = { template: "foto", format, theme: "dourado", transparent: false, photo: photoT, map: mapT, showMap: showMap && hasMap };
 
   return (
     <div className="rounded-xl border border-line-soft bg-ink p-4">
@@ -228,6 +244,7 @@ export default function ShareCardStudio({
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             <Switch label={runner.pos <= 3 ? "Selo de medalha" : "Selo finisher"} on={showBadge} onChange={setShowBadge} />
             <Switch label="QR da classificação" on={showQr} onChange={setShowQr} />
+            {hasMap && <Switch label="Mapa da prova (na foto)" on={showMap} onChange={setShowMap} />}
           </div>
         </div>
       )}
@@ -257,8 +274,10 @@ export default function ShareCardStudio({
             zoom={photoImg ? photoT.zoom : undefined}
             onZoom={photoImg ? (z) => setPhotoT((t) => ({ ...t, zoom: z })) : undefined}
             onCanvasClick={!photoImg ? () => fileRef.current?.click() : undefined}
-            hint={photoImg ? "Arraste para reposicionar · pinça (celular) para zoom" : "Toque para escolher sua foto de fundo"}
+            hint={!photoImg ? "Toque para escolher sua foto de fundo" : undefined}
             extraDownloadLabel="Baixar sem foto (transparente)"
+            editing={photoEditing}
+            onToggleEdit={photoImg ? () => setPhotoEditing((v) => !v) : undefined}
           />
           <div className="mt-3 flex flex-wrap gap-2.5">
             <button type="button" onClick={() => fileRef.current?.click()} className={chip(false)}>{photoImg ? "Trocar foto" : "Escolher foto"}</button>
@@ -297,7 +316,8 @@ export default function ShareCardStudio({
                 gesture={mapGesture}
                 zoom={mapT.zoom}
                 onZoom={(z) => setMapT((t) => ({ ...t, zoom: z }))}
-                hint="Arraste · pinça (celular) para enquadrar o mapa"
+                editing={mapEditing}
+                onToggleEdit={() => setMapEditing((v) => !v)}
               />
             )}
           </div>
@@ -341,6 +361,8 @@ function CardPreview({
   onCanvasClick,
   hint,
   extraDownloadLabel,
+  editing,
+  onToggleEdit,
 }: {
   title: string;
   state: CardState;
@@ -356,6 +378,8 @@ function CardPreview({
   onCanvasClick?: () => void;
   hint?: string;
   extraDownloadLabel?: string;
+  editing?: boolean;
+  onToggleEdit?: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -431,19 +455,45 @@ function CardPreview({
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
   };
 
+  const canEdit = movable && !!onToggleEdit;
   return (
     <div className="flex flex-col">
-      <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">{title}</div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">{title}</span>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={onToggleEdit}
+            aria-pressed={!!editing}
+            className={`min-h-9 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.03em] transition-colors ${
+              editing ? "bg-gold text-gold-ink" : "border border-line-soft text-muted-strong hover:text-cream"
+            }`}
+          >
+            {editing ? "Concluir" : "Reposicionar"}
+          </button>
+        )}
+      </div>
       <canvas
         ref={ref}
         {...(movable && gesture ? gesture : {})}
         onClick={onCanvasClick}
-        className={`mt-1.5 w-full rounded-lg border border-line-soft ${movable ? "cursor-grab touch-none active:cursor-grabbing" : ""} ${onCanvasClick ? "cursor-pointer" : ""}`}
-        style={{ aspectRatio: `${FORMATS[state.format].w} / ${FORMATS[state.format].h}` }}
+        className={`mt-1.5 w-full rounded-lg border ${editing ? "border-gold" : "border-line-soft"} ${movable && editing ? "cursor-grab active:cursor-grabbing" : ""} ${onCanvasClick ? "cursor-pointer" : ""}`}
+        style={{
+          aspectRatio: `${FORMATS[state.format].w} / ${FORMATS[state.format].h}`,
+          // Fora do modo edição, o toque ROLA a página (pan-y); em edição, gestos.
+          touchAction: movable ? (editing ? "none" : "pan-y") : undefined,
+        }}
         aria-label={`Card ${title}`}
       />
       {hint && <p className="mt-1 text-[11px] text-muted">{hint}</p>}
-      {movable && (
+      {canEdit && (
+        <p className="mt-1 text-[11px] text-muted">
+          {editing
+            ? "Arraste para reposicionar · pinça (celular) para zoom · toque em Concluir para rolar"
+            : "Toque em Reposicionar para enquadrar (fora disso, a página rola normalmente)"}
+        </p>
+      )}
+      {movable && editing && (
         <div className="mt-1.5 hidden items-center gap-3 md:flex">
           <span className="w-[54px] shrink-0 text-[11px] uppercase tracking-[0.05em] text-muted">Zoom</span>
           <input type="range" min={1} max={4} step={0.02} value={zoom ?? 1} onChange={(e) => onZoom?.(Number(e.target.value))} className="h-2 w-full accent-gold" aria-label="Zoom" />
