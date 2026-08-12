@@ -164,10 +164,18 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
     alças × formatos × arrastes: proporção mantida e **sempre dentro da imagem**, sem inverter). Trabalha
     em **px naturais** (fonte única p/ render via % e p/ exportação), com clamp e lado mínimo.
     **Preserva transparência**: o recorte é `drawImage` num canvas **sem `fillRect`** → exporta **PNG
-    com alpha**; o upload (`uploadMedia`) converte p/ WebP **mantendo o alpha**. Salva como **nova
-    imagem** (`POST /api/media`, key nova/imutável) — **não sobrescreve** nada, então as referências
-    existentes ficam intactas; só imagens `.png/.jpg/.webp` são editáveis (SVG/GIF/vídeo não).
-    Verificado: recorte de PNG transparente → canto com `alpha=0`, miolo opaco.
+    com alpha**; o upload (`uploadMedia`) converte p/ WebP **mantendo o alpha**. Só imagens
+    `.png/.jpg/.webp` são editáveis (SVG/GIF/vídeo não). Verificado: recorte de PNG transparente →
+    canto com `alpha=0`, miolo opaco.
+  - **Gravar o recorte — nova OU substituir** (o editor delega ao `onCommit(file, mode)` da página):
+    - **"Salvar como nova imagem"**: `POST /api/media` (key nova/imutável); não mexe em nada.
+    - **"Substituir imagem atual"**: sobe a nova key **e reescreve TODAS as referências** no conteúdo
+      (`oldKey` → nova key, por **substring exata da key** no JSON do `stored`, via `useContent().restore`
+      — mantém **D1 + store do ADM** em sincronia, sem corrida) e **apaga a antiga**. Resultado: a
+      imagem troca **em todo o site preservando os vínculos**, e **sem cache velho** (key nova, e o
+      `/api/media/[key]` é `immutable` — por isso NÃO sobrescrevemos a mesma key). Confirmação antes
+      (avisa se está "em uso"). Verificado ponta a ponta: imagem referenciada 3× → após substituir,
+      **3 referências atualizadas**, key antiga removida do KV, transparência preservada na nova.
   - **`MediaPicker`** (`components/admin/MediaPicker.tsx`) — modal reutilizável: escolher uma
     imagem já enviada **ou** enviar do computador. Ligado a **todos** os campos de imagem
     (`ImageUpload` e `HeroImageField`). Os controles (**escolher do armazenamento + trocar +

@@ -5,11 +5,14 @@ import { uploadMedia } from "@/lib/uploadMedia";
 import {
   cleanupUnusedMedia,
   deleteMedia,
+  extractMediaKey,
   fetchMediaList,
   formatBytes,
   isVideoKey,
   type MediaItem,
 } from "@/lib/media";
+import { useContent } from "@/lib/content/store";
+import type { CropCommitMode, CropCommitResult } from "@/components/admin/MediaCropEditor";
 import {
   AdmLoading,
   Card,
@@ -35,6 +38,8 @@ export default function ArmazenamentoPage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Store do conteúdo (para reescrever as referências ao SUBSTITUIR uma imagem).
+  const { stored, restore } = useContent();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -57,6 +62,50 @@ export default function ArmazenamentoPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
+
+  /**
+   * Grava um recorte: **nova** imagem (só sobe) OU **substitui a atual** — sobe a
+   * nova, reescreve TODAS as referências no conteúdo (`oldKey` → nova key, pelo
+   * store, mantendo backend + ADM em sincronia) e apaga a antiga. Assim a imagem
+   * troca em todo o site **sem perder os vínculos** e sem cache velho (key nova).
+   */
+  const commitCrop = useCallback(
+    async (file: File, mode: CropCommitMode, oldKey: string): Promise<CropCommitResult> => {
+      setError(null);
+      const up = await uploadMedia(file); // sempre KV (biblioteca) → /api/media/<key>
+      if (up.code === "not_configured") return { ok: false, error: "Edição disponível apenas no site publicado." };
+      if (!up.url) return { ok: false, error: up.error ?? "Não foi possível salvar o recorte." };
+
+      if (mode === "new") {
+        setNotice("Recorte salvo como nova imagem no armazenamento.");
+        await refresh();
+        return { ok: true };
+      }
+
+      // Substituir: reescreve as referências (substring da key, que é única) e apaga a antiga.
+      const newKey = extractMediaKey(up.url);
+      if (newKey && oldKey && newKey !== oldKey) {
+        const raw = JSON.stringify(stored);
+        const count = raw.split(oldKey).length - 1;
+        if (count > 0) {
+          const rewritten = JSON.parse(raw.split(oldKey).join(newKey));
+          const okSave = await restore(rewritten, "Substituição de imagem (recorte)");
+          if (!okSave) return { ok: false, error: "Não foi possível atualizar as referências." };
+        }
+        await deleteMedia(oldKey);
+        setNotice(
+          count > 0
+            ? `Imagem substituída — ${count} ${count === 1 ? "referência atualizada" : "referências atualizadas"}.`
+            : "Imagem substituída.",
+        );
+      } else {
+        setNotice("Imagem substituída (nova cópia salva).");
+      }
+      await refresh();
+      return { ok: true };
+    },
+    [stored, restore, refresh],
+  );
 
   const used = items.filter((it) => usedKeys.has(it.key));
   const unused = items.filter((it) => !usedKeys.has(it.key));
@@ -306,11 +355,7 @@ export default function ArmazenamentoPage() {
             setSelected(null);
             setNotice("Arquivo excluído.");
           }}
-          onSavedNew={() => {
-            setSelected(null);
-            setNotice("Recorte salvo como nova imagem no armazenamento.");
-            refresh();
-          }}
+          onCommit={commitCrop}
         />
       )}
     </>

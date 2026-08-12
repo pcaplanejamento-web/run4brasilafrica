@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { deleteMedia, formatBytes, isImageKey, isVideoKey, type MediaItem } from "@/lib/media";
 import { SpinnerIcon, TrashIcon } from "./mediaIcons";
-import MediaCropEditor from "./MediaCropEditor";
+import MediaCropEditor, { type CropCommitMode, type CropCommitResult } from "./MediaCropEditor";
 
 /** Só imagens rasterizadas (não SVG/GIF/vídeo) podem ser recortadas. */
 function isEditable(key: string): boolean {
@@ -37,13 +37,15 @@ export default function MediaDetail({
   inUse,
   onClose,
   onDeleted,
-  onSavedNew,
+  onCommit,
 }: {
   item: MediaItem;
   inUse: boolean;
   onClose: () => void;
   onDeleted: (key: string) => void;
-  onSavedNew: (url: string) => void;
+  /** Sobe o recorte e grava: **nova** imagem ou **substitui** a atual (rebind das
+   *  referências no conteúdo). Recebe a key atual como `oldKey`. */
+  onCommit: (file: File, mode: CropCommitMode, oldKey: string) => Promise<CropCommitResult>;
 }) {
   const [dims, setDims] = useState<{ url: string; w: number; h: number } | null>(null);
   const [editing, setEditing] = useState(false);
@@ -145,8 +147,19 @@ export default function MediaDetail({
           {editing ? (
             <MediaCropEditor
               url={item.url}
+              canReplace={editable}
               onCancel={() => setEditing(false)}
-              onSaved={(newUrl) => { setEditing(false); onSavedNew(newUrl); }}
+              onCommit={async (file, mode) => {
+                if (mode === "replace") {
+                  const msg = inUse
+                    ? "Substituir esta imagem em todo o site? Onde ela é usada passará a mostrar o recorte, mantendo os vínculos. A imagem antiga será removida e não dá para desfazer."
+                    : "Substituir a imagem atual pelo recorte? A imagem antiga será removida.";
+                  if (!window.confirm(msg)) return { ok: false };
+                }
+                const r = await onCommit(file, mode, item.key);
+                if (r.ok) onClose(); // fecha o detalhe; a página já atualizou a lista
+                return r;
+              }}
             />
           ) : (
             <div className="flex flex-col gap-5 sm:flex-row">

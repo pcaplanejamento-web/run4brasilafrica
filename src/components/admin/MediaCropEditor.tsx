@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { uploadMedia } from "@/lib/uploadMedia";
 import {
   CROP_ASPECTS,
   fitAspect,
@@ -10,6 +9,13 @@ import {
   type CropRect as Rect,
 } from "@/lib/crop";
 import { SpinnerIcon } from "./mediaIcons";
+
+/** Como o recorte é gravado: **nova** imagem ou **substituir** a atual. */
+export type CropCommitMode = "new" | "replace";
+export interface CropCommitResult {
+  ok: boolean;
+  error?: string;
+}
 
 /** Fundo xadrez (mostra a transparência do PNG por baixo do recorte). */
 const CHECKER: React.CSSProperties = {
@@ -25,18 +31,22 @@ const CHECKER: React.CSSProperties = {
  * **Editor de recorte** de uma imagem do armazenamento — arraste/redimensione o
  * quadro (8 alças + mover), no **toque** e no mouse. O recorte é feito num canvas
  * **sem preencher fundo**, então **PNGs transparentes mantêm a transparência**
- * (exporta PNG; o upload converte p/ WebP com alpha). Salva como **nova imagem**
- * no armazenamento (não sobrescreve — mantém as referências existentes intactas).
- * 100% componente; sem dependências externas.
+ * (exporta PNG; o upload converte p/ WebP com alpha). O recorte pode ser gravado
+ * como **nova imagem** OU **substituir a atual** (o pai reescreve as referências)
+ * — quem sobe/rebind/apaga é o `onCommit`. 100% componente.
  */
 export default function MediaCropEditor({
   url,
+  canReplace = false,
+  onCommit,
   onCancel,
-  onSaved,
 }: {
   url: string;
+  /** Habilita "Substituir imagem atual" (o pai cuida do rebind das referências). */
+  canReplace?: boolean;
+  /** Sobe o recorte e grava (nova imagem ou substituição). O pai fecha no sucesso. */
+  onCommit: (file: File, mode: CropCommitMode) => Promise<CropCommitResult>;
   onCancel: () => void;
-  onSaved: (newUrl: string) => void;
 }) {
   const imgRef = useRef<HTMLImageElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -94,7 +104,7 @@ export default function MediaCropEditor({
 
   const reset = () => { setAspect(null); if (nat) setRect({ x: 0, y: 0, w: nat.w, h: nat.h }); };
 
-  async function apply() {
+  async function apply(mode: CropCommitMode) {
     const img = imgRef.current;
     if (!img || !rect || !nat) return;
     setSaving(true);
@@ -112,14 +122,15 @@ export default function MediaCropEditor({
       const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
       if (!blob) throw new Error("toBlob");
       const file = new File([blob], "recorte.png", { type: "image/png" });
-      const r = await uploadMedia(file);
-      if (r.code === "not_configured") { setError("Edição disponível apenas no site publicado."); return; }
-      if (!r.url) { setError(r.error ?? "Não foi possível salvar o recorte."); return; }
-      onSaved(r.url);
+      const r = await onCommit(file, mode);
+      // Sucesso → o pai fecha o editor (nos desmonta); só tratamos falha/cancelamento.
+      if (!r.ok) {
+        if (r.error) setError(r.error);
+        setSaving(false);
+      }
     } catch {
       // Canvas "tainted" (imagem sem CORS) faz o toBlob lançar — reportamos sem quebrar.
       setError("Não foi possível processar a imagem (permissão de origem).");
-    } finally {
       setSaving(false);
     }
   }
@@ -240,14 +251,29 @@ export default function MediaCropEditor({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
+        {canReplace && (
+          <button
+            type="button"
+            onClick={() => apply("replace")}
+            disabled={saving || !rect}
+            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-terracotta px-5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {saving ? <SpinnerIcon className="h-4 w-4" /> : null}
+            {saving ? "Salvando…" : "Substituir imagem atual"}
+          </button>
+        )}
         <button
           type="button"
-          onClick={apply}
+          onClick={() => apply("new")}
           disabled={saving || !rect}
-          className="inline-flex min-h-11 items-center gap-2 rounded-md bg-terracotta px-5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className={`inline-flex min-h-11 items-center gap-2 rounded-md px-5 text-[13px] font-bold transition-colors disabled:opacity-60 ${
+            canReplace
+              ? "border border-[#ccc] bg-white text-adm-ink hover:border-terracotta hover:text-terracotta"
+              : "bg-terracotta text-white hover:opacity-90"
+          }`}
         >
-          {saving ? <SpinnerIcon className="h-4 w-4" /> : null}
-          {saving ? "Salvando…" : "Salvar recorte como nova imagem"}
+          {saving && !canReplace ? <SpinnerIcon className="h-4 w-4" /> : null}
+          Salvar como nova imagem
         </button>
         <button
           type="button"
@@ -265,8 +291,11 @@ export default function MediaCropEditor({
         >
           Cancelar
         </button>
-        <span className="w-full text-[12px] text-adm-muted sm:ml-auto sm:w-auto">
-          PNG transparente mantém a transparência. Arraste o quadro ou as alças (funciona no toque).
+        <span className="w-full text-[12px] text-adm-muted">
+          {canReplace
+            ? "“Substituir” troca a imagem em todo o site (mantém os vínculos). PNG transparente mantém a transparência."
+            : "PNG transparente mantém a transparência."}{" "}
+          Arraste o quadro ou as alças (funciona no toque).
         </span>
       </div>
     </div>
