@@ -18,6 +18,7 @@ import {
   PrimaryButton,
 } from "@/components/admin/ui";
 import { ImagesIcon, SpinnerIcon, TrashIcon, UploadIcon } from "@/components/admin/mediaIcons";
+import MediaDetail from "@/components/admin/MediaDetail";
 
 /**
  * Armazenamento — biblioteca central de mídia do sistema (Cloudflare KV, servida
@@ -32,6 +33,7 @@ export default function ArmazenamentoPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<MediaItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -241,7 +243,12 @@ export default function ArmazenamentoPage() {
               return (
                 <div
                   key={it.key}
-                  className="group overflow-hidden rounded-lg border border-adm-border bg-[#faf9f7]"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelected(it)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(it); } }}
+                  aria-label={`Ver detalhes de ${it.key}`}
+                  className="group cursor-pointer overflow-hidden rounded-lg border border-adm-border bg-[#faf9f7] transition-colors hover:border-terracotta focus:border-terracotta focus:outline-none"
                 >
                   <div className="relative aspect-square w-full overflow-hidden bg-[#eee]">
                     {isVideoKey(it.key) ? (
@@ -269,7 +276,7 @@ export default function ArmazenamentoPage() {
                         depende de hover). Confirma antes de apagar. */}
                     <button
                       type="button"
-                      onClick={() => handleDelete(it)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(it); }}
                       disabled={busy}
                       aria-label="Excluir arquivo"
                       title="Excluir arquivo"
@@ -288,6 +295,24 @@ export default function ArmazenamentoPage() {
           </div>
         )}
       </div>
+
+      {selected && (
+        <MediaDetail
+          item={selected}
+          inUse={usedKeys.has(selected.key)}
+          onClose={() => setSelected(null)}
+          onDeleted={(key) => {
+            setItems((xs) => xs.filter((x) => x.key !== key));
+            setSelected(null);
+            setNotice("Arquivo excluído.");
+          }}
+          onSavedNew={() => {
+            setSelected(null);
+            setNotice("Recorte salvo como nova imagem no armazenamento.");
+            refresh();
+          }}
+        />
+      )}
     </>
   );
 }

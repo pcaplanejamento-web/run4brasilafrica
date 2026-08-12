@@ -150,6 +150,20 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
   - A página mostra grade responsiva (2→5 colunas, touch), tamanho, badge **em uso/não usado**,
     excluir individual e **"Limpar não usadas"** → `POST /api/media/cleanup` (deleta só os
     órfãos; cada delete é best-effort — cota de KV não derruba a operação).
+  - **Detalhe do arquivo (banner)** (`components/admin/MediaDetail.tsx`) — clicar num card (agora
+    `role="button"`, teclado/toque; o excluir do card usa `stopPropagation`) abre um **modal banner**
+    com TODOS os dados: arquivo (key), tipo, tamanho, **dimensões** (medidas no cliente carregando a
+    imagem — não ficam no metadata), envio, situação e **endereço** (copiar/abrir). Preview sobre
+    **xadrez** (mostra a transparência). Ações: **Editar imagem (recortar)**, **Excluir**.
+  - **Editor de recorte** (`components/admin/MediaCropEditor.tsx`) — quadro de recorte com **8 alças
+    + mover**, no **toque e no mouse** (Pointer Events; alças com alvo grande e `touch-action:none`;
+    `setPointerCapture` em try/catch). Trabalha em **px naturais** (fonte única p/ render via % e p/
+    exportação), com clamp e lado mínimo. **Preserva transparência**: o recorte é `drawImage` num
+    canvas **sem `fillRect`** → exporta **PNG com alpha**; o upload (`uploadMedia`) converte p/ WebP
+    **mantendo o alpha**. Salva como **nova imagem** (`POST /api/media`, key nova/imutável) — **não
+    sobrescreve** nada, então as referências existentes ficam intactas; só imagens `.png/.jpg/.webp`
+    são editáveis (SVG/GIF/vídeo não). Verificado: recorte de PNG transparente → canto com `alpha=0`,
+    miolo opaco.
   - **`MediaPicker`** (`components/admin/MediaPicker.tsx`) — modal reutilizável: escolher uma
     imagem já enviada **ou** enviar do computador. Ligado a **todos** os campos de imagem
     (`ImageUpload` e `HeroImageField`). Os controles (**escolher do armazenamento + trocar +
