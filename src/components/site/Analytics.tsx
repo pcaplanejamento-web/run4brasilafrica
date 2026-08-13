@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import type { Analytics as AnalyticsConfig } from "@/lib/content/types";
+import { trackVisit } from "@/lib/metrics";
 
 /**
  * Injects web-analytics scripts when configured in ADM > Configurações:
@@ -14,6 +15,9 @@ export default function Analytics({ analytics }: { analytics?: AnalyticsConfig }
   // Only accept a well-formed GA id (e.g. G-XXXX / UA-XXXX) — never interpolate
   // arbitrary text into the inline gtag script.
   const ga = gaRaw && /^[A-Za-z0-9-]+$/.test(gaRaw) ? gaRaw : "";
+
+  // Métrica interna própria: 1 acesso por sessão (independe de CF/GA acima).
+  useEffect(() => { trackVisit(); }, []);
 
   useEffect(() => {
     if (cf && !document.querySelector('script[src*="cloudflareinsights.com"]')) {

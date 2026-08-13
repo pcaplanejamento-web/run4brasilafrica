@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ClassificacaoDisplay,
   EventInfo,
@@ -29,6 +29,7 @@ import {
   type LayerTransform,
 } from "@/lib/results/card";
 import { qrMatrix } from "@/lib/results/qr";
+import { trackDownload } from "@/lib/metrics";
 import SegmentedTabs from "./SegmentedTabs";
 
 const PREFS_KEY = "r4ba:card:prefs";
@@ -266,6 +267,12 @@ export default function ShareCardStudio({
     return () => { alive = false; };
   }, [mapRoutes]);
 
+  // Métrica: registra o download/compartilhamento com o atleta do card (dados do
+  // resultado público — nome, nº, categoria). Fire-and-forget, nunca quebra a UI.
+  const reportDownload = useCallback(() => {
+    trackDownload({ name: runner.name, bib: runner.bib, category: categoryLabel }, format);
+  }, [runner.name, runner.bib, categoryLabel, format]);
+
   const qr = useMemo(() => {
     if (!showQr || typeof window === "undefined") return null;
     try { return qrMatrix(`${window.location.origin}/#classificacao`); } catch { return null; }
@@ -406,6 +413,7 @@ export default function ShareCardStudio({
             onCanvasClick={!photoImg ? () => fileRef.current?.click() : undefined}
             hint={!photoImg ? "Toque para escolher sua foto de fundo" : undefined}
             extraDownloadLabel="Baixar sem foto (transparente)"
+            onSaved={reportDownload}
           />
           <div className="mt-3 flex flex-wrap gap-2.5">
             <button type="button" onClick={() => fileRef.current?.click()} className={chip(false)}>{photoImg ? "Trocar foto" : "Escolher foto"}</button>
@@ -441,6 +449,7 @@ export default function ShareCardStudio({
               drawKey={drawKey}
               filenameBase={`card-${slug(runner.name)}-${activeTemplate}-${mode}-${format}`}
               shareText={`${runner.name} — ${runner.pos}º lugar (${categoryLabel}).`}
+              onSaved={reportDownload}
             />
           </div>
         </div>
@@ -481,6 +490,7 @@ function CardPreview({
   onCanvasClick,
   hint,
   extraDownloadLabel,
+  onSaved,
 }: {
   title: string;
   state: CardState;
@@ -494,6 +504,8 @@ function CardPreview({
   onCanvasClick?: () => void;
   hint?: string;
   extraDownloadLabel?: string;
+  /** Chamado quando a imagem foi **realmente** baixada/compartilhada (não no cancelamento). */
+  onSaved?: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   // No **celular** só oferecemos "Compartilhar" (que salva na galeria); o botão
@@ -546,9 +558,11 @@ function CardPreview({
     // galeria). Cancelar NÃO baixa nada; só baixamos se o recurso não existir.
     if (coarse) {
       const r = await tryNativeShare(new File([blob], filename, { type: "image/png" }));
-      if (r === "shared" || r === "canceled") return;
+      if (r === "shared") { onSaved?.(); return; }
+      if (r === "canceled") return;
     }
     downloadBlob(blob, filename);
+    onSaved?.();
   };
   const share = async () => {
     const blob = await renderBlob(false);
@@ -556,9 +570,11 @@ function CardPreview({
     const filename = `${filenameBase}.png`;
     const file = new File([blob], filename, { type: "image/png" });
     const r = await tryNativeShare(file, { title: "Meu resultado", text: shareText });
-    if (r === "shared" || r === "canceled") return; // compartilhou ou cancelou → fim
+    if (r === "shared") { onSaved?.(); return; }
+    if (r === "canceled") return; // cancelou → não conta
     // Sem compartilhamento nativo (ex.: desktop): baixa a imagem e abre o WhatsApp.
     downloadBlob(blob, filename);
+    onSaved?.();
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener,noreferrer");
   };
 

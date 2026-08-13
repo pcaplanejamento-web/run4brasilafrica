@@ -127,6 +127,33 @@ ADM (browser)          ── PUT ──▶  /api/content ──▶ D1
 - Uso (mesma origem): `fetch('/api/auth/dev-session', {method:'POST'})` grava o cookie httpOnly;
   recarregue e o ADM abre. Cookie `secure` só em HTTPS (funciona no `localhost` http).
 
+## Métricas (acessos + downloads)
+
+Painel simples de uso, sem serviço externo (tudo no D1 do próprio site). Aba ADM **Métricas**
+(`/admin/metricas`, item em `components/admin/nav.ts`).
+
+- **Store (D1)** — tabelas criadas **em runtime** (`CREATE TABLE IF NOT EXISTS` em
+  `src/app/api/metrics/route.ts`, guardado por um flag de isolate) e também versionadas em
+  `migrations/0005_metrics.sql` (opcional aplicar à mão). São: `metric_counters` (`visits`/`downloads`),
+  `metric_daily` (`day`,`kind` → série por dia UTC) e `athlete_downloads` (agregado por atleta:
+  `akey` = nº ou nome + categoria, `count`, `last_at`). Contadores via `INSERT … ON CONFLICT DO UPDATE
+  SET count = count + 1`. Tudo **bounded** (poucas linhas/dia; 1 linha por atleta).
+- **`POST /api/metrics`** (público, same-origin) — `{kind:"visit"}` conta 1 acesso; `{kind:"download",
+  athlete:{name,bib,category},format}` conta 1 download e faz upsert do atleta. **Sem rate-limit de KV**
+  (para não gastar a cota diária de escrita do KV): acessos são deduplicados **por sessão** no cliente
+  (`sessionStorage`, `lib/metrics.ts`) e downloads são clique explícito. É best-effort/aproximado (como
+  toda analytics). Guarda só **dados do card** (resultado público: nome/nº/categoria) — nada do usuário
+  que baixa.
+- **`GET /api/metrics`** (admin, guard leve `authConfigured() && getSessionUser()`) — resumo:
+  `visits`, `downloads`, `athletes[]` (ordenado por qtd), `daily[]`.
+- **Cliente** (`src/lib/metrics.ts`, sem servidor): `trackVisit()` (1×/sessão, disparado no mount do
+  `components/site/Analytics.tsx`) e `trackDownload(athlete, format)` (chamado pelo `ShareCardStudio` →
+  `CardPreview.onSaved`, só quando o download/compartilhamento **de fato** ocorre — não no cancelamento).
+  Ambos são fire-and-forget (`keepalive`), nunca quebram a UI.
+- **Página ADM** (`src/app/admin/(painel)/metricas/page.tsx`): cards de resumo (acessos, fotos baixadas,
+  atletas), mini-gráfico de barras dos últimos 14 dias (acessos × downloads), e tabela dos atletas com
+  imagens baixadas (nome, nº, categoria, qtd, última vez) com busca + **Exportar CSV**. Responsivo.
+
 ## Imagens e vídeo (mídia)
 
 - Storage = **Cloudflare KV** (binding `MEDIA_KV`) guardando o binário + o

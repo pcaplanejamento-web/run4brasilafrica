@@ -16,6 +16,7 @@ export const ADM_NAV: AdmNavItem[] = [
   // TODAS as seções (inclusive galeria, inscrição/lotes e dia da corrida) são
   // abas autocontidas, editadas em /admin/custom/sec-*. Sobra aqui só o CRM de
   // leads do "Seja um Parceiro" (cadastros).
+  { key: "metricas", label: "Métricas", href: "/admin/metricas" },
   { key: "seja-parceiro", label: "Cadastros de parceiros", href: "/admin/seja-parceiro" },
   { key: "inscritos", label: "Avisos (e-mails)", href: "/admin/inscritos" },
   { key: "armazenamento", label: "Armazenamento", href: "/admin/armazenamento" },
