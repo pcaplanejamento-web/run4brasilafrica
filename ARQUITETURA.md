@@ -614,7 +614,10 @@ onde cada `ResultCategory { id, label, distance?, ageBrackets?, count?, updatedA
   `CertificateModal` o converte em link para `window.location.origin`.
 - Desenho **profissional** (`certificate.ts`): moldura dupla + cantos, marca/logo, título
   "CERTIFICADO / DE CONCLUSÃO", "Certificamos que" + **nome** grande (serifa, auto-ajuste) com
-  filete, **prosa** (prova, tempo, cidade/data, colocação geral e na faixa), **caixas de dados**
+  filete, **prosa** (prova, tempo, cidade/data, colocação geral e **na faixa etária do ADM** —
+  rótulo `ageBracketLabel` + colocação `ageBracketPos` computados por `Classificacao` a partir da
+  idade do corredor e das faixas da categoria; cai para o código `ageGroup`/`ageGroupPos` do CSV
+  quando não há faixa), **caixas de dados**
   (número/tempo/faixa/equipe), **selo circular** com a colocação, **assinaturas** e **rodapé**
   com site + data de emissão + **código de autenticação** determinístico (`R4B-XXXXXX`). O rodapé
   é desenhado **por segmento**, cada trecho (domínio/emissão/código) com **negrito opcional** do

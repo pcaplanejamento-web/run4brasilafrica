@@ -80,6 +80,9 @@ export interface CertificateData {
   categoryLabel?: string;
   ageGroup?: string;
   ageGroupPos?: string;
+  /** Faixa etária do ADM (rótulo + colocação nela) — tem prioridade sobre o código. */
+  ageBracketLabel?: string;
+  ageBracketPos?: number;
   team?: string;
   eventName: string;
   editionYear?: string;
@@ -403,9 +406,14 @@ export function drawCertificate(
   // Prosa
   const distance = (data.distance || data.modality || data.categoryLabel || "").trim();
   const place = `${data.pos}ª colocação geral`;
-  const faixa = data.ageGroup && data.ageGroupPos && data.ageGroupPos !== "-"
-    ? `, e ${data.ageGroupPos}ª colocação na faixa ${data.ageGroup}`
-    : "";
+  // Faixa: o rótulo/colocação do ADM têm prioridade; senão cai para o código do CSV.
+  const faixaLabel = (data.ageBracketLabel || data.ageGroup || "").trim();
+  const faixaPos = data.ageBracketPos
+    ? String(data.ageBracketPos)
+    : data.ageGroupPos && data.ageGroupPos !== "-"
+      ? data.ageGroupPos
+      : "";
+  const faixa = faixaLabel && faixaPos ? `, e ${faixaPos}ª colocação na faixa ${faixaLabel}` : "";
   const local = [data.cityText, data.dateText].filter(Boolean).join(", ");
   const prova = distance ? `a prova de ${distance}` : "a prova";
   const evento = `${data.eventName}${data.editionYear ? ` ${data.editionYear}` : ""}`.trim();
@@ -426,7 +434,8 @@ export function drawCertificate(
   const stats: { label: string; value: string }[] = [];
   if (data.showBib !== false && data.bib) stats.push({ label: "Número", value: `#${data.bib}` });
   if (data.showTime !== false && data.time) stats.push({ label: data.timeLabel || "Tempo", value: data.time });
-  if (data.showAgeGroup !== false && data.ageGroup) stats.push({ label: "Faixa etária", value: data.ageGroup });
+  if (data.showAgeGroup !== false && (data.ageBracketLabel || data.ageGroup))
+    stats.push({ label: "Faixa etária", value: (data.ageBracketLabel || data.ageGroup) as string });
   if (data.showTeam !== false && data.team) stats.push({ label: "Equipe", value: data.team });
   if (stats.length) {
     const boxW = 640, boxH = 158, gap = 42;

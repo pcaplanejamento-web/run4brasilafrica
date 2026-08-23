@@ -140,6 +140,14 @@ export default function Classificacao({
   const hasView = viewRows.length > 0; // o filtro atual tem corredores
   const showBracketFilter = categoryHasRows && activeBrackets.length > 0;
 
+  // Faixa etária do ADM p/ o certificado: a faixa em que o corredor cai (por idade)
+  // + sua colocação DENTRO dela (reindexa 1..N na faixa). Reflete o que o ADM configurou.
+  const certBracket =
+    certRunner && activeBrackets.length ? activeBrackets.find((b) => rowInBracket(certRunner, b)) ?? null : null;
+  const certBracketPos = certBracket
+    ? allRows.filter((r) => rowInBracket(r, certBracket)).findIndex((r) => r.pos === certRunner!.pos) + 1
+    : 0;
+
   return (
     <section id="classificacao" className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
       <SectionEyebrow className="mb-2">{cfg.eyebrow || "Classificação"}</SectionEyebrow>
@@ -309,6 +317,8 @@ export default function Classificacao({
         event={event}
         categoryLabel={activeCat?.label ?? ""}
         categoryDistance={activeCat?.distance}
+        ageBracketLabel={certBracket?.label}
+        ageBracketPos={certBracketPos || undefined}
         brandLogo={brandLogo}
         display={display}
         certificate={certificate}
