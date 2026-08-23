@@ -126,7 +126,8 @@ export default function CustomCarousel({
   const [cssFs, setCssFs] = useState(false);
   const [showControls, setShowControls] = useState(true);
   // Which slide indices have been brought into the load window (grows over time).
-  const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0]));
+  // Seed the first few so the opening slides never show an empty (color-only) box.
+  const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0, 1, 2]));
   const containerRef = useRef<HTMLDivElement>(null);
   const touchX = useRef<number | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -263,7 +264,7 @@ export default function CustomCarousel({
   const srcFor = (idx: number) => (loaded.has(idx % n) ? pics[idx % n] : undefined);
   const imgProps = (idx: number) =>
     ({
-      loading: idx === 0 ? ("eager" as const) : ("lazy" as const),
+      loading: idx <= 1 ? ("eager" as const) : ("lazy" as const),
       fetchPriority: idx === 0 ? ("high" as const) : ("auto" as const),
       decoding: "async" as const,
       draggable: false,
