@@ -251,11 +251,14 @@ export default function CustomCarousel({
   const boxStyle: CSSProperties = isFs
     ? {
         aspectRatio: "auto",
-        width: "100vw",
-        height: "100vh",
         background: activeBg,
         borderRadius: 0,
-        ...(cssFs ? { position: "fixed", inset: 0, zIndex: 100 } : {}),
+        // CSS fallback (iOS Safari): fill via inset:0 — tracks the visible area
+        // exactly, unlike 100vh which leaves a gap under Safari's toolbar.
+        // Native fullscreen (Android/desktop): 100vw/100vh = the screen.
+        ...(cssFs
+          ? { position: "fixed", inset: 0, zIndex: 100 }
+          : { width: "100vw", height: "100vh" }),
       }
     : { aspectRatio, background: activeBg };
   const ctrlCls = `transition-all duration-300 ${showControls ? "opacity-100" : "pointer-events-none opacity-0"}`;
