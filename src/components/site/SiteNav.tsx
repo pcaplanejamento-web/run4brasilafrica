@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import type { HeaderCta } from "@/lib/content/types";
 import CtaButton from "./CtaButton";
 
-/** Header button destination from its config (section anchor or link). */
+/** Header button destination from its config (section anchor or link).
+ *  Robust to a missing `target`: uses whichever of section/url is configured. */
 function ctaUrl(h?: HeaderCta): string {
-  if (h?.target === "link") return h.url?.trim() || "#inscricao";
-  if (h?.target === "section") return `#${h.section || "top"}`;
+  if (!h) return "#inscricao";
+  if (h.target === "link") return h.url?.trim() || "#inscricao";
+  if (h.section?.trim()) return `#${h.section.trim()}`;
+  if (h.url?.trim()) return h.url.trim();
   return "#inscricao";
 }
 
