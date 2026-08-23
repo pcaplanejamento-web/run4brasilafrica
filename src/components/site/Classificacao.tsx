@@ -57,8 +57,8 @@ export default function Classificacao({
   const initialCount = Math.max(3, cfg?.initialCount ?? 10);
 
   const [active, setActive] = useState(0);
-  // Faixa etária selecionada: -1 = "Todas"; senão o índice em `activeCat.ageBrackets`.
-  const [faixa, setFaixa] = useState(-1);
+  // Faixa etária selecionada (índice em `displayBrackets`). Sem "Todas" automática.
+  const [faixa, setFaixa] = useState(0);
   // cache[id]: undefined = ainda buscando; [] = buscado e vazio; [...] = com dados.
   const [cache, setCache] = useState<Record<string, RaceResultRow[]>>({});
   const [openFull, setOpenFull] = useState(false);
@@ -98,9 +98,9 @@ export default function Classificacao({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCat?.id]);
 
-  // Ao trocar de categoria, volta o filtro de faixa para "Todas".
+  // Ao trocar de categoria, volta para a 1ª faixa configurada.
   useEffect(() => {
-    setFaixa(-1);
+    setFaixa(0);
   }, [activeCat?.id]);
 
   useEffect(() => {
@@ -124,26 +124,33 @@ export default function Classificacao({
   // Some sozinho quando não há nada configurado.
   if (!cfg || cats.length === 0) return null;
 
-  // Filtro por faixa etária (dentro da categoria). "Todas" = categoria inteira.
+  // Filtro por faixa etária (dentro da categoria). Sem "Todas" automática:
+  // o filtro só aparece se o ADM ativou (`ageFilter`) E há faixas configuradas.
+  // Sem faixas / filtro desligado → mostra TODOS os corredores, sem abas.
   const allRows = rows ?? [];
+  const loading = !!activeCat && rows === undefined;
+  const categoryHasRows = allRows.length > 0; // a categoria tem corredores
   const activeBrackets = activeCat?.ageBrackets ?? [];
-  const selBracket = faixa >= 0 && faixa < activeBrackets.length ? activeBrackets[faixa] : null;
+  const displayBrackets = activeBrackets.filter((b) => (b.label ?? "").trim() !== "");
+  const showBracketFilter =
+    categoryHasRows && activeCat?.ageFilter !== false && displayBrackets.length > 0;
+  const faixaIdx = showBracketFilter ? Math.min(Math.max(faixa, 0), displayBrackets.length - 1) : -1;
+  const selBracket = faixaIdx >= 0 ? displayBrackets[faixaIdx] : null;
   const viewRows = selBracket ? allRows.filter((r) => rowInBracket(r, selBracket)) : allRows;
-  // Colocação exibida: dentro da faixa reindexa 1..N; em "Todas" é a geral (`pos`).
+  // Colocação exibida: dentro da faixa reindexa 1..N; sem filtro é a geral (`pos`).
   const placeMap = selBracket ? new Map(viewRows.map((r, i) => [r.pos, i + 1])) : null;
   const placeOf = (row: RaceResultRow) => placeMap?.get(row.pos) ?? row.pos;
 
   const podium = viewRows.slice(0, 3);
   const listRows = viewRows.slice(3, initialCount);
-  const loading = !!activeCat && rows === undefined;
-  const categoryHasRows = !!rows && rows.length > 0; // a categoria tem corredores
   const hasView = viewRows.length > 0; // o filtro atual tem corredores
-  const showBracketFilter = categoryHasRows && activeBrackets.length > 0;
 
-  // Faixa etária do ADM p/ o certificado: a faixa em que o corredor cai (por idade)
-  // + sua colocação DENTRO dela (reindexa 1..N na faixa). Reflete o que o ADM configurou.
+  // Faixa etária do ADM p/ o certificado: a faixa (COM idade definida) em que o
+  // corredor cai + sua colocação DENTRO dela. Faixas sem limites (ex.: "Geral")
+  // não contam como faixa etária do certificado.
+  const boundedBrackets = activeBrackets.filter((b) => b.min != null || b.max != null);
   const certBracket =
-    certRunner && activeBrackets.length ? activeBrackets.find((b) => rowInBracket(certRunner, b)) ?? null : null;
+    certRunner && boundedBrackets.length ? boundedBrackets.find((b) => rowInBracket(certRunner, b)) ?? null : null;
   const certBracketPos = certBracket
     ? allRows.filter((r) => rowInBracket(r, certBracket)).findIndex((r) => r.pos === certRunner!.pos) + 1
     : 0;
@@ -178,9 +185,9 @@ export default function Classificacao({
           {/* Filtro por faixa etária (dentro da categoria) — mesmo seletor das abas. */}
           {showBracketFilter && (
             <SegmentedTabs
-              items={["Todas", ...activeBrackets.map((b) => b.label)]}
-              active={faixa + 1}
-              onSelect={(i) => setFaixa(i - 1)}
+              items={displayBrackets.map((b) => b.label)}
+              active={faixaIdx}
+              onSelect={(i) => setFaixa(i)}
               ariaLabel="Filtrar por faixa etária"
               className="mb-8 rounded-lg border border-line-soft"
             />

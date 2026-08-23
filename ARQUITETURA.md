@@ -587,20 +587,24 @@ onde cada `ResultCategory { id, label, distance?, ageBrackets?, count?, updatedA
 - **ADM** (`ClassificacaoEditor`): título/nota, **quantos aparecem no início** (`initialCount`),
   **toggles de "Informações exibidas"**, e **categorias** (rótulo = aba, que **é a categoria usada
   no certificado**; reorder ↑/↓; "+ Nova categoria"). Cada categoria envia o **CSV** (parse no
-  navegador → `saveResults` → D1) e mostra "N corredores · atualizado em…". Cada categoria também
-  tem **Faixas etárias** (`ageBrackets`: rótulo + idade mín/máx, **reordenáveis** ↑/↓) — "Usar
-  faixas padrão" preenche as 7 do print. Faixa vira um **filtro por idade** dentro da categoria no
-  site (a ordem do ADM = ordem no filtro). *(O campo `distance` foi removido: o certificado usa o
-  próprio rótulo da categoria.)*
+  navegador → `saveResults` → D1) e mostra "N corredores · atualizado em…". Cada categoria tem um
+  **toggle "Ativar filtro por faixa etária"** (`ageFilter`); quando ligado, as **Faixas etárias**
+  (`ageBrackets`: rótulo + idade mín/máx, **reordenáveis** ↑/↓) viram um filtro por idade. **Não há
+  aba "Todas" automática** — para uma aba que mostra todos, o ADM adiciona **"+ Geral"** (faixa sem
+  idade). "Usar faixas padrão" preenche as 7 do print. A ordem do ADM = ordem no filtro. *(O campo
+  `distance` foi removido: o certificado usa o próprio rótulo da categoria.)*
 - **Faixas** (`src/lib/results/brackets.ts`, PURO): `STANDARD_BRACKETS` (14–19…70+) e
-  `rowInBracket(row, b)` (casa por `row.age` em `[min, max]`). Reusado por ADM e site.
+  `rowInBracket(row, b)` (casa por `row.age` em `[min, max]`; sem min/max = casa todos → "Geral").
+  Reusado por ADM e site.
 - **Público** (`Classificacao` + `ClassificacaoModal` + `RunnerModal`): abas por categoria
-  (`SegmentedTabs`) e, quando a categoria tem faixas, um **2º `SegmentedTabs`** ("Todas" + faixas)
-  que filtra por idade. Dentro de uma faixa, a **colocação exibida reindexa 1..N** (`placeOf`) no
-  pódio/tabela/modal — o certificado usa sempre os dados reais do corredor (colocação geral +
-  faixa). **Pódio animado** dos 3 primeiros (padrão de `Premiacao`, respeita reduced-motion),
-  **tabela** até `initialCount`, e **"Ver classificação geral"** → modal com **busca**. Some
-  sozinho quando não há categorias; "Nenhum corredor nesta faixa etária" quando o filtro esvazia.
+  (`SegmentedTabs`). O filtro de faixa (**2º `SegmentedTabs`, sem "Todas"**) só aparece quando
+  `ageFilter !== false` **e** há faixas com rótulo; senão a categoria mostra **todos** sem filtro.
+  Dentro de uma faixa, a **colocação exibida reindexa 1..N** (`placeOf`) no pódio/tabela/modal. O
+  certificado usa a faixa **com idade definida** em que o corredor cai (faixas "Geral" sem limites
+  não contam como faixa do certificado). **Pódio animado** dos 3 primeiros (padrão de `Premiacao`,
+  respeita reduced-motion), **tabela** até `initialCount`, e **"Ver classificação geral"** → modal
+  com **busca**. Some sozinho quando não há categorias; "Nenhum corredor nesta faixa etária" quando
+  o filtro esvazia.
 
 ### Certificado do atleta (`CertificateModal` + `lib/results/certificate.ts` + `lib/pdf.ts`)
 - Botão **"Emitir certificado"** em cada linha do atleta (`ResultRow`, ícone `CertIcon`), no

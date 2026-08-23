@@ -67,6 +67,9 @@ export function ClassificacaoEditor({
     setBrackets(i, STANDARD_BRACKETS.map((b) => ({ ...b, id: uid() })));
   const addBracket = (i: number) =>
     setBrackets(i, [...brackets(i), { id: uid(), label: "", min: undefined, max: undefined }]);
+  /** Faixa "Geral" (sem idade) — mostra todos; substitui a antiga aba "Todas". */
+  const addGeralBracket = (i: number) =>
+    setBrackets(i, [...brackets(i), { id: uid(), label: "Geral", min: undefined, max: undefined }]);
   const setBracket = (i: number, j: number, patch: Partial<AgeBracket>) =>
     setBrackets(i, brackets(i).map((b, k) => (k === j ? { ...b, ...patch } : b)));
   const removeBracket = (i: number, j: number) =>
@@ -283,22 +286,42 @@ export function ClassificacaoEditor({
 
             {/* Faixas etárias — viram um filtro por idade dentro da categoria no site. */}
             <div className="mt-4 border-t border-adm-border pt-4">
-              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                <FieldLabel>Faixas etárias (filtro no site)</FieldLabel>
+              <label className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold text-adm-ink">
+                <input
+                  type="checkbox"
+                  checked={c.ageFilter !== false}
+                  onChange={(e) => setCat(i, { ageFilter: e.target.checked })}
+                  className="h-4 w-4 accent-terracotta"
+                />
+                Ativar filtro por faixa etária
+              </label>
+              {c.ageFilter === false ? (
+                <p className="mt-1.5 text-[11px] text-adm-muted">
+                  Filtro desativado — a categoria mostra <strong>todos</strong> os corredores, sem abas.
+                </p>
+              ) : (
+                <>
+              <div className="mb-1 mt-3 flex flex-wrap items-center justify-between gap-2">
+                <FieldLabel>Faixas etárias</FieldLabel>
                 <div className="flex gap-2">
                   {brackets(i).length === 0 && (
                     <GhostButton onClick={() => addStandardBrackets(i)} className="px-3 py-1.5 text-[12px]">
                       Usar faixas padrão
                     </GhostButton>
                   )}
+                  <GhostButton onClick={() => addGeralBracket(i)} className="px-3 py-1.5 text-[12px]">
+                    + Geral (todos)
+                  </GhostButton>
                   <GhostButton onClick={() => addBracket(i)} className="px-3 py-1.5 text-[12px]">
                     + Faixa
                   </GhostButton>
                 </div>
               </div>
               <p className="mb-2 text-[11px] text-adm-muted">
-                Cada faixa vira um filtro por <strong>idade</strong> nesta categoria. Deixe a idade máxima
-                vazia para &ldquo;ou mais&rdquo;. Sem faixas, a categoria mostra a lista completa.
+                Cada faixa vira uma aba de filtro por <strong>idade</strong> (a ordem ↑/↓ manda). Deixe a
+                idade máxima vazia para &ldquo;ou mais&rdquo;. <strong>Não existe mais aba &ldquo;Todas&rdquo;
+                automática</strong> — para uma aba que mostra todos, use <strong>&ldquo;+ Geral&rdquo;</strong>
+                (faixa sem idade). Sem faixas, a categoria mostra todos sem filtro.
               </p>
               {brackets(i).length > 0 && (
                 <div className="flex flex-col gap-2">
@@ -359,6 +382,8 @@ export function ClassificacaoEditor({
                     </div>
                   ))}
                 </div>
+              )}
+                </>
               )}
             </div>
           </Card>

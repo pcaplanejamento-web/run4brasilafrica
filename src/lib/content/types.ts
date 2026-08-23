@@ -674,6 +674,8 @@ export interface ResultCategory {
   label: string;
   /** @deprecated Substituído pelo `label` no certificado. Mantido p/ conteúdo antigo. */
   distance?: string;
+  /** Ativa o filtro por faixa etária no site (padrão: ligado se houver faixas). */
+  ageFilter?: boolean;
   /** Faixas etárias (ADM) — viram um filtro dentro da categoria no site. */
   ageBrackets?: AgeBracket[];
   /** Nº de linhas (preenchido no upload, para exibição no ADM). */
