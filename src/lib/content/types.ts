@@ -195,6 +195,21 @@ export interface Branding {
 }
 
 /**
+ * Header button override. When `enabled`, it replaces the automatic lote button
+ * (label + destination); otherwise the header keeps the auto "Inscreva-se…" CTA.
+ */
+export interface HeaderCta {
+  enabled?: boolean;
+  label?: string;
+  /** Destination: scroll to a home section ("section") or open a link ("link"). */
+  target?: "section" | "link";
+  /** Anchor id (without `#`) when `target === "section"`. */
+  section?: string;
+  /** URL when `target === "link"`. */
+  url?: string;
+}
+
+/**
  * Site color overrides (theme). Each maps to CSS custom properties applied at
  * runtime; unset keys keep the default palette. Values are any CSS color (hex).
  */
@@ -696,6 +711,8 @@ export interface LayoutItem {
 export interface SiteContent {
   event: EventInfo;
   branding: Branding;
+  /** Optional override for the header button (label + destination). */
+  headerCta?: HeaderCta;
   theme: ThemeColors;
   /** Homepage section order + on/off (ADM dashboard). */
   layout: LayoutItem[];

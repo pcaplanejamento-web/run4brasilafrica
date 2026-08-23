@@ -1,4 +1,4 @@
-import type { CustomSection, LayoutItem, SectionKind } from "./types";
+import type { CustomSection, LayoutItem, SectionKind, SiteContent } from "./types";
 import { isSectionKind, SECTION_ANCHOR } from "./sectionKinds";
 
 /**
@@ -46,6 +46,28 @@ export function abaAnchor(section: CustomSection): string {
     return SECTION_ANCHOR[blocks[0].type as SectionKind];
   }
   return `aba-${section.id}`;
+}
+
+/**
+ * Destinos de rolagem da tela inicial (âncora + rótulo): "Topo" + cada aba ativa,
+ * na ordem do layout. Usado por qualquer botão que role até uma seção (blocos e
+ * o botão do header), evitando duplicar a lógica.
+ */
+export function homeAnchorTargets(
+  content: Pick<SiteContent, "layout" | "customSections">,
+): { label: string; anchor: string }[] {
+  const sections = content.customSections ?? [];
+  const resolved = resolveLayout(content.layout, sections.map((s) => s.id));
+  return [
+    { label: "Topo da página", anchor: "top" },
+    ...resolved
+      .filter((li) => li.enabled && isCustomKey(li.key))
+      .map((li) => {
+        const s = sections.find((c) => c.id === customIdFromKey(li.key));
+        return s ? { label: s.title?.trim() || "Aba sem título", anchor: abaAnchor(s) } : null;
+      })
+      .filter((x): x is { label: string; anchor: string } => x !== null),
+  ];
 }
 
 /**

@@ -9,11 +9,13 @@ import type {
   Cloudinary,
   ContactLinks,
   EventInfo,
+  HeaderCta,
   Organizer,
   OrganizersSection,
   PrivacySection,
   ThemeColors,
 } from "@/lib/content/types";
+import { homeAnchorTargets } from "@/lib/content/sections";
 import ImageUpload from "@/components/admin/ImageUpload";
 import EditionsManager from "@/components/admin/EditionsManager";
 import {
@@ -53,6 +55,7 @@ const BACKEND_LABEL: Record<Backend, { text: string; dot: string; tone: string }
 function ConfiguracoesForm({
   initialEvent,
   initialBranding,
+  initialHeaderCta,
   initialTheme,
   initialCloudinary,
   initialAnalytics,
@@ -63,6 +66,7 @@ function ConfiguracoesForm({
 }: {
   initialEvent: EventInfo;
   initialBranding: Branding;
+  initialHeaderCta: HeaderCta;
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
   initialAnalytics: Analytics;
@@ -71,9 +75,11 @@ function ConfiguracoesForm({
   initialContact: ContactLinks;
   cloudinaryUpload?: { cloudName?: string; uploadPreset?: string };
 }) {
-  const { save, reset, reload, backend, status } = useContent();
+  const { save, reset, reload, backend, status, content } = useContent();
   const [event, setEvent] = useState<EventInfo>(initialEvent);
   const [branding, setBranding] = useState(initialBranding);
+  const [headerCta, setHeaderCta] = useState<HeaderCta>(initialHeaderCta);
+  const headerTargets = homeAnchorTargets(content);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
   const [analytics, setAnalytics] = useState<Analytics>(initialAnalytics);
@@ -269,6 +275,73 @@ function ConfiguracoesForm({
               </p>
             </div>
           </div>
+        </Card>
+
+        {/* Botão do topo (header): texto + destino, POR EDIÇÃO */}
+        <Card>
+          <SectionLabel>Botão do topo (header)</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Personalize o botão do cabeçalho (o texto e para onde ele leva). No modo
+            automático, ele mostra o status da inscrição (abertura / inscreva-se / encerradas).
+          </p>
+          <div className="mb-3">
+            <FieldLabel>Comportamento</FieldLabel>
+            <Select
+              value={headerCta.enabled ? "custom" : "auto"}
+              onChange={(e) => setHeaderCta((h) => ({ ...h, enabled: e.target.value === "custom" }))}
+            >
+              <option value="auto">Automático (status da inscrição)</option>
+              <option value="custom">Personalizado</option>
+            </Select>
+          </div>
+          {headerCta.enabled && (
+            <div className="flex flex-col gap-3">
+              <div>
+                <FieldLabel>Texto do botão</FieldLabel>
+                <TextInput
+                  value={headerCta.label ?? ""}
+                  onChange={(e) => setHeaderCta((h) => ({ ...h, label: e.target.value }))}
+                  placeholder="Ex.: Inscreva-se"
+                />
+              </div>
+              <div>
+                <FieldLabel>Ação ao clicar</FieldLabel>
+                <Select
+                  value={headerCta.target ?? "section"}
+                  onChange={(e) =>
+                    setHeaderCta((h) => ({ ...h, target: e.target.value as "section" | "link" }))
+                  }
+                >
+                  <option value="section">Rolar até uma seção da tela inicial</option>
+                  <option value="link">Abrir um link</option>
+                </Select>
+              </div>
+              {(headerCta.target ?? "section") === "section" ? (
+                <div>
+                  <FieldLabel>Seção de destino</FieldLabel>
+                  <Select
+                    value={headerCta.section ?? "top"}
+                    onChange={(e) => setHeaderCta((h) => ({ ...h, section: e.target.value }))}
+                  >
+                    {headerTargets.map((t) => (
+                      <option key={t.anchor} value={t.anchor}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <FieldLabel>Link (URL)</FieldLabel>
+                  <TextInput
+                    value={headerCta.url ?? ""}
+                    onChange={(e) => setHeaderCta((h) => ({ ...h, url: e.target.value }))}
+                    placeholder="https://..."
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </Card>
 
         {/* Cores do site (tema) */}
@@ -541,6 +614,7 @@ function ConfiguracoesForm({
               {
                 event,
                 branding,
+                headerCta,
                 theme,
                 cloudinary,
                 analytics,
@@ -567,6 +641,7 @@ export default function ConfiguracoesPage() {
       key={selectedEditionId ?? "none"}
       initialEvent={content.event}
       initialBranding={content.branding ?? {}}
+      initialHeaderCta={content.headerCta ?? {}}
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}
       initialAnalytics={content.analytics ?? {}}

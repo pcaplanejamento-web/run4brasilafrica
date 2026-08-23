@@ -89,6 +89,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
         <SiteNav
           logo={c.branding?.logo}
           lotes={c.lotes ?? []}
+          headerCta={c.headerCta}
           showOrganizers={c.organizers?.enabled !== false}
         />
         <RaceCountdownBar inscricao={c.inscricao} />

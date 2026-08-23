@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Lote } from "@/lib/content/types";
+import type { HeaderCta, Lote } from "@/lib/content/types";
 import { loteCtaLabel } from "@/lib/content/lotes";
 import CtaButton from "./CtaButton";
+
+/** Resolve the header button destination from an override (section or link). */
+function overrideUrl(h: HeaderCta, fallback: string): string {
+  if (h.target === "link") return h.url?.trim() || fallback;
+  if (h.target === "section") return `#${h.section || "top"}`;
+  return fallback;
+}
 
 const LINKS = [
   { href: "#aba-a-causa", label: "Sobre" },
@@ -26,10 +33,13 @@ function Wordmark({ className = "" }: { className?: string }) {
 export default function SiteNav({
   logo,
   lotes,
+  headerCta,
   showOrganizers = false,
 }: {
   logo?: string;
   lotes?: Lote[];
+  /** Optional override for the header button (label + destination). */
+  headerCta?: HeaderCta;
   /** Add the "Organizadores" entry (opens the floating card via #organizadores). */
   showOrganizers?: boolean;
 }) {
@@ -56,7 +66,10 @@ export default function SiteNav({
     return () => clearInterval(id);
   }, []);
 
-  const cta = loteCtaLabel(lotes ?? [], now);
+  const auto = loteCtaLabel(lotes ?? [], now);
+  const cta = headerCta?.enabled
+    ? { label: headerCta.label?.trim() || auto.label, url: overrideUrl(headerCta, auto.url) }
+    : auto;
 
   return (
     <header

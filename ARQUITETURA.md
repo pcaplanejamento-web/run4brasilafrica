@@ -468,8 +468,13 @@ Painel simples de uso, sem serviço externo (tudo no D1 do próprio site). Aba A
   de texto é largo demais para caber um botão ao lado; (2) o **botão do menu** com barras em
   **`bg-white` literal** (não um token `oklch`), para o ícone nunca sair preto/invisível em
   aparelhos onde as cores de tema não resolvem. O dropdown contém só os links (sem CTA dentro).
-- **CTA do header** (`SiteNav`): o botão adapta o texto ao lote ativo via `loteCtaLabel` —
-  "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou "Inscrições encerradas".
+- **CTA do header** (`SiteNav`): por padrão o botão adapta o texto ao lote ativo via
+  `loteCtaLabel` — "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou
+  "Inscrições encerradas". O ADM pode **sobrescrever** em Configurações → **"Botão do topo
+  (header)"** (`content.headerCta`, por edição): escolher o **texto** e o **destino** — rolar
+  até uma **seção da tela inicial** (âncora, via o helper compartilhado `homeAnchorTargets`,
+  o mesmo usado pelo botão dos blocos) ou abrir um **link**. Quando `enabled` é falso, mantém
+  o automático. `SiteContent` passa `headerCta` ao `SiteNav`, que resolve label/URL.
 - **Fundo padronizado da home**: TODAS as seções de conteúdo usam o mesmo fundo `bg-ink` (=
   cor do `body`) — seja explícito ou por transparência sobre o body. Não há mais alternância
   clara/escura (`bg-ink-deep`/`bg-ink-panel`) nos *roots* de seção; cards internos ainda usam

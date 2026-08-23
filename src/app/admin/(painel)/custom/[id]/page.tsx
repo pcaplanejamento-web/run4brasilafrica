@@ -48,9 +48,7 @@ import {
   SECAO_CHOICES,
 } from "@/lib/content/blockChoices";
 import {
-  abaAnchor,
-  customIdFromKey,
-  isCustomKey,
+  homeAnchorTargets,
   resolveLayout,
 } from "@/lib/content/sections";
 import { uid } from "@/lib/uid";
@@ -684,20 +682,7 @@ function CustomAbaForm({
       li.enabled && (li.key === "sejaParceiro" || li.key === "custom:sec-sejaParceiro"),
   );
   // Abas ativas da tela inicial que o botão pode rolar até (âncora + rótulo).
-  const homeTargets: { label: string; anchor: string }[] = [
-    { label: "Topo da página", anchor: "top" },
-    ...resolved
-      .filter((li) => li.enabled && isCustomKey(li.key))
-      .map((li) => {
-        const s = (content.customSections ?? []).find(
-          (c) => c.id === customIdFromKey(li.key),
-        );
-        return s
-          ? { label: s.title?.trim() || "Aba sem título", anchor: abaAnchor(s) }
-          : null;
-      })
-      .filter((x): x is { label: string; anchor: string } => x !== null),
-  ];
+  const homeTargets = homeAnchorTargets(content);
 
   const setBlock = (i: number, patch: Partial<CustomBlock>) =>
     setBlocks((bs) => bs.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
