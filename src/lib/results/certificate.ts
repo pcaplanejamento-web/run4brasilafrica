@@ -82,6 +82,7 @@ export interface CertificateData {
   verifyCode?: string;
   // --- controlado pelo ADM ---
   accent?: string; // cor de destaque (da logo ou config)
+  showEventName?: boolean; // nome da corrida ao lado da logo
   message?: string; // observação opcional abaixo do subtítulo
   sig1Label?: string;
   sig1Sub?: string;
@@ -178,20 +179,50 @@ function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numb
   ctx.restore();
 }
 
-/** Marca (logo do evento centrada, ou nome do evento em texto). */
+/** Marca no topo: logo (imagem própria/do site) e, opcionalmente, o **nome da
+ *  corrida ao lado**. Sem logo, cai para o nome do evento em texto. Centraliza o
+ *  conjunto. Retorna o `y` de baixo. */
 function drawBrand(ctx: CanvasRenderingContext2D, assets: CertificateAssets, data: CertificateData, cx: number, top: number, h: number, col: CertificatePalette) {
-  if (assets.logo && assets.logo.width > 0) {
-    const w = (assets.logo.width / assets.logo.height) * h;
+  const name = (data.eventName || "").trim().toUpperCase();
+  const hasLogo = !!assets.logo && assets.logo.width > 0;
+
+  if (hasLogo) {
+    const logo = assets.logo as HTMLImageElement;
+    const ar = logo.width / logo.height;
+    const dh = h;
+    const dw = ar * dh;
+
+    if (data.showEventName && name) {
+      // Lockup horizontal: logo + nome, ajustando o nome para caber ao lado.
+      const gap = 52;
+      const maxNameW = CERT_W * 0.5 - dw;
+      const namePx = fitFont(ctx, name, Math.round(h * 0.5), Math.round(h * 0.26), (px) => `800 ${px}px ${DISPLAY}`, maxNameW);
+      ctx.font = `800 ${namePx}px ${DISPLAY}`;
+      const nameW = ctx.measureText(name).width;
+      const totalW = dw + gap + nameW;
+      const startX = cx - totalW / 2;
+      ctx.drawImage(logo, startX, top, dw, dh);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = col.ink;
+      ctx.fillText(name, startX + dw + gap, top + dh / 2 + namePx * 0.02);
+      ctx.textBaseline = "alphabetic";
+      return top + dh;
+    }
+    // Só a logo, centrada.
     const maxW = CERT_W * 0.34;
-    const dw = Math.min(w, maxW);
-    const dh = (dw / w) * h;
-    ctx.drawImage(assets.logo, cx - dw / 2, top, dw, dh);
-    return top + dh;
+    const cdw = Math.min(dw, maxW);
+    const cdh = (cdw / dw) * dh;
+    ctx.drawImage(logo, cx - cdw / 2, top, cdw, cdh);
+    return top + cdh;
   }
+
+  // Sem logo → nome do evento como marca (sempre, para não ficar sem cabeçalho).
   ctx.textAlign = "center";
   ctx.fillStyle = col.ink;
-  ctx.font = `800 ${Math.round(h * 0.9)}px ${DISPLAY}`;
-  ctx.fillText((data.eventName || "").toUpperCase(), cx, top + h * 0.9);
+  const px = fitFont(ctx, name, Math.round(h * 0.9), Math.round(h * 0.5), (p) => `800 ${p}px ${DISPLAY}`, CERT_W * 0.72);
+  ctx.font = `800 ${px}px ${DISPLAY}`;
+  ctx.fillText(name, cx, top + h * 0.9);
   return top + h;
 }
 
@@ -247,17 +278,7 @@ export function drawCertificate(
 
   // ---- Marca ----
   const brandBottom = drawBrand(ctx, assets, data, cx, y, 156, col);
-  y = brandBottom + 44;
-
-  // Eyebrow (evento + edição)
-  ctx.textAlign = "center";
-  ctx.fillStyle = col.soft;
-  ctx.font = `700 44px ${DISPLAY}`;
-  const eyebrow = [data.eventName, data.editionYear].filter(Boolean).join(" · ").toUpperCase();
-  if (eyebrow && (assets.logo?.width ?? 0) > 0) {
-    withTracking(ctx, "6px", () => ctx.fillText(eyebrow, cx, y));
-    y += 64;
-  }
+  y = brandBottom + 96;
 
   // ---- Título ----
   y += 34;

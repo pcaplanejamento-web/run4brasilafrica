@@ -199,6 +199,10 @@ export interface Branding {
  * vêm da logo por padrão (`useLogoColors`), com override opcional de `accent`.
  */
 export interface CertificateConfig {
+  /** Imagem própria para o certificado (URL). Vazio → usa a logo do site. */
+  logo?: string;
+  /** Mostrar o nome da corrida ao lado da logo (padrão: não). */
+  showEventName?: boolean;
   /** Cor de destaque (moldura/selo/filetes). Vazio → cor da logo ou padrão. */
   accent?: string;
   /** Extrair as cores da logo (padrão: ligado). `accent` explícito tem prioridade. */

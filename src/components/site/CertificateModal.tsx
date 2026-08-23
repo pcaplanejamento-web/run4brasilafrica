@@ -120,7 +120,7 @@ export default function CertificateModal({
   useBodyScrollLock(open);
 
   useEffect(() => { ensureFonts().then(() => setFontsReady(true)); }, []);
-  useEffect(() => { loadImageTaintSafe(brandLogo).then(setLogo); }, [brandLogo]);
+  useEffect(() => { loadImageTaintSafe(certificate?.logo || brandLogo).then(setLogo); }, [certificate?.logo, brandLogo]);
 
   const data: CertificateData | null = useMemo(() => {
     if (!runner) return null;
@@ -154,6 +154,7 @@ export default function CertificateModal({
       accent:
         certificate?.accent?.trim() ||
         (certificate?.useLogoColors !== false ? dominantColor(logo) : undefined),
+      showEventName: certificate?.showEventName,
       message: certificate?.message,
       sig1Label: certificate?.sig1Label,
       sig1Sub: certificate?.sig1Sub,

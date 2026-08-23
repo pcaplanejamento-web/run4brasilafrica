@@ -355,6 +355,31 @@ function ConfiguracoesForm({
             Controle as informações e a aparência do certificado que os atletas emitem na
             Classificação (Resultados). Por padrão, as cores vêm da logo.
           </p>
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr]">
+            <div>
+              <FieldLabel>Imagem do certificado (logo)</FieldLabel>
+              <ImageUpload
+                value={cert.logo}
+                onChange={(url) => setCert((c) => ({ ...c, logo: url }))}
+                aspect="auto"
+                fit="contain"
+                label="imagem do certificado"
+                cloudinary={cloudinaryUpload}
+                className="max-w-[360px] bg-[#2b2118]"
+              />
+              <p className="mt-1 text-[11px] text-adm-muted">Vazio = usa a logo do site.</p>
+            </div>
+            <div>
+              <FieldLabel>Nome da corrida ao lado da logo</FieldLabel>
+              <Select
+                value={cert.showEventName ? "sim" : "nao"}
+                onChange={(e) => setCert((c) => ({ ...c, showEventName: e.target.value === "sim" }))}
+              >
+                <option value="nao">Não — só a imagem</option>
+                <option value="sim">Sim — imagem + nome do evento</option>
+              </Select>
+            </div>
+          </div>
           <div className="mb-3">
             <FieldLabel>Cores</FieldLabel>
             <Select
