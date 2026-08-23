@@ -13,7 +13,7 @@ interface Props {
   download?: boolean;
   /** e.g. "16/9" or "9/16" — used for the box and for the exported video. */
   aspectRatio?: string;
-  /** Default background behind the photos in fullscreen (hex). Default black. */
+  /** Default background behind the photos (hex). Default black. */
   fullscreenBg?: string;
   /** Per-slide background (aligned to `images` by index); empty = use fullscreenBg. */
   imageBgs?: string[];
@@ -97,12 +97,15 @@ function FsButton({
 }
 
 /**
- * Image slideshow for custom-section "carrossel" blocks.
- * - `slide` (default): sliding track with arrows, dots, autoplay, touch-swipe.
- * - `fade`: continuous crossfade loop (video-like, no controls), with an
- *   optional "Baixar vídeo" export (canvas + MediaRecorder → MP4/WebM).
- * Both modes support fullscreen (native Fullscreen API, with a CSS fallback for
- * iOS Safari). Respects prefers-reduced-motion (no autoplay).
+ * Image slideshow for custom-section "carrossel" blocks. Light + fast:
+ * - Solid per-slide backdrop paints the configured color from the first frame
+ *   (no color flash), behind `object-contain` photos (never cropped).
+ * - Only a window (current ± 1, plus the first) of images is loaded, growing as
+ *   it plays — so it stays light on any device/aspect. First photo is eager +
+ *   high priority; the rest are lazy.
+ * - `slide` (setas/pontos) and `fade` (crossfade em loop) modes; fullscreen with
+ *   a CSS fallback for iOS; controls auto-hide when idle. Optional MP4/WebM export.
+ * Respects prefers-reduced-motion (no autoplay).
  */
 export default function CustomCarousel({
   images,
@@ -114,22 +117,22 @@ export default function CustomCarousel({
   imageBgs,
 }: Props) {
   const pics = images.filter(Boolean);
+  const n = pics.length;
   const [i, setI] = useState(0);
-  const [anim, setAnim] = useState(true); // slide-mode transition on/off (for seamless wrap)
+  const [anim, setAnim] = useState(true); // slide-mode transition on/off (seamless wrap)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [nativeFs, setNativeFs] = useState(false);
   const [cssFs, setCssFs] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  // Which slide indices have been brought into the load window (grows over time).
+  const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0]));
   const containerRef = useRef<HTMLDivElement>(null);
   const touchX = useRef<number | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const n = pics.length;
   const stepMs = Math.max(1200, interval * 1000);
   const isFs = nativeFs || cssFs;
 
-  // Slide mode advances forward without bound (…, n-1, n = clone of the first),
-  // so the loop always keeps moving in the same direction; fade wraps modulo.
   const go = (d: number) => {
     if (mode === "slide") {
       setI((v) => (d > 0 ? Math.min(v + 1, n) : v <= 0 ? n - 1 : v - 1));
@@ -138,6 +141,7 @@ export default function CustomCarousel({
     }
   };
 
+  // Autoplay: slide advances forward (clone at n), fade wraps modulo.
   useEffect(() => {
     if (n <= 1) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -148,17 +152,25 @@ export default function CustomCarousel({
     return () => clearInterval(t);
   }, [n, stepMs, mode]);
 
-  // When slide mode lands on the appended clone, snap back to the real first
-  // slide with no animation, then re-enable the transition on the next frame.
+  // Grow the load window around the current slide (current ± 1), keeping the
+  // first always ready (loop restart). Only mounts the images actually needed.
+  useEffect(() => {
+    setLoaded((prev) => {
+      const next = new Set(prev);
+      for (const k of [i - 1, i, i + 1]) next.add(((k % n) + n) % n);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [i, n]);
+
+  // Slide clone → snap back to the real first (no animation), re-enable next frame.
   useEffect(() => {
     if (mode !== "slide" || anim) return;
     const r = requestAnimationFrame(() => requestAnimationFrame(() => setAnim(true)));
     return () => cancelAnimationFrame(r);
   }, [anim, mode]);
 
-  // Fallback for the seamless loop: if the transition to the clone never fires
-  // `transitionend` (e.g. the tab was hidden, so CSS transitions were paused),
-  // force the reset anyway so the carousel can never get stuck on the last slide.
+  // Fallback: if the transition to the clone never fires `transitionend` (e.g.
+  // the tab was hidden), force the reset so the loop can't get stuck.
   useEffect(() => {
     if (mode !== "slide" || i < n) return;
     const t = setTimeout(() => {
@@ -195,8 +207,7 @@ export default function CustomCarousel({
     };
   }, [cssFs]);
 
-  // Auto-hide the overlay controls when the pointer sits still (like a video
-  // player): any move re-shows them and restarts the idle timer.
+  // Auto-hide the overlay controls when the pointer sits still (like a player).
   const nudgeControls = () => {
     setShowControls(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -217,6 +228,7 @@ export default function CustomCarousel({
       webkitFullscreenElement?: Element;
       webkitExitFullscreen?: () => void;
     };
+    nudgeControls();
     if (nativeFs) {
       (document.exitFullscreen || doc.webkitExitFullscreen)?.call(document);
       return;
@@ -233,8 +245,7 @@ export default function CustomCarousel({
 
   if (n === 0) return null;
 
-  // Background follows the active slide (per-slide color), falling back to the
-  // block default and then black. `i % n` maps the slide-mode clone → first.
+  // Per-slide background (solid backdrop). `i % n` maps the slide clone → first.
   const activeBg = imageBgs?.[i % n]?.trim() || fullscreenBg || "#000000";
   const boxStyle: CSSProperties = isFs
     ? {
@@ -246,10 +257,17 @@ export default function CustomCarousel({
         ...(cssFs ? { position: "fixed", inset: 0, zIndex: 100 } : {}),
       }
     : { aspectRatio, background: activeBg };
-  // Fit the whole photo (no crop); the slide color fills the letterbox area.
-  const objectFit = "object-contain";
   const ctrlCls = `transition-all duration-300 ${showControls ? "opacity-100" : "pointer-events-none opacity-0"}`;
   const cursorCls = showControls ? "" : "cursor-none";
+  const boxCls = `relative w-full overflow-hidden rounded-xl ${cursorCls}`;
+  const srcFor = (idx: number) => (loaded.has(idx % n) ? pics[idx % n] : undefined);
+  const imgProps = (idx: number) =>
+    ({
+      loading: idx === 0 ? ("eager" as const) : ("lazy" as const),
+      fetchPriority: idx === 0 ? ("high" as const) : ("auto" as const),
+      decoding: "async" as const,
+      draggable: false,
+    });
 
   // ---- Fade (video-style) ----
   if (mode === "fade") {
@@ -267,7 +285,7 @@ export default function CustomCarousel({
         let W = arW >= arH ? long : Math.round((long * arW) / arH);
         let H = arW >= arH ? Math.round((long * arH) / arW) : long;
         W -= W % 2;
-        H -= H % 2; // even dims for encoders
+        H -= H % 2;
 
         const imgs = await Promise.all(pics.map(loadImage));
         const canvas = document.createElement("canvas");
@@ -287,7 +305,7 @@ export default function CustomCarousel({
 
         const holdMs = stepMs;
         const fadeMs = Math.min(900, holdMs * 0.5);
-        const totalMs = n * holdMs; // one seamless loop
+        const totalMs = n * holdMs;
 
         rec.start();
         const t0 = performance.now();
@@ -331,20 +349,20 @@ export default function CustomCarousel({
       <div className="flex flex-col gap-3">
         <div
           ref={containerRef}
-          className={`relative w-full overflow-hidden rounded-xl bg-ink-panel ${cursorCls}`}
+          className={boxCls}
           style={boxStyle}
           onMouseMove={nudgeControls}
           onMouseLeave={() => setShowControls(false)}
         >
-          {pics.map((src, idx) => (
+          <div className="absolute inset-0" style={{ background: activeBg }} aria-hidden="true" />
+          {pics.map((_, idx) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={idx}
-              src={src}
+              src={srcFor(idx)}
               alt=""
-              loading={idx === 0 ? "eager" : "lazy"}
-              draggable={false}
-              className={`absolute inset-0 h-full w-full ${objectFit} transition-opacity duration-1000 ease-in-out`}
+              {...imgProps(idx)}
+              className="absolute inset-0 h-full w-full object-contain transition-opacity duration-700 ease-in-out"
               style={{ opacity: idx === i ? 1 : 0 }}
             />
           ))}
@@ -379,7 +397,7 @@ export default function CustomCarousel({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full overflow-hidden rounded-xl bg-ink-panel ${cursorCls}`}
+      className={boxCls}
       style={boxStyle}
       onMouseMove={nudgeControls}
       onMouseLeave={() => setShowControls(false)}
@@ -394,30 +412,28 @@ export default function CustomCarousel({
         touchX.current = null;
       }}
     >
+      <div className="absolute inset-0" style={{ background: activeBg }} aria-hidden="true" />
       <div
-        className={`flex ease-out ${anim ? "transition-transform duration-500" : ""} ${isFs ? "h-full" : ""}`}
+        className={`relative flex h-full ease-out ${anim ? "transition-transform duration-500" : ""}`}
         style={{
           transform: `translateX(-${i * 100}%)`,
           transitionDuration: anim ? undefined : "0ms",
         }}
         onTransitionEnd={() => {
-          // Reached the appended clone → jump to the real first with no animation.
           if (i >= n) {
             setAnim(false);
             setI(0);
           }
         }}
       >
-        {[...pics, pics[0]].map((src, idx) => (
+        {[...pics, pics[0]].map((_, idx) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={idx}
-            src={src}
+            src={srcFor(idx)}
             alt=""
-            loading="lazy"
-            draggable={false}
-            className={`w-full shrink-0 ${objectFit} ${isFs ? "h-full" : ""}`}
-            style={isFs ? undefined : { aspectRatio }}
+            {...imgProps(idx)}
+            className="h-full w-full shrink-0 object-contain"
           />
         ))}
       </div>
