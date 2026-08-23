@@ -612,11 +612,13 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   ignora branco/preto/cinza) e `certificatePalette()` deriva `accent`/`accentSoft`/`accentDeep`
   (moldura, selo, filetes, filete das caixas). O ADM pode desligar e escolher uma cor.
 - **Controle do ADM** (`content.certificate: CertificateConfig`, por edição — Configurações →
-  **"Certificado do atleta"**): **cores** (usar a logo ou uma cor), **assinaturas** (2 blocos,
-  título + linha de baixo), **mensagem** opcional e quais **caixas de dados** aparecem
-  (número/tempo/faixa/equipe). Persistido por edição (em `EDITION_FIELDS`/`resolveEdition`,
-  igual a `branding`/`headerCta`); passado por `SectionRenderCtx.certificate` →
-  `Classificacao` → `CertificateModal`.
+  **"Certificado do atleta"**): **imagem própria** do certificado (`logo`, vazio → logo do site),
+  mostrar o **nome da corrida ao lado da logo** (`showEventName` — o `drawBrand` monta o lockup
+  logo+nome ou só a logo), **cores** (usar a logo ou uma cor), **assinaturas** (2 blocos, título +
+  linha de baixo), **mensagem** opcional e quais **caixas de dados** aparecem
+  (número/tempo/faixa/equipe). A `dominantColor` amostra a **imagem do certificado** quando há
+  uma. Persistido por edição (em `EDITION_FIELDS`/`resolveEdition`, igual a `branding`/`headerCta`);
+  passado por `SectionRenderCtx.certificate` → `Classificacao` → `CertificateModal`.
 
 ### Estúdio de cards (`ShareCardStudio`, estilo Strava)
 
