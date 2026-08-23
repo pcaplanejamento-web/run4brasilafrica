@@ -235,6 +235,10 @@ export interface CertificateConfig {
   showTime?: boolean;
   showAgeGroup?: boolean;
   showTeam?: boolean;
+  /** Rodapé em negrito (opcional): domínio, data de emissão e código. */
+  domainBold?: boolean;
+  issuedBold?: boolean;
+  authBold?: boolean;
 }
 
 /**

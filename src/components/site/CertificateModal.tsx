@@ -96,6 +96,7 @@ export default function CertificateModal({
 }) {
   const open = !!runner;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const domainRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const pushed = useRef(false);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null);
@@ -176,6 +177,9 @@ export default function CertificateModal({
       showTime: certificate?.showTime,
       showAgeGroup: certificate?.showAgeGroup,
       showTeam: certificate?.showTeam,
+      domainBold: certificate?.domainBold,
+      issuedBold: certificate?.issuedBold,
+      authBold: certificate?.authBold,
     };
   }, [runner, event, categoryLabel, categoryDistance, display, certificate, logo]);
 
@@ -187,7 +191,7 @@ export default function CertificateModal({
     c.height = CERT_H;
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    try { drawCertificate(ctx, CERT_W, CERT_H, data, { logo, bg: bgImg }); }
+    try { domainRectRef.current = drawCertificate(ctx, CERT_W, CERT_H, data, { logo, bg: bgImg }).domainRect; }
     catch (e) { console.error("[certificado] erro ao desenhar:", e); }
   }, [data, logo, bgImg, fontsReady]);
 
@@ -200,7 +204,12 @@ export default function CertificateModal({
     if (!c) return;
     setBusy(true);
     try {
-      const blob = await canvasToPdfBlob(c, A4_LANDSCAPE_PT, 0.95);
+      // Link clicável no domínio do rodapé → abre o site.
+      const r = domainRectRef.current;
+      const links = r && typeof window !== "undefined"
+        ? [{ ...r, url: window.location.origin }]
+        : undefined;
+      const blob = await canvasToPdfBlob(c, A4_LANDSCAPE_PT, 0.95, links);
       if (!blob) return;
       const filename = `certificado-${slug(runner!.name)}.pdf`;
       const file = new File([blob], filename, { type: "application/pdf" });

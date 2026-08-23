@@ -43,4 +43,29 @@ describe("buildImagePdf", () => {
     expect(txt).toContain("xref\n0 6\n");
     expect(txt).toContain("/Size 6");
   });
+
+  it("adiciona anotação /Link clicável quando há links (xref cresce)", async () => {
+    const blob = buildImagePdf(jpeg, 800, 600, A4_LANDSCAPE_PT.w, A4_LANDSCAPE_PT.h, [
+      { x: 100, y: 550, w: 200, h: 30, url: "https://example.com" },
+    ]);
+    const txt = await toText(blob);
+    expect(txt).toContain("xref\n0 7\n");
+    expect(txt).toContain("/Size 7");
+    expect(txt).toContain("/Subtype /Link");
+    expect(txt).toContain("/URI (https://example.com)");
+    expect(txt).toContain("/Annots [6 0 R]");
+    // xref ainda íntegra: o offset declarado aponta para 'xref'.
+    const m = txt.match(/startxref\n(\d+)\n%%EOF$/);
+    expect(m).toBeTruthy();
+    expect(txt.slice(Number(m![1]), Number(m![1]) + 4)).toBe("xref");
+  });
+
+  it("ignora links inválidos (sem url/área), mantendo 6 objetos", async () => {
+    const blob = buildImagePdf(jpeg, 800, 600, A4_LANDSCAPE_PT.w, A4_LANDSCAPE_PT.h, [
+      { x: 10, y: 10, w: 0, h: 0, url: "https://x.com" },
+    ]);
+    const txt = await toText(blob);
+    expect(txt).toContain("/Size 6");
+    expect(txt).not.toContain("/Subtype /Link");
+  });
 });
