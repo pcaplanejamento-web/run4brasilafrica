@@ -149,9 +149,14 @@ export default function Classificacao({
   // DENTRO dela. Faixas sem limites ("Geral") não contam. Usado igual no certificado
   // E no card de compartilhar / detalhe do corredor (dados condizentes).
   const boundedBrackets = activeBrackets.filter((b) => b.min != null || b.max != null);
+  // Amplitude de idade da faixa (menor = mais específica). Evita que uma faixa
+  // ampla tipo "Geral (0–100)" vire a faixa etária do corredor no certificado/card.
+  const bracketRange = (b: { min?: number; max?: number }) => (b.max ?? 120) - (b.min ?? 0);
   const bracketInfoFor = (row: RaceResultRow | null): { label?: string; pos: number } => {
-    const b = row && boundedBrackets.length ? boundedBrackets.find((x) => rowInBracket(row, x)) ?? null : null;
-    if (!b || !row) return { label: undefined, pos: 0 };
+    if (!row || !boundedBrackets.length) return { label: undefined, pos: 0 };
+    const matches = boundedBrackets.filter((x) => rowInBracket(row, x));
+    if (!matches.length) return { label: undefined, pos: 0 };
+    const b = matches.reduce((best, x) => (bracketRange(x) < bracketRange(best) ? x : best));
     return { label: b.label, pos: allRows.filter((r) => rowInBracket(r, b)).findIndex((r) => r.pos === row.pos) + 1 };
   };
   const certInfo = bracketInfoFor(certRunner);
