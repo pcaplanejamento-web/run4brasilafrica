@@ -281,20 +281,20 @@ function ConfiguracoesForm({
         <Card>
           <SectionLabel>Botão do topo (header)</SectionLabel>
           <p className="mb-3 text-[12px] text-adm-muted">
-            Personalize o botão do cabeçalho (o texto e para onde ele leva). No modo
-            automático, ele mostra o status da inscrição (abertura / inscreva-se / encerradas).
+            Personalize o botão do cabeçalho — o texto e para onde ele leva — ou oculte-o
+            para não aparecer nada.
           </p>
           <div className="mb-3">
-            <FieldLabel>Comportamento</FieldLabel>
+            <FieldLabel>Exibição</FieldLabel>
             <Select
-              value={headerCta.enabled ? "custom" : "auto"}
-              onChange={(e) => setHeaderCta((h) => ({ ...h, enabled: e.target.value === "custom" }))}
+              value={headerCta.hidden ? "hidden" : "show"}
+              onChange={(e) => setHeaderCta((h) => ({ ...h, hidden: e.target.value === "hidden" }))}
             >
-              <option value="auto">Automático (status da inscrição)</option>
-              <option value="custom">Personalizado</option>
+              <option value="show">Mostrar botão</option>
+              <option value="hidden">Ocultar (não aparece nada)</option>
             </Select>
           </div>
-          {headerCta.enabled && (
+          {!headerCta.hidden && (
             <div className="flex flex-col gap-3">
               <div>
                 <FieldLabel>Texto do botão</FieldLabel>

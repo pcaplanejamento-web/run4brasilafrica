@@ -195,11 +195,13 @@ export interface Branding {
 }
 
 /**
- * Header button override. When `enabled`, it replaces the automatic lote button
- * (label + destination); otherwise the header keeps the auto "Inscreva-se…" CTA.
+ * Header button — fully driven by this config (no auto/lote logic), so it never
+ * flashes a different label. Empty `label` falls back to "Inscreva-se".
  */
 export interface HeaderCta {
-  enabled?: boolean;
+  /** Hide the header button entirely (nothing shows). */
+  hidden?: boolean;
+  /** Button text (empty → "Inscreva-se"). */
   label?: string;
   /** Destination: scroll to a home section ("section") or open a link ("link"). */
   target?: "section" | "link";

@@ -88,7 +88,6 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
       <div id="site-sticky-header" className="sticky top-0 z-30">
         <SiteNav
           logo={c.branding?.logo}
-          lotes={c.lotes ?? []}
           headerCta={c.headerCta}
           showOrganizers={c.organizers?.enabled !== false}
         />

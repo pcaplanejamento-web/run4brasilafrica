@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { HeaderCta, Lote } from "@/lib/content/types";
-import { loteCtaLabel } from "@/lib/content/lotes";
+import type { HeaderCta } from "@/lib/content/types";
 import CtaButton from "./CtaButton";
 
-/** Resolve the header button destination from an override (section or link). */
-function overrideUrl(h: HeaderCta, fallback: string): string {
-  if (h.target === "link") return h.url?.trim() || fallback;
-  if (h.target === "section") return `#${h.section || "top"}`;
-  return fallback;
+/** Header button destination from its config (section anchor or link). */
+function ctaUrl(h?: HeaderCta): string {
+  if (h?.target === "link") return h.url?.trim() || "#inscricao";
+  if (h?.target === "section") return `#${h.section || "top"}`;
+  return "#inscricao";
 }
 
 const LINKS = [
@@ -32,19 +31,16 @@ function Wordmark({ className = "" }: { className?: string }) {
 
 export default function SiteNav({
   logo,
-  lotes,
   headerCta,
   showOrganizers = false,
 }: {
   logo?: string;
-  lotes?: Lote[];
-  /** Optional override for the header button (label + destination). */
+  /** Header button config (label + destination + hide). */
   headerCta?: HeaderCta;
   /** Add the "Organizadores" entry (opens the floating card via #organizadores). */
   showOrganizers?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [now, setNow] = useState(0);
 
   const links = showOrganizers
     ? [...LINKS, { href: "#organizadores", label: "Organizadores" }]
@@ -58,18 +54,9 @@ export default function SiteNav({
     };
   }, [open]);
 
-  // The CTA label adapts to the active lote (abertura em / inscreva-se até…).
-  useEffect(() => {
-    const tick = () => setNow(Date.now());
-    tick();
-    const id = setInterval(tick, 30000);
-    return () => clearInterval(id);
-  }, []);
-
-  const auto = loteCtaLabel(lotes ?? [], now);
-  const cta = headerCta?.enabled
-    ? { label: headerCta.label?.trim() || auto.label, url: overrideUrl(headerCta, auto.url) }
-    : auto;
+  // Header button: purely config-driven (no lote/time logic → no flash).
+  const showCta = headerCta?.hidden !== true;
+  const cta = { label: headerCta?.label?.trim() || "Inscreva-se", url: ctaUrl(headerCta) };
 
   return (
     <header
@@ -95,19 +82,21 @@ export default function SiteNav({
           ))}
         </div>
 
-        {/* Desktop CTA (adapts to the active lote). Wrapped so it's reliably
-            hidden below lg — putting `hidden` straight on CtaButton loses to its
-            own `inline-block` base class in the CSS cascade. */}
-        <div className="hidden lg:block">
-          <CtaButton href={cta.url} size="sm">
-            {cta.label}
-          </CtaButton>
-        </div>
+        {/* Desktop CTA (config-driven). Wrapped so it's reliably hidden below lg —
+            putting `hidden` straight on CtaButton loses to its own `inline-block`
+            base class in the CSS cascade. Omitted entirely when set to hidden. */}
+        {showCta && (
+          <div className="hidden lg:block">
+            <CtaButton href={cta.url} size="sm">
+              {cta.label}
+            </CtaButton>
+          </div>
+        )}
 
         {/* Mobile CTA — absolutely centered in the header (below lg), between the
             logo (left) and the menu button (right). Shown only when a logo IMAGE is
             set; the text wordmark is too wide to leave room for a centered button. */}
-        {logo && (
+        {showCta && logo && (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:hidden">
             <CtaButton href={cta.url} size="xs">
               {cta.label}

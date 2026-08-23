@@ -468,13 +468,14 @@ Painel simples de uso, sem serviço externo (tudo no D1 do próprio site). Aba A
   de texto é largo demais para caber um botão ao lado; (2) o **botão do menu** com barras em
   **`bg-white` literal** (não um token `oklch`), para o ícone nunca sair preto/invisível em
   aparelhos onde as cores de tema não resolvem. O dropdown contém só os links (sem CTA dentro).
-- **CTA do header** (`SiteNav`): por padrão o botão adapta o texto ao lote ativo via
-  `loteCtaLabel` — "Abertura em DD/MM" (a abrir), "Inscreva-se até DD/MM" (aberto) ou
-  "Inscrições encerradas". O ADM pode **sobrescrever** em Configurações → **"Botão do topo
-  (header)"** (`content.headerCta`, por edição): escolher o **texto** e o **destino** — rolar
-  até uma **seção da tela inicial** (âncora, via o helper compartilhado `homeAnchorTargets`,
-  o mesmo usado pelo botão dos blocos) ou abrir um **link**. Quando `enabled` é falso, mantém
-  o automático. `SiteContent` passa `headerCta` ao `SiteNav`, que resolve label/URL.
+- **Botão do header** (`SiteNav`): **100% dirigido pela config** `content.headerCta` (por
+  edição) — **sem lógica de lote/tempo**, então não há *flash* (não renderiza um rótulo e troca).
+  Editável em Configurações → **"Botão do topo (header)"**: **Exibição** (Mostrar / **Ocultar** —
+  não aparece nada), **texto** do botão (vazio → "Inscreva-se") e **destino** — rolar até uma
+  **seção da tela inicial** (âncora, via o helper compartilhado `homeAnchorTargets`, o mesmo do
+  botão dos blocos) ou abrir um **link**. `SiteContent` passa `headerCta` ao `SiteNav`, que
+  resolve label/URL e omite os dois CTAs (desktop e mobile) quando oculto. `loteCtaLabel` não é
+  mais usado no header.
 - **Fundo padronizado da home**: TODAS as seções de conteúdo usam o mesmo fundo `bg-ink` (=
   cor do `body`) — seja explícito ou por transparência sobre o body. Não há mais alternância
   clara/escura (`bg-ink-deep`/`bg-ink-panel`) nos *roots* de seção; cards internos ainda usam
