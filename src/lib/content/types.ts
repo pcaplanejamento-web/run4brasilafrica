@@ -688,6 +688,7 @@ export interface Edition {
   status: EditionStatus;
   event: EventInfo;
   branding: Branding;
+  headerCta?: HeaderCta;
   theme: ThemeColors;
   cloudinary: Cloudinary;
   analytics: Analytics;

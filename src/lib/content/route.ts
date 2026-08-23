@@ -9,6 +9,7 @@ import { activeEdition } from "./editions";
 export const EDITION_FIELDS: readonly (keyof Edition)[] = [
   "event",
   "branding",
+  "headerCta",
   "theme",
   "cloudinary",
   "analytics",
