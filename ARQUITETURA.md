@@ -525,7 +525,9 @@ Painel simples de uso, sem serviço externo (tudo no D1 do próprio site). Aba A
   barra de abas é o **`SegmentedTabs`** — o **mesmo componente** da barra **STRAVA/GARMIN** de "O
   Percurso" (`RouteViewer`): segmentos **conectados** (sem espaço), largura cheia no mobile
   (`flex-1`, alvo ≥44px) e natural no desktop (`sm:flex-none`), borda inferior, **ativa em
-  `bg-gold`** (verde) e inativa em `bg-ink-panel`; `role="tablist"` + `aria-current`. A **ordem
+  `bg-gold`** (verde) e inativa em `bg-ink-panel`; `role="tablist"` + `aria-current`. Com **muitos**
+  itens (ex.: 8 faixas etárias) as abas **quebram em linhas** (`flex-wrap` + `whitespace-nowrap`) —
+  no mobile ficam todas acessíveis pelo scroll vertical, sem encolher/cortar. A **ordem
   manda**: a **primeira seção é a que abre** (`sections` = `albums` na ordem do ADM + álbuns
   legados só presentes em `galleryPhotos`, anexados ao fim). Com **1 seção** as abas somem (nada a
   escolher — o próprio `SegmentedTabs` se oculta).
