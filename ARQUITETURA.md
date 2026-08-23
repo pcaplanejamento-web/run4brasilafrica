@@ -591,6 +591,23 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   acento) ou número**. Clicar num corredor abre o **detalhe** (todos os campos) + o **estúdio de
   cards** (abaixo). Some sozinho quando não há categorias.
 
+### Certificado do atleta (`CertificateModal` + `lib/results/certificate.ts` + `lib/pdf.ts`)
+- Botão **"Emitir certificado"** em cada linha do atleta (`ResultRow`, ícone `CertIcon`), no
+  detalhe (`RunnerModal`) e na classificação geral (`ClassificacaoModal`) — todos abrem o
+  `CertificateModal` (com sua própria entrada de History API, sobre o que estiver aberto).
+- `CertificateModal` desenha o certificado num `<canvas>` **WYSIWYG** (`drawCertificate`) em
+  **A4 paisagem ~300 DPI** (3508×2480) e baixa em **PDF** (gerador próprio `lib/pdf.ts` —
+  `canvasToPdfBlob`/`A4_LANDSCAPE_PT`, embute o JPEG do canvas, **sem dependências**); no mobile
+  (`pointer: coarse`) usa o **compartilhar** nativo (`navigator.share` com o arquivo). 100% no
+  navegador, nada vai ao servidor.
+- Desenho **profissional** (`certificate.ts`): moldura dupla + cantos, marca/logo, título
+  "CERTIFICADO / DE CONCLUSÃO", "Certificamos que" + **nome** grande (serifa, auto-ajuste) com
+  filete, **prosa** (prova, tempo, cidade/data, colocação geral e na faixa), **caixas de dados**
+  (número/tempo/faixa/equipe), **selo circular** com a colocação, **duas assinaturas**
+  (Organização / Direção de Prova) e **rodapé** com site + data de emissão + **código de
+  autenticação** determinístico (`R4B-XXXXXX`). Reusa `card.ts` (`ensureFonts`,
+  `loadImageTaintSafe`, `wrapText`) e `primaryTime`.
+
 ### Estúdio de cards (`ShareCardStudio`, estilo Strava)
 
 Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: preview = export),
