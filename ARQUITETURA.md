@@ -603,10 +603,18 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
 - Desenho **profissional** (`certificate.ts`): moldura dupla + cantos, marca/logo, título
   "CERTIFICADO / DE CONCLUSÃO", "Certificamos que" + **nome** grande (serifa, auto-ajuste) com
   filete, **prosa** (prova, tempo, cidade/data, colocação geral e na faixa), **caixas de dados**
-  (número/tempo/faixa/equipe), **selo circular** com a colocação, **duas assinaturas**
-  (Organização / Direção de Prova) e **rodapé** com site + data de emissão + **código de
-  autenticação** determinístico (`R4B-XXXXXX`). Reusa `card.ts` (`ensureFonts`,
-  `loadImageTaintSafe`, `wrapText`) e `primaryTime`.
+  (número/tempo/faixa/equipe), **selo circular** com a colocação, **assinaturas** e **rodapé**
+  com site + data de emissão + **código de autenticação** determinístico (`R4B-XXXXXX`). Reusa
+  `card.ts` (`ensureFonts`, `loadImageTaintSafe`, `wrapText`) e `primaryTime`.
+- **Assinaturas** (ADM): **1 ou 2 assinantes** (`signMode`). Cada um tem **papel**, **nome** (em
+  **cursiva**, como assinatura manuscrita) e **CPF** — mostrado **mascarado** por LGPD
+  (`maskCpf` → `***.456.789-**`). No modo "one", uma assinatura única centrada.
+- **Verificação de autenticidade**: código no rodapé do certificado ⇄ botão **"Verificar
+  certificado"** no rodapé do site (`VerifyCertificateModal`, banner flutuante). O código
+  (`certSeed`+`certVerifyCode` em `lib/results/verify.ts`, **compartilhado** cliente/servidor)
+  é recomputado no servidor por **`/api/verify-cert?code=`**, que varre as categorias de
+  classificação da edição ativa (KV) e devolve os dados do atleta quando confere. Nenhum código
+  é armazenado — é determinístico a partir de nome|número|colocação|categoria.
 - **Cores da marca**: por padrão o certificado é **tingido com a cor da logo** —
   `CertificateModal.dominantColor()` amostra a cor mais vívida da logo (canvas 48×48,
   ignora branco/preto/cinza) e `certificatePalette()` deriva `accent`/`accentSoft`/`accentDeep`
@@ -614,8 +622,8 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
 - **Controle do ADM** (`content.certificate: CertificateConfig`, por edição — Configurações →
   **"Certificado do atleta"**): **imagem própria** do certificado (`logo`, vazio → logo do site),
   mostrar o **nome da corrida ao lado da logo** (`showEventName` — o `drawBrand` monta o lockup
-  logo+nome ou só a logo), **cores** (usar a logo ou uma cor), **assinaturas** (2 blocos, título +
-  linha de baixo), **mensagem** opcional e quais **caixas de dados** aparecem
+  logo+nome ou só a logo), **cores** (usar a logo ou uma cor), **assinaturas** (1 ou 2
+  assinantes: papel + nome cursivo + CPF mascarado), **mensagem** opcional e quais **caixas de dados** aparecem
   (número/tempo/faixa/equipe). A `dominantColor` amostra a **imagem do certificado** quando há
   uma. Persistido por edição (em `EDITION_FIELDS`/`resolveEdition`, igual a `branding`/`headerCta`);
   passado por `SectionRenderCtx.certificate` → `Classificacao` → `CertificateModal`.
