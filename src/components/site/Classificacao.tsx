@@ -14,6 +14,8 @@ import SectionEyebrow from "./SectionEyebrow";
 import SegmentedTabs from "./SegmentedTabs";
 import ClassificacaoModal from "./ClassificacaoModal";
 import RunnerModal from "./RunnerModal";
+import CertificateModal from "./CertificateModal";
+import { CertIcon } from "./CertIcon";
 
 /** Cor da medalha por colocação (0 = 1º). Mesma paleta do pódio de Premiação. */
 const MEDAL = [
@@ -55,10 +57,14 @@ export default function Classificacao({
   const [cache, setCache] = useState<Record<string, RaceResultRow[]>>({});
   const [openFull, setOpenFull] = useState(false);
   const [runner, setRunner] = useState<RaceResultRow | null>(null);
+  const [certRunner, setCertRunner] = useState<RaceResultRow | null>(null);
 
   // Handlers estáveis (evitam re-registrar listeners/scroll-lock dos modais a cada render).
   const closeFull = useCallback(() => setOpenFull(false), []);
   const closeRunner = useCallback(() => setRunner(null), []);
+  const closeCert = useCallback(() => setCertRunner(null), []);
+  // Abre o certificado (por cima do que estiver aberto — tem própria entrada de histórico).
+  const openCert = useCallback((r: RaceResultRow) => setCertRunner(r), []);
   // NÃO fecha a "classificação geral": o detalhe abre POR CIMA (com sua própria
   // entrada de histórico), então ao Voltar do atleta a lista continua no mesmo
   // lugar (busca/rolagem preservadas).
@@ -217,7 +223,7 @@ export default function Classificacao({
           {listRows.length > 0 && (
             <div className="overflow-hidden rounded-lg border border-line-soft bg-ink-panel">
               {listRows.map((row, i) => (
-                <ResultRow key={`${row.pos}-${row.bib}-${i}`} row={row} display={display} onClick={() => setRunner(row)} />
+                <ResultRow key={`${row.pos}-${row.bib}-${i}`} row={row} display={display} onClick={() => setRunner(row)} onCertificate={() => openCert(row)} />
               ))}
             </div>
           )}
@@ -243,6 +249,7 @@ export default function Classificacao({
         categoryLabel={activeCat?.label ?? ""}
         display={display}
         onPick={pickFromModal}
+        onCertificate={openCert}
       />
       <RunnerModal
         key={runner ? `${activeCat?.id}-${runner.pos}` : "none"}
@@ -252,6 +259,15 @@ export default function Classificacao({
         categoryLabel={activeCat?.label ?? ""}
         brandLogo={brandLogo}
         routes={routes ?? []}
+        display={display}
+        onCertificate={runner ? () => openCert(runner) : undefined}
+      />
+      <CertificateModal
+        runner={certRunner}
+        onClose={closeCert}
+        event={event}
+        categoryLabel={activeCat?.label ?? ""}
+        brandLogo={brandLogo}
         display={display}
       />
     </section>
@@ -280,22 +296,28 @@ function SubChips({ row, display }: { row: RaceResultRow; display?: Classificaca
   );
 }
 
-/** Uma linha clicável da tabela compacta (responsiva: some colunas no mobile). */
+/** Uma linha clicável da tabela compacta (responsiva: some colunas no mobile).
+ *  A linha abre o detalhe; o botão à direita **emite o certificado**. */
 export function ResultRow({
   row,
   display,
   onClick,
+  onCertificate,
 }: {
   row: RaceResultRow;
   display?: ClassificacaoDisplay;
   onClick: () => void;
+  onCertificate?: () => void;
 }) {
   const time = primaryTime(row, display);
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="flex w-full items-center gap-3 border-b border-line-soft px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5 sm:px-4"
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+      aria-label={`${row.pos}º ${row.name}`}
+      className="flex w-full cursor-pointer items-center gap-3 border-b border-line-soft px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5 sm:px-4"
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink font-display text-[13px] font-bold text-gold">
         {row.pos}
@@ -316,6 +338,17 @@ export function ResultRow({
       {time && (
         <span className="shrink-0 font-display text-[15px] font-bold text-cream">{time}</span>
       )}
-    </button>
+      {onCertificate && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCertificate(); }}
+          aria-label={`Emitir certificado de ${row.name}`}
+          title="Emitir certificado"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-muted-strong transition-colors hover:border-gold hover:text-gold"
+        >
+          <CertIcon />
+        </button>
+      )}
+    </div>
   );
 }

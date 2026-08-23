@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ClassificacaoDisplay, RaceResultRow } from "@/lib/content/types";
 import { foldText, matchesQuery, primaryTime } from "@/lib/results/format";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { CertIcon } from "./CertIcon";
 
 /**
  * Modal da **classificação geral**: lista completa da categoria com **busca por
@@ -17,6 +18,7 @@ export default function ClassificacaoModal({
   categoryLabel,
   display,
   onPick,
+  onCertificate,
 }: {
   open: boolean;
   onClose: () => void;
@@ -24,6 +26,8 @@ export default function ClassificacaoModal({
   categoryLabel: string;
   display?: ClassificacaoDisplay;
   onPick: (row: RaceResultRow) => void;
+  /** Emite o certificado do corredor (botão na linha). */
+  onCertificate?: (row: RaceResultRow) => void;
 }) {
   const [query, setQuery] = useState("");
   // Entrada de histórico: o botão Voltar do aparelho fecha ESTE modal e volta à
@@ -157,11 +161,14 @@ export default function ClassificacaoModal({
             filtered.map((row, i) => {
               const time = primaryTime(row, display);
               return (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   key={`${row.pos}-${row.bib}-${i}`}
                   onClick={() => onPick(row)}
-                  className="flex w-full items-center gap-3 border-b border-line-soft px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5"
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(row); } }}
+                  aria-label={`${row.pos}º ${row.name}`}
+                  className="flex w-full cursor-pointer items-center gap-3 border-b border-line-soft px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5"
                 >
                   <span className="grid h-8 w-9 shrink-0 place-items-center rounded-full bg-ink font-display text-[13px] font-bold text-gold">
                     {row.pos}
@@ -178,7 +185,18 @@ export default function ClassificacaoModal({
                   {time && (
                     <span className="shrink-0 font-display text-[15px] font-bold text-cream">{time}</span>
                   )}
-                </button>
+                  {onCertificate && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onCertificate(row); }}
+                      aria-label={`Emitir certificado de ${row.name}`}
+                      title="Emitir certificado"
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-muted-strong transition-colors hover:border-gold hover:text-gold"
+                    >
+                      <CertIcon />
+                    </button>
+                  )}
+                </div>
               );
             })
           )}

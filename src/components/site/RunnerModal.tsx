@@ -42,6 +42,7 @@ export default function RunnerModal({
   brandLogo,
   routes,
   display,
+  onCertificate,
 }: {
   runner: RaceResultRow | null;
   onClose: () => void;
@@ -50,6 +51,8 @@ export default function RunnerModal({
   brandLogo?: string;
   routes: PercursoRoute[];
   display?: ClassificacaoDisplay;
+  /** Abre o certificado do corredor (por cima deste detalhe). */
+  onCertificate?: () => void;
 }) {
   const open = !!runner;
   // Marcador para saber se empurramos uma entrada de histórico (para o botão
@@ -156,6 +159,20 @@ export default function RunnerModal({
               </div>
             ))}
           </dl>
+
+          {/* Emitir certificado. */}
+          {onCertificate && (
+            <button
+              type="button"
+              onClick={onCertificate}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-gold bg-gold/10 px-4 py-3 text-[14px] font-bold uppercase tracking-[0.02em] text-gold transition-colors hover:bg-gold hover:text-gold-ink"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="9" r="6" /><path d="M9 14.5 7.5 22l4.5-2.6L16.5 22 15 14.5" />
+              </svg>
+              Emitir certificado
+            </button>
+          )}
 
           {/* Estúdio de cards. */}
           <div className="mt-6">
