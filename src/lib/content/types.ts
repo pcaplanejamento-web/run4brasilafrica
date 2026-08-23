@@ -672,7 +672,7 @@ export interface AgeBracket {
 export interface ResultCategory {
   id: string;
   label: string;
-  /** Distância da prova (ex.: "5 km") — usada no texto do certificado. */
+  /** @deprecated Substituído pelo `label` no certificado. Mantido p/ conteúdo antigo. */
   distance?: string;
   /** Faixas etárias (ADM) — viram um filtro dentro da categoria no site. */
   ageBrackets?: AgeBracket[];

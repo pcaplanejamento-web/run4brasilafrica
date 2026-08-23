@@ -92,7 +92,6 @@ export interface CertificateData {
   issuedText?: string;
   verifyCode?: string;
   // --- controlado pelo ADM ---
-  distance?: string; // distância da prova (da categoria) — "a prova de X"
   accent?: string; // cor de destaque (da logo ou config)
   bgColor?: string; // cor de fundo
   textColor?: string; // cor do texto principal
@@ -404,7 +403,9 @@ export function drawCertificate(
   y += 138;
 
   // Prosa
-  const distance = (data.distance || data.modality || data.categoryLabel || "").trim();
+  // Categoria da prova = o **Nome da categoria** (rótulo da aba); cai para a
+  // modalidade do CSV quando não há rótulo.
+  const categoria = (data.categoryLabel || data.modality || "").trim();
   const place = `${data.pos}ª colocação geral`;
   // Faixa: o rótulo/colocação do ADM têm prioridade; senão cai para o código do CSV.
   const faixaLabel = (data.ageBracketLabel || data.ageGroup || "").trim();
@@ -415,7 +416,7 @@ export function drawCertificate(
       : "";
   const faixa = faixaLabel && faixaPos ? `, e ${faixaPos}ª colocação na faixa ${faixaLabel}` : "";
   const local = [data.cityText, data.dateText].filter(Boolean).join(", ");
-  const prova = distance ? `a prova de ${distance}` : "a prova";
+  const prova = categoria ? `a prova de ${categoria}` : "a prova";
   const evento = `${data.eventName}${data.editionYear ? ` ${data.editionYear}` : ""}`.trim();
   let prose = `concluiu com êxito ${prova} da ${evento}`;
   if (local) prose += `, realizada em ${local}`;

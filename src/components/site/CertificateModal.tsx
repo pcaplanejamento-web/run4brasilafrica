@@ -79,7 +79,6 @@ export default function CertificateModal({
   runner,
   event,
   categoryLabel,
-  categoryDistance,
   ageBracketLabel,
   ageBracketPos,
   brandLogo,
@@ -90,7 +89,6 @@ export default function CertificateModal({
   runner: RaceResultRow | null;
   event?: EventInfo;
   categoryLabel: string;
-  categoryDistance?: string;
   /** Faixa etária do ADM (rótulo + colocação) — reflete no certificado. */
   ageBracketLabel?: string;
   ageBracketPos?: number;
@@ -148,7 +146,6 @@ export default function CertificateModal({
       timeLabel,
       modality: runner.modality,
       categoryLabel,
-      distance: categoryDistance,
       ageGroup: runner.ageGroup,
       ageGroupPos: runner.ageGroupPos,
       ageBracketLabel,
@@ -188,7 +185,7 @@ export default function CertificateModal({
       issuedBold: certificate?.issuedBold,
       authBold: certificate?.authBold,
     };
-  }, [runner, event, categoryLabel, categoryDistance, ageBracketLabel, ageBracketPos, display, certificate, logo]);
+  }, [runner, event, categoryLabel, ageBracketLabel, ageBracketPos, display, certificate, logo]);
 
   // Desenha o certificado quando tudo está pronto.
   useEffect(() => {

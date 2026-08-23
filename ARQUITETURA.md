@@ -585,11 +585,13 @@ onde cada `ResultCategory { id, label, distance?, ageBrackets?, count?, updatedA
   de encoding** UTF-8→Windows-1252 fica em `src/lib/results/client.ts` (`readResultsFile`), junto
   de `fetchResults`/`saveResults`/`deleteResults`. `RaceResultRow` = colunas do CSV oficial.
 - **ADM** (`ClassificacaoEditor`): título/nota, **quantos aparecem no início** (`initialCount`),
-  **toggles de "Informações exibidas"**, e **categorias** (rótulo = aba; **distância** do
-  certificado; reorder ↑/↓; "+ Nova categoria"). Cada categoria envia o **CSV** (parse no
+  **toggles de "Informações exibidas"**, e **categorias** (rótulo = aba, que **é a categoria usada
+  no certificado**; reorder ↑/↓; "+ Nova categoria"). Cada categoria envia o **CSV** (parse no
   navegador → `saveResults` → D1) e mostra "N corredores · atualizado em…". Cada categoria também
-  tem **Faixas etárias** (`ageBrackets`: rótulo + idade mín/máx) — "Usar faixas padrão" preenche
-  as 7 do print. Faixa vira um **filtro por idade** dentro da categoria no site.
+  tem **Faixas etárias** (`ageBrackets`: rótulo + idade mín/máx, **reordenáveis** ↑/↓) — "Usar
+  faixas padrão" preenche as 7 do print. Faixa vira um **filtro por idade** dentro da categoria no
+  site (a ordem do ADM = ordem no filtro). *(O campo `distance` foi removido: o certificado usa o
+  próprio rótulo da categoria.)*
 - **Faixas** (`src/lib/results/brackets.ts`, PURO): `STANDARD_BRACKETS` (14–19…70+) e
   `rowInBracket(row, b)` (casa por `row.age` em `[min, max]`). Reusado por ADM e site.
 - **Público** (`Classificacao` + `ClassificacaoModal` + `RunnerModal`): abas por categoria
@@ -649,10 +651,10 @@ onde cada `ResultCategory { id, label, distance?, ageBrackets?, count?, updatedA
   lockup (logo+nome) a logo é limitada (~42%) para sempre sobrar espaço ao nome; e o respiro
   abaixo da marca encolhe com a escala para o conjunto não encostar nas assinaturas. O
   certificado **carrega já com as configurações salvas** (nada é sobreposto no load).
-- **Distância da prova**: cada **categoria** de Resultados (`ResultCategory.distance`, campo em
-  `ClassificacaoEditor`) define a distância que aparece no texto "concluiu com êxito **a prova de
-  X**" — passada por `Classificacao` → `CertificateModal` (`categoryDistance` → `data.distance`);
-  cai para `modality`/`categoryLabel` quando vazio.
+- **Categoria da prova**: o texto "concluiu com êxito **a prova de X**" usa o **rótulo da
+  categoria** (`categoryLabel` = "Nome da categoria (rótulo da aba)"), caindo para `modality` do
+  CSV quando vazio. (O antigo campo `distance` foi removido; `ResultCategory.distance` fica só como
+  `@deprecated` p/ conteúdo antigo.)
 - **Controle do ADM** (`content.certificate: CertificateConfig`, por edição — Configurações →
   **"Certificado do atleta"**): **imagem própria** do certificado (`logo`, vazio → logo do site),
   mostrar o **nome da corrida ao lado da logo** (`showEventName` — o `drawBrand` monta o lockup

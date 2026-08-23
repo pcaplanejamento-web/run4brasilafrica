@@ -316,7 +316,6 @@ export default function Classificacao({
         onClose={closeCert}
         event={event}
         categoryLabel={activeCat?.label ?? ""}
-        categoryDistance={activeCat?.distance}
         ageBracketLabel={certBracket?.label}
         ageBracketPos={certBracketPos || undefined}
         brandLogo={brandLogo}

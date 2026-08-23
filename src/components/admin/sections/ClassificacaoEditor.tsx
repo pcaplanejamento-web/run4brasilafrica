@@ -71,6 +71,14 @@ export function ClassificacaoEditor({
     setBrackets(i, brackets(i).map((b, k) => (k === j ? { ...b, ...patch } : b)));
   const removeBracket = (i: number, j: number) =>
     setBrackets(i, brackets(i).filter((_, k) => k !== j));
+  const moveBracket = (i: number, j: number, dir: -1 | 1) => {
+    const list = brackets(i);
+    const k = j + dir;
+    if (k < 0 || k >= list.length) return;
+    const next = [...list];
+    [next[j], next[k]] = [next[k], next[j]];
+    setBrackets(i, next);
+  };
   /** Idade do input (número) → valor ou undefined (campo vazio = sem piso/teto). */
   const ageNum = (v: string): number | undefined => {
     const n = parseInt(v, 10);
@@ -245,14 +253,9 @@ export function ClassificacaoEditor({
                   onChange={(e) => setCat(i, { label: e.target.value })}
                   placeholder="Ex.: 5KM Masculino"
                 />
-                <div className="mt-3">
-                  <FieldLabel>Distância da prova (usada no certificado)</FieldLabel>
-                  <TextInput
-                    value={c.distance ?? ""}
-                    onChange={(e) => setCat(i, { distance: e.target.value })}
-                    placeholder="Ex.: 5 km"
-                  />
-                </div>
+                <p className="mt-1 text-[11px] text-adm-muted">
+                  Este nome é a categoria usada no certificado (&ldquo;a prova de …&rdquo;).
+                </p>
               </div>
               <div>
                 <FieldLabel>Planilha de resultados (.CSV)</FieldLabel>
@@ -301,6 +304,24 @@ export function ClassificacaoEditor({
                 <div className="flex flex-col gap-2">
                   {brackets(i).map((b, j) => (
                     <div key={b.id} className="flex flex-wrap items-center gap-2">
+                      <div className="flex gap-1">
+                        <GhostButton
+                          onClick={() => moveBracket(i, j, -1)}
+                          disabled={j === 0}
+                          aria-label="Subir faixa"
+                          className="px-2.5 py-1.5 text-[12px]"
+                        >
+                          ↑
+                        </GhostButton>
+                        <GhostButton
+                          onClick={() => moveBracket(i, j, 1)}
+                          disabled={j === brackets(i).length - 1}
+                          aria-label="Descer faixa"
+                          className="px-2.5 py-1.5 text-[12px]"
+                        >
+                          ↓
+                        </GhostButton>
+                      </div>
                       <div className="min-w-[150px] flex-1">
                         <TextInput
                           value={b.label}
