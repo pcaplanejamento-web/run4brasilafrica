@@ -145,15 +145,17 @@ export default function Classificacao({
   const listRows = viewRows.slice(3, initialCount);
   const hasView = viewRows.length > 0; // o filtro atual tem corredores
 
-  // Faixa etária do ADM p/ o certificado: a faixa (COM idade definida) em que o
-  // corredor cai + sua colocação DENTRO dela. Faixas sem limites (ex.: "Geral")
-  // não contam como faixa etária do certificado.
+  // Faixa etária do ADM (COM idade definida) em que um corredor cai + sua colocação
+  // DENTRO dela. Faixas sem limites ("Geral") não contam. Usado igual no certificado
+  // E no card de compartilhar / detalhe do corredor (dados condizentes).
   const boundedBrackets = activeBrackets.filter((b) => b.min != null || b.max != null);
-  const certBracket =
-    certRunner && boundedBrackets.length ? boundedBrackets.find((b) => rowInBracket(certRunner, b)) ?? null : null;
-  const certBracketPos = certBracket
-    ? allRows.filter((r) => rowInBracket(r, certBracket)).findIndex((r) => r.pos === certRunner!.pos) + 1
-    : 0;
+  const bracketInfoFor = (row: RaceResultRow | null): { label?: string; pos: number } => {
+    const b = row && boundedBrackets.length ? boundedBrackets.find((x) => rowInBracket(row, x)) ?? null : null;
+    if (!b || !row) return { label: undefined, pos: 0 };
+    return { label: b.label, pos: allRows.filter((r) => rowInBracket(r, b)).findIndex((r) => r.pos === row.pos) + 1 };
+  };
+  const certInfo = bracketInfoFor(certRunner);
+  const runnerInfo = bracketInfoFor(runner);
 
   return (
     <section id="classificacao" className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
@@ -317,14 +319,16 @@ export default function Classificacao({
         routes={routes ?? []}
         display={display}
         onCertificate={runner ? () => openCert(runner) : undefined}
+        ageBracketLabel={runnerInfo.label}
+        ageBracketPos={runnerInfo.pos || undefined}
       />
       <CertificateModal
         runner={certRunner}
         onClose={closeCert}
         event={event}
         categoryLabel={activeCat?.label ?? ""}
-        ageBracketLabel={certBracket?.label}
-        ageBracketPos={certBracketPos || undefined}
+        ageBracketLabel={certInfo.label}
+        ageBracketPos={certInfo.pos || undefined}
         brandLogo={brandLogo}
         display={display}
         certificate={certificate}

@@ -11,7 +11,17 @@ import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 import ShareCardStudio from "./ShareCardStudio";
 
 /** Campos mostrados no detalhe (todos os disponíveis, com rótulo pt-BR). */
-function detailFields(row: RaceResultRow): { label: string; value: string }[] {
+function detailFields(
+  row: RaceResultRow,
+  bracket?: { label?: string; pos?: number },
+): { label: string; value: string }[] {
+  // Faixa/colocação seguem a **mesma lógica do certificado** (rótulo do ADM + colocação na faixa).
+  const faixaLabel = bracket?.label || row.ageGroup;
+  const faixaPos = bracket?.pos
+    ? `${bracket.pos}º`
+    : row.ageGroupPos && row.ageGroupPos !== "-"
+      ? `${row.ageGroupPos}º`
+      : undefined;
   const f: { label: string; value?: string }[] = [
     { label: "Colocação geral", value: `${row.pos}º` },
     { label: "Número", value: row.bib },
@@ -22,8 +32,8 @@ function detailFields(row: RaceResultRow): { label: string; value: string }[] {
     { label: "Categoria", value: row.category },
     { label: "Sexo", value: row.sex },
     { label: "Idade", value: row.age ? `${row.age}` : undefined },
-    { label: "Faixa etária", value: row.ageGroup },
-    { label: "Colocação na faixa", value: row.ageGroupPos ? `${row.ageGroupPos}º` : undefined },
+    { label: "Faixa etária", value: faixaLabel },
+    { label: "Colocação na faixa", value: faixaPos },
   ];
   return f.filter((x): x is { label: string; value: string } => !!x.value);
 }
@@ -43,6 +53,8 @@ export default function RunnerModal({
   routes,
   display,
   onCertificate,
+  ageBracketLabel,
+  ageBracketPos,
 }: {
   runner: RaceResultRow | null;
   onClose: () => void;
@@ -53,6 +65,9 @@ export default function RunnerModal({
   display?: ClassificacaoDisplay;
   /** Abre o certificado do corredor (por cima deste detalhe). */
   onCertificate?: () => void;
+  /** Faixa etária do ADM (rótulo + colocação) — igual ao certificado. */
+  ageBracketLabel?: string;
+  ageBracketPos?: number;
 }) {
   const open = !!runner;
   // Marcador para saber se empurramos uma entrada de histórico (para o botão
@@ -104,7 +119,7 @@ export default function RunnerModal({
 
   if (!runner) return null;
 
-  const fields = detailFields(runner);
+  const fields = detailFields(runner, { label: ageBracketLabel, pos: ageBracketPos });
 
   return (
     <div
@@ -183,6 +198,8 @@ export default function RunnerModal({
               routes={routes}
               categoryLabel={categoryLabel}
               display={display}
+              ageBracketLabel={ageBracketLabel}
+              ageBracketPos={ageBracketPos}
             />
           </div>
         </div>

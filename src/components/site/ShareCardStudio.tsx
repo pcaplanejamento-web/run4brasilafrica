@@ -226,6 +226,8 @@ export default function ShareCardStudio({
   routes,
   categoryLabel,
   display,
+  ageBracketLabel,
+  ageBracketPos,
 }: {
   runner: RaceResultRow;
   event?: EventInfo;
@@ -233,10 +235,16 @@ export default function ShareCardStudio({
   routes: PercursoRoute[];
   categoryLabel: string;
   display?: ClassificacaoDisplay;
+  /** Faixa etária do ADM (rótulo + colocação) — mesma lógica do certificado. */
+  ageBracketLabel?: string;
+  ageBracketPos?: number;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const mapRoutes = useMemo(() => routes.filter((r) => r.fallbackImage), [routes]);
-  const available: CardField[] = useMemo(() => cardFieldOptions(runner, event, routes), [runner, event, routes]);
+  const available: CardField[] = useMemo(
+    () => cardFieldOptions(runner, event, routes, { label: ageBracketLabel, pos: ageBracketPos }),
+    [runner, event, routes, ageBracketLabel, ageBracketPos],
+  );
   const prefs = useMemo(() => (typeof window !== "undefined" ? loadPrefs() : {}), []);
 
   const hasMap = mapRoutes.length > 0;

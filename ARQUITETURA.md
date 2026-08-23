@@ -681,6 +681,12 @@ Substitui o gerador simples de imagem por um estúdio no `<canvas>` (WYSIWYG: pr
 - **Plumbing**: `SectionRenderCtx` ganhou `brandLogo` (`branding.logo`) e `percursoRoutes`
   (`percurso.routes`), populados em `SiteContent.tsx` e repassados por `Classificacao` →
   `RunnerModal` → `ShareCardStudio` (que também recebe `display` do ADM).
+- **Faixa etária condizente com o certificado**: `Classificacao` computa a faixa (do ADM) em que o
+  corredor cai + sua colocação nela (`bracketInfoFor`, mesma lógica do certificado) e passa
+  `ageBracketLabel`/`ageBracketPos` para `RunnerModal` (detalhe) e `ShareCardStudio`. Assim o card
+  e o detalhe mostram **"Faixa etária" = rótulo do ADM** (ex.: "20 a 29 anos", não o código `M2029`)
+  e **"Colocação na faixa" = colocação DENTRO da faixa** — igual ao certificado (`cardFieldOptions`
+  aceita `bracket` com prioridade sobre o CSV; a colocação geral do card segue sendo `row.pos`).
 - **Duas abas** (`SegmentedTabs`) + **formatos** compartilhados (Feed 4:5 1080×1350, Stories 9:16
   1080×1920):
   - **Fotos** (inicial) — o card já traz as **informações** e o usuário **sobe a foto que fica ao

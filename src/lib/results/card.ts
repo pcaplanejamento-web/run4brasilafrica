@@ -165,14 +165,29 @@ function routeDistance(routes: PercursoRoute[] | undefined, modality?: string): 
   return routes[0]?.distance;
 }
 
-/** Campos DISPONÍVEIS (só os com valor) para o usuário escolher exibir no card. */
+/** Faixa etária do ADM (rótulo + colocação nela) — mesma lógica do certificado. */
+export interface AgeBracketInfo {
+  label?: string;
+  pos?: number;
+}
+
+/** Campos DISPONÍVEIS (só os com valor) para o usuário escolher exibir no card.
+ *  `bracket` (faixa do ADM) tem prioridade sobre o código/colocação do CSV — assim
+ *  o card fica **condizente com o certificado** (mesmo rótulo e colocação na faixa). */
 export function cardFieldOptions(
   row: RaceResultRow,
   event?: EventInfo,
   routes?: PercursoRoute[],
+  bracket?: AgeBracketInfo,
 ): CardField[] {
   const pace = paceFromModality(row.modality, routeDistance(routes, row.modality), row.timeNet);
   const dateCity = (event?.dateLabel || event?.city || "").trim();
+  const faixaLabel = bracket?.label || row.ageGroup;
+  const faixaPos = bracket?.pos
+    ? `${bracket.pos}º`
+    : row.ageGroupPos && row.ageGroupPos !== "-"
+      ? `${row.ageGroupPos}º`
+      : undefined;
   const list: { key: CardFieldKey; label: string; value?: string }[] = [
     { key: "netTime", label: "Tempo líquido", value: row.timeNet },
     { key: "pace", label: "Pace (min/km)", value: pace },
@@ -181,8 +196,8 @@ export function cardFieldOptions(
     { key: "modality", label: "Modalidade", value: row.modality },
     { key: "bib", label: "Número", value: row.bib ? `#${row.bib}` : undefined },
     { key: "age", label: "Idade", value: row.age ? `${row.age} anos` : undefined },
-    { key: "ageGroup", label: "Faixa etária", value: row.ageGroup },
-    { key: "ageGroupPos", label: "Colocação na faixa", value: row.ageGroupPos ? `${row.ageGroupPos}º` : undefined },
+    { key: "ageGroup", label: "Faixa etária", value: faixaLabel },
+    { key: "ageGroupPos", label: "Colocação na faixa", value: faixaPos },
     { key: "dateCity", label: "Data / cidade", value: dateCity || undefined },
   ];
   return list.filter((f): f is CardField => !!f.value);
