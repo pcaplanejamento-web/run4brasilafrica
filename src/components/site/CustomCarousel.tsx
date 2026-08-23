@@ -73,16 +73,19 @@ function FsButton({
   isFs,
   onClick,
   className = "",
+  style,
 }: {
   isFs: boolean;
   onClick: () => void;
   className?: string;
+  style?: CSSProperties;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={isFs ? "Sair da tela cheia" : "Tela cheia"}
+      style={style}
       className={`absolute right-2 top-2 z-10 grid h-10 w-10 place-items-center rounded-full bg-black/45 text-white transition-all hover:bg-black/70 ${className}`}
     >
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -195,15 +198,23 @@ export default function CustomCarousel({
     };
   }, []);
 
-  // CSS-fallback fullscreen: lock body scroll + exit on Escape.
+  // CSS-fallback fullscreen (iOS): lock body scroll, exit on Escape, and extend
+  // the layout viewport under the notch / home indicator (`viewport-fit=cover`)
+  // so the overlay covers the whole screen — restored on exit.
   useEffect(() => {
     if (!cssFs) return;
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const vp = document.querySelector('meta[name="viewport"]');
+    const prevVp = vp?.getAttribute("content") ?? null;
+    if (vp && prevVp && !/viewport-fit/.test(prevVp)) {
+      vp.setAttribute("content", `${prevVp}, viewport-fit=cover`);
+    }
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setCssFs(false);
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
+      if (vp && prevVp !== null) vp.setAttribute("content", prevVp);
       window.removeEventListener("keydown", onKey);
     };
   }, [cssFs]);
@@ -264,6 +275,13 @@ export default function CustomCarousel({
   const ctrlCls = `transition-all duration-300 ${showControls ? "opacity-100" : "pointer-events-none opacity-0"}`;
   const cursorCls = showControls ? "" : "cursor-none";
   const boxCls = `relative w-full overflow-hidden rounded-xl ${cursorCls}`;
+  // In fullscreen, keep controls clear of the notch / home indicator.
+  const fsBtnStyle: CSSProperties | undefined = isFs
+    ? { top: "max(0.5rem, env(safe-area-inset-top))", right: "max(0.5rem, env(safe-area-inset-right))" }
+    : undefined;
+  const fsDotsStyle: CSSProperties | undefined = isFs
+    ? { bottom: "max(0.75rem, env(safe-area-inset-bottom))" }
+    : undefined;
   const srcFor = (idx: number) => (loaded.has(idx % n) ? pics[idx % n] : undefined);
   const imgProps = (idx: number) =>
     ({
@@ -370,7 +388,7 @@ export default function CustomCarousel({
               style={{ opacity: idx === i ? 1 : 0 }}
             />
           ))}
-          <FsButton isFs={isFs} onClick={toggleFs} className={ctrlCls} />
+          <FsButton isFs={isFs} onClick={toggleFs} className={ctrlCls} style={fsBtnStyle} />
         </div>
 
         {download && (
@@ -442,7 +460,7 @@ export default function CustomCarousel({
         ))}
       </div>
 
-      <FsButton isFs={isFs} onClick={toggleFs} className={ctrlCls} />
+      <FsButton isFs={isFs} onClick={toggleFs} className={ctrlCls} style={fsBtnStyle} />
 
       {n > 1 && (
         <>
@@ -462,7 +480,7 @@ export default function CustomCarousel({
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
           </button>
-          <div className={`absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2 ${ctrlCls}`}>
+          <div className={`absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2 ${ctrlCls}`} style={fsDotsStyle}>
             {pics.map((_, idx) => (
               <button
                 key={idx}
