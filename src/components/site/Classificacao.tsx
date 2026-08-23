@@ -10,6 +10,7 @@ import type {
   RaceResultRow,
 } from "@/lib/content/types";
 import { fetchResults } from "@/lib/results/client";
+import { rowInBracket } from "@/lib/results/brackets";
 import { primaryTime } from "@/lib/results/format";
 import SectionEyebrow from "./SectionEyebrow";
 import SegmentedTabs from "./SegmentedTabs";
@@ -56,6 +57,8 @@ export default function Classificacao({
   const initialCount = Math.max(3, cfg?.initialCount ?? 10);
 
   const [active, setActive] = useState(0);
+  // Faixa etária selecionada: -1 = "Todas"; senão o índice em `activeCat.ageBrackets`.
+  const [faixa, setFaixa] = useState(-1);
   // cache[id]: undefined = ainda buscando; [] = buscado e vazio; [...] = com dados.
   const [cache, setCache] = useState<Record<string, RaceResultRow[]>>({});
   const [openFull, setOpenFull] = useState(false);
@@ -95,6 +98,11 @@ export default function Classificacao({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCat?.id]);
 
+  // Ao trocar de categoria, volta o filtro de faixa para "Todas".
+  useEffect(() => {
+    setFaixa(-1);
+  }, [activeCat?.id]);
+
   useEffect(() => {
     const el = podiumRef.current;
     if (!el) return;
@@ -116,10 +124,21 @@ export default function Classificacao({
   // Some sozinho quando não há nada configurado.
   if (!cfg || cats.length === 0) return null;
 
-  const podium = (rows ?? []).slice(0, 3);
-  const listRows = (rows ?? []).slice(3, initialCount);
+  // Filtro por faixa etária (dentro da categoria). "Todas" = categoria inteira.
+  const allRows = rows ?? [];
+  const activeBrackets = activeCat?.ageBrackets ?? [];
+  const selBracket = faixa >= 0 && faixa < activeBrackets.length ? activeBrackets[faixa] : null;
+  const viewRows = selBracket ? allRows.filter((r) => rowInBracket(r, selBracket)) : allRows;
+  // Colocação exibida: dentro da faixa reindexa 1..N; em "Todas" é a geral (`pos`).
+  const placeMap = selBracket ? new Map(viewRows.map((r, i) => [r.pos, i + 1])) : null;
+  const placeOf = (row: RaceResultRow) => placeMap?.get(row.pos) ?? row.pos;
+
+  const podium = viewRows.slice(0, 3);
+  const listRows = viewRows.slice(3, initialCount);
   const loading = !!activeCat && rows === undefined;
-  const hasRows = !!rows && rows.length > 0;
+  const categoryHasRows = !!rows && rows.length > 0; // a categoria tem corredores
+  const hasView = viewRows.length > 0; // o filtro atual tem corredores
+  const showBracketFilter = categoryHasRows && activeBrackets.length > 0;
 
   return (
     <section id="classificacao" className="px-5 py-16 sm:px-8 md:px-14 md:py-20">
@@ -142,12 +161,28 @@ export default function Classificacao({
         <div className="flex h-[200px] items-center justify-center text-[14px] text-muted">
           Carregando resultados…
         </div>
-      ) : !hasRows ? (
+      ) : !categoryHasRows ? (
         <div className="flex h-[160px] items-center justify-center rounded-lg border border-line bg-ink-panel px-5 text-center text-[14px] text-muted">
           Os resultados desta categoria ainda não foram publicados.
         </div>
       ) : (
         <>
+          {/* Filtro por faixa etária (dentro da categoria) — mesmo seletor das abas. */}
+          {showBracketFilter && (
+            <SegmentedTabs
+              items={["Todas", ...activeBrackets.map((b) => b.label)]}
+              active={faixa + 1}
+              onSelect={(i) => setFaixa(i - 1)}
+              ariaLabel="Filtrar por faixa etária"
+              className="mb-8 rounded-lg border border-line-soft"
+            />
+          )}
+          {!hasView ? (
+            <div className="flex h-[140px] items-center justify-center rounded-lg border border-line bg-ink-panel px-5 text-center text-[14px] text-muted">
+              Nenhum corredor nesta faixa etária.
+            </div>
+          ) : (
+            <>
           {/* Pódio dos 3 primeiros. */}
           <div
             ref={podiumRef}
@@ -162,7 +197,7 @@ export default function Classificacao({
                   key={`${row.pos}-${row.bib}-${rank}`}
                   onClick={() => setRunner(row)}
                   className={`group flex flex-1 flex-col text-left sm:max-w-[300px] ${SM_ORDER[rank]}`}
-                  aria-label={`${row.pos}º lugar: ${row.name}`}
+                  aria-label={`${placeOf(row)}º lugar: ${row.name}`}
                 >
                   {/* Cartão do corredor. */}
                   <div
@@ -178,7 +213,7 @@ export default function Classificacao({
                       className="text-[12px] font-bold uppercase tracking-[0.06em]"
                       style={{ color: medal.bar }}
                     >
-                      {row.pos}º lugar
+                      {placeOf(row)}º lugar
                     </div>
                     <div className="mt-1 font-display text-[17px] font-bold uppercase leading-tight text-cream md:text-[19px]">
                       {row.name}
@@ -226,7 +261,7 @@ export default function Classificacao({
           {listRows.length > 0 && (
             <div className="overflow-hidden rounded-lg border border-line-soft bg-ink-panel">
               {listRows.map((row, i) => (
-                <ResultRow key={`${row.pos}-${row.bib}-${i}`} row={row} display={display} onClick={() => setRunner(row)} onCertificate={() => openCert(row)} />
+                <ResultRow key={`${row.pos}-${row.bib}-${i}`} row={row} place={placeOf(row)} display={display} onClick={() => setRunner(row)} onCertificate={() => openCert(row)} />
               ))}
             </div>
           )}
@@ -241,6 +276,8 @@ export default function Classificacao({
               Ver classificação geral
             </button>
           </div>
+            </>
+          )}
         </>
       )}
 
@@ -248,8 +285,9 @@ export default function Classificacao({
       <ClassificacaoModal
         open={openFull}
         onClose={closeFull}
-        rows={rows ?? []}
-        categoryLabel={activeCat?.label ?? ""}
+        rows={viewRows}
+        placeOf={selBracket ? placeOf : undefined}
+        categoryLabel={`${activeCat?.label ?? ""}${selBracket ? ` · ${selBracket.label}` : ""}`}
         display={display}
         onPick={pickFromModal}
         onCertificate={openCert}
@@ -305,27 +343,31 @@ function SubChips({ row, display }: { row: RaceResultRow; display?: Classificaca
  *  A linha abre o detalhe; o botão à direita **emite o certificado**. */
 export function ResultRow({
   row,
+  place,
   display,
   onClick,
   onCertificate,
 }: {
   row: RaceResultRow;
+  /** Colocação exibida (dentro do filtro). Vazio → colocação geral (`row.pos`). */
+  place?: number;
   display?: ClassificacaoDisplay;
   onClick: () => void;
   onCertificate?: () => void;
 }) {
   const time = primaryTime(row, display);
+  const shownPos = place ?? row.pos;
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
-      aria-label={`${row.pos}º ${row.name}`}
+      aria-label={`${shownPos}º ${row.name}`}
       className="flex w-full cursor-pointer items-center gap-3 border-b border-line-soft px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5 sm:px-4"
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink font-display text-[13px] font-bold text-gold">
-        {row.pos}
+        {shownPos}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[14px] font-bold uppercase tracking-[0.02em] text-cream">

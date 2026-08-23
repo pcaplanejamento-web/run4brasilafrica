@@ -564,15 +564,18 @@ Painel simples de uso, sem serviço externo (tudo no D1 do próprio site). Aba A
 
 Seção `classificacao` (section kind auto-contida, como `faq`/`premiacao`): publica os resultados
 da corrida por categoria. **Onde ficam os dados**: as LINHAS (centenas por categoria) **não** vão
-para o JSON de conteúdo (que é hidratado a cada render) — cada categoria é um **blob JSON no KV**
-(`MEDIA_KV`, chave `results/<catId>.json`, sem novo binding). O bloco no conteúdo guarda só a
+para o JSON de conteúdo (que é hidratado a cada render) — ficam numa tabela **D1** `results (cat
+PK, json, count, updated_at)`. Migrou de KV → D1 porque o **KV gratuito** tem cota diária de
+**gravação** baixa (~1k/dia) que estoura no dia da prova (`10048 — free usage limit`) e fazia o
+upload falhar ("falha ao salvar") e travava o cache ISR/deploy. O bloco no conteúdo guarda só a
 config leve: `ClassificacaoSection { eyebrow, title, note, initialCount, display, categories[] }`
-onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV).
+onde cada `ResultCategory { id, label, distance?, ageBrackets?, count?, updatedAt? }`.
 
-- **Rota `/api/results`** (`src/app/api/results/route.ts`, molde de `partners`): `GET ?cat=<id>`
-  público (lê o blob); `POST { cat, rows }` e `DELETE ?cat=<id>` protegidos por `requireAdmin()`
-  (`authConfigured() && getSessionUser()`). O id é **sanitizado** (`[a-z0-9-]`) → chave
-  `results/<id>.json` (sem path traversal). Limite defensivo de 20k linhas.
+- **Rota `/api/results`** (`src/app/api/results/route.ts`): `GET ?cat=<id>` público — lê do **D1**
+  e cai para o **KV** (`results/<id>.json`) como *fallback* de dados antigos; `POST { cat, rows }`
+  grava no **D1** (`ensureTable` + upsert) e `DELETE ?cat=<id>` remove de D1 + KV — ambos
+  protegidos por `requireAdmin()` (`authConfigured() && getSessionUser()`). O id é **sanitizado**
+  (`[a-z0-9-]`, sem path traversal). Limite defensivo de 20k linhas.
 - **Parser** (`src/lib/results/parse.ts`, PURO/testável): `parseResultsCsv(text)` — detecta o
   separador (`;`/`,`), casa colunas pelo **cabeçalho** (sem acento/caixa) com fallback à ordem
   canônica, trata vazios/`-`, descarta linhas inválidas e ordena por colocação. Teste em
@@ -580,16 +583,20 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   de encoding** UTF-8→Windows-1252 fica em `src/lib/results/client.ts` (`readResultsFile`), junto
   de `fetchResults`/`saveResults`/`deleteResults`. `RaceResultRow` = colunas do CSV oficial.
 - **ADM** (`ClassificacaoEditor`): título/nota, **quantos aparecem no início** (`initialCount`),
-  **toggles de "Informações exibidas"** (equipe, tempo líquido/bruto, nº peito, idade, faixa
-  etária, colocação na faixa — Posição e Nome sempre), e **categorias** (rótulo = aba; reorder
-  ↑/↓; "+ Nova categoria" abaixo). Cada categoria envia o **CSV** (parse no navegador →
-  `saveResults` → KV) e mostra "N corredores · atualizado em…".
+  **toggles de "Informações exibidas"**, e **categorias** (rótulo = aba; **distância** do
+  certificado; reorder ↑/↓; "+ Nova categoria"). Cada categoria envia o **CSV** (parse no
+  navegador → `saveResults` → D1) e mostra "N corredores · atualizado em…". Cada categoria também
+  tem **Faixas etárias** (`ageBrackets`: rótulo + idade mín/máx) — "Usar faixas padrão" preenche
+  as 7 do print. Faixa vira um **filtro por idade** dentro da categoria no site.
+- **Faixas** (`src/lib/results/brackets.ts`, PURO): `STANDARD_BRACKETS` (14–19…70+) e
+  `rowInBracket(row, b)` (casa por `row.age` em `[min, max]`). Reusado por ADM e site.
 - **Público** (`Classificacao` + `ClassificacaoModal` + `RunnerModal`): abas por categoria
-  (`SegmentedTabs`), **pódio animado** dos 3 primeiros (padrão de `Premiacao`, medalhas
-  ouro/prata/bronze, respeita reduced-motion), **tabela** dos colocados até `initialCount`, e
-  **"Ver classificação geral"** → modal (casca dos modais do site) com **busca por nome (sem
-  acento) ou número**. Clicar num corredor abre o **detalhe** (todos os campos) + o **estúdio de
-  cards** (abaixo). Some sozinho quando não há categorias.
+  (`SegmentedTabs`) e, quando a categoria tem faixas, um **2º `SegmentedTabs`** ("Todas" + faixas)
+  que filtra por idade. Dentro de uma faixa, a **colocação exibida reindexa 1..N** (`placeOf`) no
+  pódio/tabela/modal — o certificado usa sempre os dados reais do corredor (colocação geral +
+  faixa). **Pódio animado** dos 3 primeiros (padrão de `Premiacao`, respeita reduced-motion),
+  **tabela** até `initialCount`, e **"Ver classificação geral"** → modal com **busca**. Some
+  sozinho quando não há categorias; "Nenhum corredor nesta faixa etária" quando o filtro esvazia.
 
 ### Certificado do atleta (`CertificateModal` + `lib/results/certificate.ts` + `lib/pdf.ts`)
 - Botão **"Emitir certificado"** em cada linha do atleta (`ResultRow`, ícone `CertIcon`), no

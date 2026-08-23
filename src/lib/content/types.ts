@@ -658,11 +658,24 @@ export interface ClassificacaoDisplay {
 }
 
 /** Uma categoria de resultados (uma planilha CSV enviada). O `id` é a chave no KV. */
+/** Faixa etária configurável (filtro no site). Casa por idade `[min, max]`. */
+export interface AgeBracket {
+  id: string;
+  /** Rótulo exibido (ex.: "30 a 39 anos"). */
+  label: string;
+  /** Idade mínima inclusiva. Vazio → sem piso. */
+  min?: number;
+  /** Idade máxima inclusiva. Vazio → sem teto (ex.: "70 anos ou mais"). */
+  max?: number;
+}
+
 export interface ResultCategory {
   id: string;
   label: string;
   /** Distância da prova (ex.: "5 km") — usada no texto do certificado. */
   distance?: string;
+  /** Faixas etárias (ADM) — viram um filtro dentro da categoria no site. */
+  ageBrackets?: AgeBracket[];
   /** Nº de linhas (preenchido no upload, para exibição no ADM). */
   count?: number;
   updatedAt?: string;

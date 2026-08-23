@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { ClassificacaoDisplay, ClassificacaoSection, ResultCategory } from "@/lib/content/types";
+import type { AgeBracket, ClassificacaoDisplay, ClassificacaoSection, ResultCategory } from "@/lib/content/types";
 import { uid } from "@/lib/uid";
+import { STANDARD_BRACKETS } from "@/lib/results/brackets";
 import { deleteResults, readResultsFile, saveResults } from "@/lib/results/client";
 import {
   Card,
@@ -58,6 +59,23 @@ export function ClassificacaoEditor({
     set({ display: { ...display, [k]: on } });
   const setCat = (i: number, patch: Partial<ResultCategory>) =>
     set({ categories: cats.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) });
+
+  // --- Faixas etárias por categoria (viram filtro no site) ---
+  const brackets = (i: number): AgeBracket[] => cats[i]?.ageBrackets ?? [];
+  const setBrackets = (i: number, next: AgeBracket[]) => setCat(i, { ageBrackets: next });
+  const addStandardBrackets = (i: number) =>
+    setBrackets(i, STANDARD_BRACKETS.map((b) => ({ ...b, id: uid() })));
+  const addBracket = (i: number) =>
+    setBrackets(i, [...brackets(i), { id: uid(), label: "", min: undefined, max: undefined }]);
+  const setBracket = (i: number, j: number, patch: Partial<AgeBracket>) =>
+    setBrackets(i, brackets(i).map((b, k) => (k === j ? { ...b, ...patch } : b)));
+  const removeBracket = (i: number, j: number) =>
+    setBrackets(i, brackets(i).filter((_, k) => k !== j));
+  /** Idade do input (número) → valor ou undefined (campo vazio = sem piso/teto). */
+  const ageNum = (v: string): number | undefined => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : undefined;
+  };
   const addCat = () =>
     set({ categories: [...cats, { id: uid(), label: `Categoria ${cats.length + 1}` }] });
   const move = (i: number, dir: -1 | 1) => {
@@ -258,6 +276,69 @@ export function ClassificacaoEditor({
                 </div>
                 {msg[c.id] && <div className="mt-1.5 text-[12px] text-adm-muted">{msg[c.id]}</div>}
               </div>
+            </div>
+
+            {/* Faixas etárias — viram um filtro por idade dentro da categoria no site. */}
+            <div className="mt-4 border-t border-adm-border pt-4">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <FieldLabel>Faixas etárias (filtro no site)</FieldLabel>
+                <div className="flex gap-2">
+                  {brackets(i).length === 0 && (
+                    <GhostButton onClick={() => addStandardBrackets(i)} className="px-3 py-1.5 text-[12px]">
+                      Usar faixas padrão
+                    </GhostButton>
+                  )}
+                  <GhostButton onClick={() => addBracket(i)} className="px-3 py-1.5 text-[12px]">
+                    + Faixa
+                  </GhostButton>
+                </div>
+              </div>
+              <p className="mb-2 text-[11px] text-adm-muted">
+                Cada faixa vira um filtro por <strong>idade</strong> nesta categoria. Deixe a idade máxima
+                vazia para &ldquo;ou mais&rdquo;. Sem faixas, a categoria mostra a lista completa.
+              </p>
+              {brackets(i).length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {brackets(i).map((b, j) => (
+                    <div key={b.id} className="flex flex-wrap items-center gap-2">
+                      <div className="min-w-[150px] flex-1">
+                        <TextInput
+                          value={b.label}
+                          onChange={(e) => setBracket(i, j, { label: e.target.value })}
+                          placeholder="Ex.: 30 a 39 anos"
+                        />
+                      </div>
+                      <div className="w-16">
+                        <TextInput
+                          type="number"
+                          inputMode="numeric"
+                          value={b.min ?? ""}
+                          onChange={(e) => setBracket(i, j, { min: ageNum(e.target.value) })}
+                          placeholder="mín"
+                          aria-label="Idade mínima"
+                        />
+                      </div>
+                      <span className="text-[12px] text-adm-muted">a</span>
+                      <div className="w-16">
+                        <TextInput
+                          type="number"
+                          inputMode="numeric"
+                          value={b.max ?? ""}
+                          onChange={(e) => setBracket(i, j, { max: ageNum(e.target.value) })}
+                          placeholder="máx"
+                          aria-label="Idade máxima"
+                        />
+                      </div>
+                      <GhostButton
+                        onClick={() => removeBracket(i, j)}
+                        className="px-3 py-1.5 text-[12px] text-[#c0392b]"
+                      >
+                        Remover
+                      </GhostButton>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
         ))}

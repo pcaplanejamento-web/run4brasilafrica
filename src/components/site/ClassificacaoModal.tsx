@@ -19,6 +19,7 @@ export default function ClassificacaoModal({
   display,
   onPick,
   onCertificate,
+  placeOf,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,6 +29,8 @@ export default function ClassificacaoModal({
   onPick: (row: RaceResultRow) => void;
   /** Emite o certificado do corredor (botão na linha). */
   onCertificate?: (row: RaceResultRow) => void;
+  /** Colocação exibida (dentro do filtro de faixa). Vazio → colocação geral. */
+  placeOf?: (row: RaceResultRow) => number;
 }) {
   const [query, setQuery] = useState("");
   // Entrada de histórico: o botão Voltar do aparelho fecha ESTE modal e volta à
@@ -160,6 +163,7 @@ export default function ClassificacaoModal({
           ) : (
             filtered.map((row, i) => {
               const time = primaryTime(row, display);
+              const shownPos = placeOf ? placeOf(row) : row.pos;
               return (
                 <div
                   role="button"
@@ -167,11 +171,11 @@ export default function ClassificacaoModal({
                   key={`${row.pos}-${row.bib}-${i}`}
                   onClick={() => onPick(row)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(row); } }}
-                  aria-label={`${row.pos}º ${row.name}`}
+                  aria-label={`${shownPos}º ${row.name}`}
                   className="flex w-full cursor-pointer items-center gap-3 border-b border-line-soft px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-white/5"
                 >
                   <span className="grid h-8 w-9 shrink-0 place-items-center rounded-full bg-ink font-display text-[13px] font-bold text-gold">
-                    {row.pos}
+                    {shownPos}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-bold uppercase tracking-[0.02em] text-cream">
