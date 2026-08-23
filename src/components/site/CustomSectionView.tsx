@@ -261,7 +261,17 @@ function Block({ block, ctx }: { block: CustomBlock; ctx: SectionRenderCtx }) {
       );
     }
     case "carrossel":
-      return <CustomCarousel images={block.images ?? []} />;
+      return (
+        <CustomCarousel
+          images={block.images ?? []}
+          mode={block.carouselMode ?? "slide"}
+          interval={block.carouselInterval}
+          download={block.videoDownload}
+          aspectRatio={block.aspectRatio || "16/9"}
+          fullscreenBg={block.fullscreenBg}
+          imageBgs={block.imageBgs}
+        />
+      );
     case "formulario":
       return (
         <div className="max-w-[520px]">

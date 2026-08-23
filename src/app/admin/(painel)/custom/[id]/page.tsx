@@ -23,6 +23,7 @@ import {
   TextInput,
 } from "@/components/admin/ui";
 import ImageUpload from "@/components/admin/ImageUpload";
+import MediaPicker from "@/components/admin/MediaPicker";
 import { FaqEditor } from "@/components/admin/sections/FaqEditor";
 import { StatsEditor } from "@/components/admin/sections/StatsEditor";
 import { DepoimentosEditor } from "@/components/admin/sections/DepoimentosEditor";
@@ -301,6 +302,7 @@ function BlockFields({
   raceDate?: string;
   homeTargets: { label: string; anchor: string }[];
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   // Seções são componentes de primeira classe — seu editor específico.
   if (isSectionKind(block.type)) {
     return (
@@ -469,19 +471,175 @@ function BlockFields({
     }
     case "carrossel": {
       const images = block.images ?? [];
+      const imageBgs = block.imageBgs ?? [];
       const setImg = (i: number, url: string) =>
         set({ images: images.map((im, idx) => (idx === i ? url : im)) });
+      const setImgBg = (i: number, color: string) => {
+        const arr = images.map((_, idx) => imageBgs[idx] ?? "");
+        arr[i] = color;
+        set({ imageBgs: arr });
+      };
+      const removeImg = (i: number) =>
+        set({
+          images: images.filter((_, idx) => idx !== i),
+          imageBgs: imageBgs.filter((_, idx) => idx !== i),
+        });
+      const moveImg = (i: number, dir: -1 | 1) => {
+        const j = i + dir;
+        if (j < 0 || j >= images.length) return;
+        const imgs = [...images];
+        [imgs[i], imgs[j]] = [imgs[j], imgs[i]];
+        const bgs = images.map((_, idx) => imageBgs[idx] ?? "");
+        [bgs[i], bgs[j]] = [bgs[j], bgs[i]];
+        set({ images: imgs, imageBgs: bgs });
+      };
+      // Normalize bg array to images length, then append new slides.
+      const addMany = (urls: string[]) =>
+        set({
+          images: [...images, ...urls],
+          imageBgs: [...images.map((_, idx) => imageBgs[idx] ?? ""), ...urls.map(() => "")],
+        });
+      const fade = block.carouselMode === "fade";
       return (
         <div className="flex flex-col gap-3">
-          {images.map((im, i) => (
-            <div key={i} className="grid grid-cols-[1fr_96px] items-center gap-3">
-              <ImageUpload value={im} onChange={(url) => setImg(i, url)} aspect="video" label="imagem" cloudinary={cloudinary} />
-              <GhostButton onClick={() => set({ images: images.filter((_, idx) => idx !== i) })}>Remover</GhostButton>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <FieldLabel>Modo</FieldLabel>
+              <Select
+                value={block.carouselMode ?? "slide"}
+                onChange={(e) => set({ carouselMode: e.target.value as "slide" | "fade" })}
+              >
+                <option value="slide">Slides (desliza, com setas)</option>
+                <option value="fade">Vídeo (crossfade em loop)</option>
+              </Select>
             </div>
-          ))}
-          <div>
-            <PrimaryButton onClick={() => set({ images: [...images, ""] })}>+ Adicionar imagem</PrimaryButton>
+            <div>
+              <FieldLabel>Proporção</FieldLabel>
+              <Select
+                value={block.aspectRatio ?? "16/9"}
+                onChange={(e) => set({ aspectRatio: e.target.value })}
+              >
+                <option value="16/9">16:9 (horizontal)</option>
+                <option value="1/1">1:1 (quadrado)</option>
+                <option value="4/5">4:5 (feed)</option>
+                <option value="9/16">9:16 (stories/reels)</option>
+              </Select>
+            </div>
+            <div>
+              <FieldLabel>Tempo por foto</FieldLabel>
+              <Select
+                value={String(block.carouselInterval ?? 3.5)}
+                onChange={(e) => set({ carouselInterval: parseFloat(e.target.value) })}
+              >
+                <option value="2">2 segundos</option>
+                <option value="3">3 segundos</option>
+                <option value="3.5">3,5 segundos</option>
+                <option value="4">4 segundos</option>
+                <option value="5">5 segundos</option>
+              </Select>
+            </div>
           </div>
+          <div>
+            <FieldLabel>Cor de fundo padrão em tela cheia</FieldLabel>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="color"
+                value={block.fullscreenBg ?? "#000000"}
+                onChange={(e) => set({ fullscreenBg: e.target.value })}
+                aria-label="Cor de fundo padrão em tela cheia"
+                className="h-9 w-14 cursor-pointer rounded-md border border-adm-border bg-white p-1"
+              />
+              {[
+                { c: "#000000", n: "Preto" },
+                { c: "#ffffff", n: "Branco" },
+                { c: "#0b0b0b", n: "Grafite" },
+              ].map((o) => (
+                <button
+                  key={o.c}
+                  type="button"
+                  onClick={() => set({ fullscreenBg: o.c })}
+                  className="rounded-full border border-adm-border px-3 py-1.5 text-[12px] font-semibold text-[#666] transition-colors hover:border-terracotta hover:text-terracotta"
+                >
+                  {o.n}
+                </button>
+              ))}
+              <span className="text-[11px] text-adm-muted">
+                Padrão para os slides sem cor própria. Cada slide pode ter a sua (abaixo).
+              </span>
+            </div>
+          </div>
+          {fade && (
+            <div>
+              <FieldLabel>Botão &ldquo;Baixar vídeo&rdquo; (MP4 no Safari, WebM no Chrome)</FieldLabel>
+              <Select
+                value={block.videoDownload ? "sim" : "nao"}
+                onChange={(e) => set({ videoDownload: e.target.value === "sim" })}
+              >
+                <option value="nao">Não mostrar</option>
+                <option value="sim">Mostrar botão de baixar vídeo</option>
+              </Select>
+            </div>
+          )}
+          <div className="flex flex-col gap-4">
+            {images.map((im, i) => (
+              <div key={i} className="rounded-lg border border-adm-border bg-adm-card/40 p-3">
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-bold text-adm-ink">Slide {i + 1}</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => moveImg(i, -1)}
+                      disabled={i === 0}
+                      aria-label="Subir slide"
+                      className="grid h-9 w-9 place-items-center rounded-md border border-adm-border disabled:opacity-30"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImg(i, 1)}
+                      disabled={i === images.length - 1}
+                      aria-label="Descer slide"
+                      className="grid h-9 w-9 place-items-center rounded-md border border-adm-border disabled:opacity-30"
+                    >
+                      ↓
+                    </button>
+                    <GhostButton onClick={() => removeImg(i)}>Remover</GhostButton>
+                  </div>
+                </div>
+                <div className="grid grid-cols-[1fr_auto] items-start gap-3">
+                  <ImageUpload value={im} onChange={(url) => setImg(i, url)} ratio={block.aspectRatio || "16/9"} fit="contain" boxStyle={{ background: imageBgs[i] || block.fullscreenBg || undefined }} label="imagem" cloudinary={cloudinary} />
+                  <label className="flex flex-col items-center gap-1 text-[10px] font-semibold text-adm-muted">
+                    Cor
+                    <input
+                      type="color"
+                      value={imageBgs[i] || block.fullscreenBg || "#000000"}
+                      onChange={(e) => setImgBg(i, e.target.value)}
+                      title={`Cor de fundo em tela cheia do slide ${i + 1}`}
+                      className="h-9 w-10 cursor-pointer rounded-md border border-adm-border bg-white p-1"
+                    />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <PrimaryButton onClick={() => set({ images: [...images, ""], imageBgs: [...imageBgs] })}>+ Adicionar slide</PrimaryButton>
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="inline-flex min-h-9 items-center rounded-md border border-adm-border px-4 text-[13px] font-semibold text-adm-ink transition-colors hover:border-terracotta hover:text-terracotta"
+            >
+              + Várias do armazenamento
+            </button>
+          </div>
+          <MediaPicker
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onPick={() => {}}
+            multiple
+            onPickMany={addMany}
+          />
         </div>
       );
     }

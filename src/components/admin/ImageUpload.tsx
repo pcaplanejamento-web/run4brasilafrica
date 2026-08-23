@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { uploadMedia } from "@/lib/uploadMedia";
 import MediaPicker from "./MediaPicker";
 import {
@@ -49,6 +49,8 @@ interface ImageUploadProps {
    *  (`false`) só em caixas minúsculas onde os 3 ícones não caibam — aí o link
    *  aparece abaixo. */
   pickerOverlay?: boolean;
+  /** Extra inline style for the preview box (ex.: cor de fundo da letterbox). */
+  boxStyle?: CSSProperties;
 }
 
 /**
@@ -68,6 +70,7 @@ export default function ImageUpload({
   fit = "cover",
   cloudinary,
   pickerOverlay = true,
+  boxStyle,
 }: ImageUploadProps) {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
   // Proporção efetiva:
@@ -77,7 +80,8 @@ export default function ImageUpload({
   const usingRatio = !!ratio?.trim();
   const isAuto = !usingRatio && aspect === "auto";
   const namedClass = usingRatio || aspect === "auto" ? "" : ASPECT_CLASS[aspect];
-  const ratioStyle = usingRatio ? { aspectRatio: ratio } : undefined;
+  const ratioStyle: CSSProperties | undefined =
+    usingRatio || boxStyle ? { ...(usingRatio ? { aspectRatio: ratio } : {}), ...boxStyle } : undefined;
   // Imagem "auto" com foto: a caixa não tem altura fixa (a foto a define, sem corte).
   const autoImage = isAuto && !video;
   // Caixa cheia: sem classe quando é imagem auto; vídeo auto cai p/ 16:9.

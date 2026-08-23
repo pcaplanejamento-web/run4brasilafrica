@@ -510,6 +510,18 @@ export interface CustomBlock {
   buttonSection?: string;
   /** carrossel/banner (lista de imagens). */
   images?: string[];
+  /** Carrossel: "slide" (desliza, com setas/pontos) ou "fade" (crossfade
+   *  contínuo, estilo vídeo, sem controles). Ausente = "slide". */
+  carouselMode?: "slide" | "fade";
+  /** Carrossel: segundos por foto (padrão 3.5). */
+  carouselInterval?: number;
+  /** Carrossel (modo fade): mostra botão "Baixar vídeo" (MP4/WebM). */
+  videoDownload?: boolean;
+  /** Carrossel: cor de fundo padrão atrás das fotos em tela cheia (hex). Ausente = preto. */
+  fullscreenBg?: string;
+  /** Carrossel: cor de fundo por slide (alinhado a `images` por índice); vazio no
+   *  índice = usa `fullscreenBg`. */
+  imageBgs?: string[];
   /** formulário: qual formulário existente embutir. */
   formKind?: "email";
 

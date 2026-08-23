@@ -345,6 +345,20 @@ Painel simples de uso, sem serviço externo (tudo no D1 do próprio site). Aba A
   antiga A Causa — Exibição (`clickToPlay`), Iniciar com som (`videoStartMuted`), Controles do
   YouTube (`videoControls`), Legendas (`videoCaptions`) — além de proporção; passadas 1:1 ao
   `YouTubePlayer`.
+- **Bloco de carrossel/slideshow das abas (`CustomCarousel`)**: dois modos —
+  **`slide`** (desliza, com setas + pontos) e **`fade`** (crossfade contínuo estilo vídeo, sem
+  controles). Campos no `CustomBlock`: `carouselMode`, `carouselInterval` (s/foto), `aspectRatio`,
+  `videoDownload` (botão **"Baixar vídeo"** → canvas + `MediaRecorder`: MP4 no Safari, WebM no
+  Chrome), `fullscreenBg` (cor de fundo padrão) e **`imageBgs[]`** (cor **por slide**, alinhada a
+  `images` por índice). Detalhes: as fotos usam **`object-contain`** (nunca cortam; a cor do slide
+  preenche a letterbox); o **loop do modo slide segue sempre para frente** (clone do 1º slide no
+  fim + reset instantâneo, sem rebobinar); **botão de tela cheia** (Fullscreen API nativa + fallback
+  CSS `fixed inset-0` p/ iOS, sai no Esc); a cor de fundo troca **na hora** com o slide (sem
+  transição, para não desincronizar); e os controles (setas/pontos/tela cheia) **se auto-ocultam**
+  com o ponteiro parado (~2,5s) e reaparecem ao mover (padrão de player). No editor
+  (`/admin/custom/[id]`), cada slide é um **card** próprio com reordenar (↑/↓), cor e remover;
+  botão **"+ Várias do armazenamento"** abre o `MediaPicker` em modo **multisseleção**
+  (`multiple`/`onPickMany`) e cria **um slide por foto** escolhida de uma vez.
 - **`Sobre`** (legado, não renderizado) — caixa de mídia com a proporção escolhida
   (`about.aspectRatio`, ex. 16/9, 4/3, 1/1, 3/4, **9/16 Reels**, 21/9): imagem `object-cover`,
   ou `YouTubePlayer` (com `clickToPlay`/`videoStartMuted` do about), ou placeholder. Em

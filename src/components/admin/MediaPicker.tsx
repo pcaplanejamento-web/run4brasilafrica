@@ -17,11 +17,17 @@ export default function MediaPicker({
   open,
   onClose,
   onPick,
+  onPickMany,
+  multiple = false,
   kind = "image",
 }: {
   open: boolean;
   onClose: () => void;
   onPick: (url: string) => void;
+  /** When `multiple`, called with all selected URLs on confirm. */
+  onPickMany?: (urls: string[]) => void;
+  /** Allow selecting several items at once (adds a confirm bar). */
+  multiple?: boolean;
   /** Which files to offer: images (default) or videos. */
   kind?: "image" | "video";
 }) {
@@ -29,7 +35,11 @@ export default function MediaPicker({
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const toggle = (url: string) =>
+    setSelected((s) => (s.includes(url) ? s.filter((u) => u !== url) : [...s, url]));
 
   const wantVideo = kind === "video";
   const visible = items.filter((it) => isVideoKey(it.key) === wantVideo);
@@ -51,6 +61,7 @@ export default function MediaPicker({
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelected([]);
     refresh();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -73,8 +84,13 @@ export default function MediaPicker({
       return;
     }
     if (r.url) {
-      onPick(r.url);
-      onClose();
+      if (multiple) {
+        setSelected((s) => [...s, r.url as string]);
+        refresh();
+      } else {
+        onPick(r.url);
+        onClose();
+      }
     } else {
       setError(r.error ?? "Falha no envio.");
     }
@@ -163,17 +179,31 @@ export default function MediaPicker({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {visible.map((it) => (
+              {visible.map((it) => {
+                const on = selected.includes(it.url);
+                return (
                 <button
                   key={it.key}
                   type="button"
                   onClick={() => {
-                    onPick(it.url);
-                    onClose();
+                    if (multiple) {
+                      toggle(it.url);
+                    } else {
+                      onPick(it.url);
+                      onClose();
+                    }
                   }}
+                  aria-pressed={multiple ? on : undefined}
                   title={`${it.key} · ${formatBytes(it.size)}`}
-                  className="group overflow-hidden rounded-lg border border-adm-border bg-[#faf9f7] transition-colors hover:border-terracotta focus:border-terracotta focus:outline-none"
+                  className={`group relative overflow-hidden rounded-lg border bg-[#faf9f7] transition-colors focus:outline-none ${on ? "border-terracotta ring-2 ring-terracotta" : "border-adm-border hover:border-terracotta focus:border-terracotta"}`}
                 >
+                  {multiple && (
+                    <span
+                      className={`absolute right-1.5 top-1.5 z-10 grid h-6 w-6 place-items-center rounded-full text-[13px] font-bold ${on ? "bg-terracotta text-white" : "bg-white/80 text-transparent"}`}
+                    >
+                      ✓
+                    </span>
+                  )}
                   <div className="aspect-square w-full overflow-hidden bg-[#eee]">
                     {wantVideo ? (
                       <video src={it.url} className="h-full w-full object-cover" muted playsInline />
@@ -191,10 +221,30 @@ export default function MediaPicker({
                     {formatBytes(it.size)}
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
+
+        {multiple && (
+          <div className="flex items-center justify-between gap-3 border-t border-adm-border px-4 py-3 sm:px-5">
+            <span className="text-[13px] text-adm-muted">
+              {selected.length} selecionada{selected.length === 1 ? "" : "s"}
+            </span>
+            <button
+              type="button"
+              disabled={selected.length === 0}
+              onClick={() => {
+                onPickMany?.(selected);
+                onClose();
+              }}
+              className="inline-flex min-h-11 items-center rounded-lg bg-terracotta px-4 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              Adicionar {selected.length > 0 ? selected.length : ""} ao carrossel
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
