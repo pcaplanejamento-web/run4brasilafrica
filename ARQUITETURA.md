@@ -607,6 +607,16 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   (Organização / Direção de Prova) e **rodapé** com site + data de emissão + **código de
   autenticação** determinístico (`R4B-XXXXXX`). Reusa `card.ts` (`ensureFonts`,
   `loadImageTaintSafe`, `wrapText`) e `primaryTime`.
+- **Cores da marca**: por padrão o certificado é **tingido com a cor da logo** —
+  `CertificateModal.dominantColor()` amostra a cor mais vívida da logo (canvas 48×48,
+  ignora branco/preto/cinza) e `certificatePalette()` deriva `accent`/`accentSoft`/`accentDeep`
+  (moldura, selo, filetes, filete das caixas). O ADM pode desligar e escolher uma cor.
+- **Controle do ADM** (`content.certificate: CertificateConfig`, por edição — Configurações →
+  **"Certificado do atleta"**): **cores** (usar a logo ou uma cor), **assinaturas** (2 blocos,
+  título + linha de baixo), **mensagem** opcional e quais **caixas de dados** aparecem
+  (número/tempo/faixa/equipe). Persistido por edição (em `EDITION_FIELDS`/`resolveEdition`,
+  igual a `branding`/`headerCta`); passado por `SectionRenderCtx.certificate` →
+  `Classificacao` → `CertificateModal`.
 
 ### Estúdio de cards (`ShareCardStudio`, estilo Strava)
 
