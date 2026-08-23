@@ -156,6 +156,18 @@ export default function CustomCarousel({
     return () => cancelAnimationFrame(r);
   }, [anim, mode]);
 
+  // Fallback for the seamless loop: if the transition to the clone never fires
+  // `transitionend` (e.g. the tab was hidden, so CSS transitions were paused),
+  // force the reset anyway so the carousel can never get stuck on the last slide.
+  useEffect(() => {
+    if (mode !== "slide" || i < n) return;
+    const t = setTimeout(() => {
+      setAnim(false);
+      setI(0);
+    }, 650);
+    return () => clearTimeout(t);
+  }, [i, n, mode]);
+
   // Track native fullscreen state.
   useEffect(() => {
     const onChange = () => {
