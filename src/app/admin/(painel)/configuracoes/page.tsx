@@ -83,6 +83,9 @@ function ConfiguracoesForm({
   const [branding, setBranding] = useState(initialBranding);
   const [headerCta, setHeaderCta] = useState<HeaderCta>(initialHeaderCta);
   const [cert, setCert] = useState<CertificateConfig>(initialCertificate);
+  const [bgMode, setBgMode] = useState<"padrao" | "cor" | "img">(
+    initialCertificate.bgImage ? "img" : initialCertificate.bgColor ? "cor" : "padrao",
+  );
   const headerTargets = homeAnchorTargets(content);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
@@ -402,6 +405,107 @@ function ConfiguracoesForm({
               </div>
             )}
           </div>
+
+          {/* Cor do texto */}
+          <div className="mb-3">
+            <FieldLabel>Cor do texto</FieldLabel>
+            <Select
+              value={cert.textColor ? "custom" : "auto"}
+              onChange={(e) => setCert((c) => ({ ...c, textColor: e.target.value === "custom" ? (c.textColor || "#1b1712") : undefined }))}
+            >
+              <option value="auto">Automática (recomendada)</option>
+              <option value="custom">Escolher uma cor</option>
+            </Select>
+            {cert.textColor && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={cert.textColor}
+                  onChange={(e) => setCert((c) => ({ ...c, textColor: e.target.value }))}
+                  aria-label="Cor do texto do certificado"
+                  className="h-9 w-14 cursor-pointer rounded-md border border-adm-border bg-white p-1"
+                />
+                <span className="text-[11px] text-adm-muted">Título, nome e corpo do texto.</span>
+              </div>
+            )}
+          </div>
+
+          {/* Fundo do certificado: padrão, cor ou imagem */}
+          <div className="mb-3">
+            <FieldLabel>Fundo do certificado</FieldLabel>
+            <Select
+              value={bgMode}
+              onChange={(e) => {
+                const v = e.target.value as "padrao" | "cor" | "img";
+                setBgMode(v);
+                setCert((c) => ({
+                  ...c,
+                  bgColor: v === "cor" ? (c.bgColor || "#faf8f2") : undefined,
+                  bgImage: v === "img" ? c.bgImage : undefined,
+                }));
+              }}
+            >
+              <option value="padrao">Padrão (creme)</option>
+              <option value="cor">Cor sólida</option>
+              <option value="img">Imagem de fundo</option>
+            </Select>
+            {bgMode === "cor" && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={cert.bgColor || "#faf8f2"}
+                  onChange={(e) => setCert((c) => ({ ...c, bgColor: e.target.value }))}
+                  aria-label="Cor de fundo do certificado"
+                  className="h-9 w-14 cursor-pointer rounded-md border border-adm-border bg-white p-1"
+                />
+                <span className="text-[11px] text-adm-muted">Cor de fundo do papel.</span>
+              </div>
+            )}
+            {bgMode === "img" && (
+              <div className="mt-2">
+                <ImageUpload
+                  value={cert.bgImage}
+                  onChange={(url) => setCert((c) => ({ ...c, bgImage: url || undefined }))}
+                  aspect="auto"
+                  fit="cover"
+                  label="imagem de fundo do certificado"
+                  cloudinary={cloudinaryUpload}
+                  className="max-w-[360px] bg-[#2b2118]"
+                />
+                <p className="mt-1 text-[11px] text-adm-muted">A imagem cobre o fundo com um véu claro para manter o texto legível.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Escalas (tamanho) dos textos e da logo */}
+          <div className="mb-3">
+            <FieldLabel>Tamanhos (escala)</FieldLabel>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {([
+                { key: "scaleTitle", label: "Título" },
+                { key: "scaleName", label: "Nome" },
+                { key: "scaleBody", label: "Textos" },
+                { key: "scaleLogo", label: "Logo" },
+              ] as const).map((s) => (
+                <div key={s.key}>
+                  <div className="mb-1 text-[11px] text-adm-muted">{s.label}</div>
+                  <Select
+                    value={String(cert[s.key] ?? 1)}
+                    onChange={(e) => setCert((c) => ({ ...c, [s.key]: Number(e.target.value) }))}
+                  >
+                    <option value="0.8">80%</option>
+                    <option value="0.9">90%</option>
+                    <option value="1">100%</option>
+                    <option value="1.1">110%</option>
+                    <option value="1.25">125%</option>
+                    <option value="1.5">150%</option>
+                    <option value="1.8">180%</option>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="mb-3">
             <FieldLabel>Assinantes</FieldLabel>
             <Select

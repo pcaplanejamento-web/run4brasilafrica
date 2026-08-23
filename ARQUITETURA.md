@@ -597,9 +597,9 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   `CertificateModal` (com sua própria entrada de History API, sobre o que estiver aberto).
 - `CertificateModal` desenha o certificado num `<canvas>` **WYSIWYG** (`drawCertificate`) em
   **A4 paisagem ~300 DPI** (3508×2480) e baixa em **PDF** (gerador próprio `lib/pdf.ts` —
-  `canvasToPdfBlob`/`A4_LANDSCAPE_PT`, embute o JPEG do canvas, **sem dependências**); no mobile
-  (`pointer: coarse`) usa o **compartilhar** nativo (`navigator.share` com o arquivo). 100% no
-  navegador, nada vai ao servidor.
+  `canvasToPdfBlob`/`A4_LANDSCAPE_PT`, embute o JPEG do canvas, **sem dependências**) **ou em
+  imagem PNG** (`canvas.toBlob("image/png")`); no mobile (`pointer: coarse`) ambos usam o
+  **compartilhar** nativo (`navigator.share` com o arquivo). 100% no navegador, nada vai ao servidor.
 - Desenho **profissional** (`certificate.ts`): moldura dupla + cantos, marca/logo, título
   "CERTIFICADO / DE CONCLUSÃO", "Certificamos que" + **nome** grande (serifa, auto-ajuste) com
   filete, **prosa** (prova, tempo, cidade/data, colocação geral e na faixa), **caixas de dados**
@@ -617,16 +617,30 @@ onde cada `ResultCategory { id, label, count?, updatedAt? }` (`id` = chave no KV
   é armazenado — é determinístico a partir de nome|número|colocação|categoria.
 - **Cores da marca**: por padrão o certificado é **tingido com a cor da logo** —
   `CertificateModal.dominantColor()` amostra a cor mais vívida da logo (canvas 48×48,
-  ignora branco/preto/cinza) e `certificatePalette()` deriva `accent`/`accentSoft`/`accentDeep`
-  (moldura, selo, filetes, filete das caixas). O ADM pode desligar e escolher uma cor.
+  ignora branco/preto/cinza) e `certificatePalette(accent, textColor, bgColor)` deriva
+  `accent`/`accentSoft`/`accentDeep` (moldura, selo, filetes, filete das caixas) e a tinta do
+  texto (`ink`/`soft`). O ADM pode desligar e escolher uma cor.
+- **Fundo, cor do texto e escalas** (ADM): o fundo pode ser **padrão creme**, uma **cor sólida**
+  (`bgColor`) ou uma **imagem** (`bgImage`, carregada por `loadImageTaintSafe` e desenhada em
+  `object-fit: cover` com um **véu claro** ~0.62 para manter o texto legível). A **cor do texto**
+  (`textColor`) e as **escalas** por grupo — `scaleTitle`/`scaleName`/`scaleBody`/`scaleLogo`
+  (multiplicadores 0.6–1.8, `scale()` no `certificate.ts`) — permitem aumentar título, nome,
+  corpo e a **logo** em pontos específicos. O certificado **carrega já com as configurações
+  salvas** (nada é sobreposto no load).
+- **Distância da prova**: cada **categoria** de Resultados (`ResultCategory.distance`, campo em
+  `ClassificacaoEditor`) define a distância que aparece no texto "concluiu com êxito **a prova de
+  X**" — passada por `Classificacao` → `CertificateModal` (`categoryDistance` → `data.distance`);
+  cai para `modality`/`categoryLabel` quando vazio.
 - **Controle do ADM** (`content.certificate: CertificateConfig`, por edição — Configurações →
   **"Certificado do atleta"**): **imagem própria** do certificado (`logo`, vazio → logo do site),
   mostrar o **nome da corrida ao lado da logo** (`showEventName` — o `drawBrand` monta o lockup
-  logo+nome ou só a logo), **cores** (usar a logo ou uma cor), **assinaturas** (1 ou 2
-  assinantes: papel + nome cursivo + CPF mascarado), **mensagem** opcional e quais **caixas de dados** aparecem
+  logo+nome ou só a logo), **cores** (usar a logo ou uma cor), **cor do texto**, **fundo**
+  (cor/imagem), **escalas** (título/nome/textos/logo), **assinaturas** (1 ou 2 assinantes: papel
+  + nome cursivo + CPF mascarado), **mensagem** opcional e quais **caixas de dados** aparecem
   (número/tempo/faixa/equipe). A `dominantColor` amostra a **imagem do certificado** quando há
   uma. Persistido por edição (em `EDITION_FIELDS`/`resolveEdition`, igual a `branding`/`headerCta`);
-  passado por `SectionRenderCtx.certificate` → `Classificacao` → `CertificateModal`.
+  passado por `SectionRenderCtx.certificate` → `Classificacao` → `CertificateModal`. Baixa em
+  **PDF** ou **PNG**.
 
 ### Estúdio de cards (`ShareCardStudio`, estilo Strava)
 

@@ -207,6 +207,17 @@ export interface CertificateConfig {
   accent?: string;
   /** Extrair as cores da logo (padrão: ligado). `accent` explícito tem prioridade. */
   useLogoColors?: boolean;
+  /** Cor de fundo do certificado (hex). Vazio → padrão creme. */
+  bgColor?: string;
+  /** Imagem de fundo do certificado (URL). Tem prioridade sobre `bgColor`. */
+  bgImage?: string;
+  /** Cor do texto principal (hex). Vazio → padrão. */
+  textColor?: string;
+  /** Escalas (multiplicadores, 0.6–1.8) de cada grupo de escrita e da logo. */
+  scaleTitle?: number;
+  scaleName?: number;
+  scaleBody?: number;
+  scaleLogo?: number;
   /** Assinantes: uma pessoa para os dois papéis ("one") ou dois ("two", padrão). */
   signMode?: "one" | "two";
   /** Assinatura 1 (Organização, ou a pessoa única): papel + nome (cursivo) + CPF. */
@@ -646,6 +657,8 @@ export interface ClassificacaoDisplay {
 export interface ResultCategory {
   id: string;
   label: string;
+  /** Distância da prova (ex.: "5 km") — usada no texto do certificado. */
+  distance?: string;
   /** Nº de linhas (preenchido no upload, para exibição no ADM). */
   count?: number;
   updatedAt?: string;

@@ -79,6 +79,7 @@ export default function CertificateModal({
   runner,
   event,
   categoryLabel,
+  categoryDistance,
   brandLogo,
   display,
   certificate,
@@ -87,6 +88,7 @@ export default function CertificateModal({
   runner: RaceResultRow | null;
   event?: EventInfo;
   categoryLabel: string;
+  categoryDistance?: string;
   brandLogo?: string;
   display?: ClassificacaoDisplay;
   certificate?: CertificateConfig;
@@ -96,6 +98,7 @@ export default function CertificateModal({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pushed = useRef(false);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
+  const [bgImg, setBgImg] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [coarse] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches);
@@ -116,6 +119,10 @@ export default function CertificateModal({
 
   useEffect(() => { ensureFonts().then(() => setFontsReady(true)); }, []);
   useEffect(() => { loadImageTaintSafe(certificate?.logo || brandLogo).then(setLogo); }, [certificate?.logo, brandLogo]);
+  useEffect(() => {
+    if (!certificate?.bgImage) { setBgImg(null); return; }
+    loadImageTaintSafe(certificate.bgImage).then(setBgImg);
+  }, [certificate?.bgImage]);
 
   const data: CertificateData | null = useMemo(() => {
     if (!runner) return null;
@@ -135,6 +142,7 @@ export default function CertificateModal({
       timeLabel,
       modality: runner.modality,
       categoryLabel,
+      distance: categoryDistance,
       ageGroup: runner.ageGroup,
       ageGroupPos: runner.ageGroupPos,
       team: display?.team ? runner.team : undefined,
@@ -149,6 +157,12 @@ export default function CertificateModal({
       accent:
         certificate?.accent?.trim() ||
         (certificate?.useLogoColors !== false ? dominantColor(logo) : undefined),
+      bgColor: certificate?.bgColor,
+      textColor: certificate?.textColor,
+      scaleTitle: certificate?.scaleTitle,
+      scaleName: certificate?.scaleName,
+      scaleBody: certificate?.scaleBody,
+      scaleLogo: certificate?.scaleLogo,
       showEventName: certificate?.showEventName,
       message: certificate?.message,
       signMode: certificate?.signMode,
@@ -163,7 +177,7 @@ export default function CertificateModal({
       showAgeGroup: certificate?.showAgeGroup,
       showTeam: certificate?.showTeam,
     };
-  }, [runner, event, categoryLabel, display, certificate, logo]);
+  }, [runner, event, categoryLabel, categoryDistance, display, certificate, logo]);
 
   // Desenha o certificado quando tudo está pronto.
   useEffect(() => {
@@ -173,9 +187,9 @@ export default function CertificateModal({
     c.height = CERT_H;
     const ctx = c.getContext("2d");
     if (!ctx) return;
-    try { drawCertificate(ctx, CERT_W, CERT_H, data, { logo }); }
+    try { drawCertificate(ctx, CERT_W, CERT_H, data, { logo, bg: bgImg }); }
     catch (e) { console.error("[certificado] erro ao desenhar:", e); }
-  }, [data, logo, fontsReady]);
+  }, [data, logo, bgImg, fontsReady]);
 
   if (!runner || !data) return null;
 
@@ -190,6 +204,30 @@ export default function CertificateModal({
       if (!blob) return;
       const filename = `certificado-${slug(runner!.name)}.pdf`;
       const file = new File([blob], filename, { type: "application/pdf" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (coarse && typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
+        try { await nav.share({ files: [file], title: "Meu certificado" }); return; }
+        catch (e) { if (e instanceof DOMException && e.name === "AbortError") return; /* senão baixa */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function downloadImage() {
+    const c = canvasRef.current;
+    if (!c) return;
+    setBusy(true);
+    try {
+      const blob: Blob | null = await new Promise((res) => c.toBlob((b) => res(b), "image/png"));
+      if (!blob) return;
+      const filename = `certificado-${slug(runner!.name)}.png`;
+      const file = new File([blob], filename, { type: "image/png" });
       const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
       if (coarse && typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
         try { await nav.share({ files: [file], title: "Meu certificado" }); return; }
@@ -251,14 +289,22 @@ export default function CertificateModal({
             </div>
             <p className="mt-2 text-center text-[12px] text-muted">Certificado A4 (paisagem) · {coarse ? "toque em salvar para compartilhar/baixar" : "PDF pronto para impressão"}</p>
 
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex flex-wrap justify-center gap-3">
               <button
                 type="button"
                 onClick={download}
                 disabled={busy}
                 className="min-h-12 rounded-lg bg-gold px-8 text-[14px] font-bold text-gold-ink transition-transform hover:-translate-y-0.5 disabled:opacity-60"
               >
-                {busy ? "Gerando PDF…" : coarse ? "Salvar / Compartilhar PDF" : "Baixar certificado (PDF)"}
+                {busy ? "Gerando…" : coarse ? "Salvar / Compartilhar PDF" : "Baixar certificado (PDF)"}
+              </button>
+              <button
+                type="button"
+                onClick={downloadImage}
+                disabled={busy}
+                className="min-h-12 rounded-lg border border-line-soft bg-white/5 px-8 text-[14px] font-bold text-cream transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+              >
+                {coarse ? "Salvar / Compartilhar imagem" : "Baixar imagem (PNG)"}
               </button>
             </div>
           </div>

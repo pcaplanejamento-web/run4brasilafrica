@@ -227,6 +227,14 @@ export function ClassificacaoEditor({
                   onChange={(e) => setCat(i, { label: e.target.value })}
                   placeholder="Ex.: 5KM Masculino"
                 />
+                <div className="mt-3">
+                  <FieldLabel>Distância da prova (usada no certificado)</FieldLabel>
+                  <TextInput
+                    value={c.distance ?? ""}
+                    onChange={(e) => setCat(i, { distance: e.target.value })}
+                    placeholder="Ex.: 5 km"
+                  />
+                </div>
               </div>
               <div>
                 <FieldLabel>Planilha de resultados (.CSV)</FieldLabel>

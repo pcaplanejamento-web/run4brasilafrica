@@ -270,6 +270,7 @@ export default function Classificacao({
         onClose={closeCert}
         event={event}
         categoryLabel={activeCat?.label ?? ""}
+        categoryDistance={activeCat?.distance}
         brandLogo={brandLogo}
         display={display}
         certificate={certificate}

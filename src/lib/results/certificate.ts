@@ -55,14 +55,14 @@ function mix(hex: string, target: number, amt: number): string {
 const lighten = (h: string, a: number) => mix(h, 255, a);
 const darken = (h: string, a: number) => mix(h, 0, a);
 
-/** Paleta do certificado a partir de um accent (hex). Deriva soft/deep. */
-export function certificatePalette(accent?: string): CertificatePalette {
-  const clean = accent?.trim();
-  const a = clean && /^#?[0-9a-fA-F]{3,6}$/.test(clean) ? (clean[0] === "#" ? clean : `#${clean}`) : DEFAULT_ACCENT;
+/** Paleta do certificado: accent (moldura/selo), cor do texto e cor de fundo. */
+export function certificatePalette(accent?: string, textColor?: string, bgColor?: string): CertificatePalette {
+  const a = validHex(accent) || DEFAULT_ACCENT;
+  const ink = validHex(textColor) || "#1b1712";
   return {
-    bg: "#faf8f2",
-    ink: "#1b1712",
-    soft: "#6c6455",
+    bg: validHex(bgColor) || "#faf8f2",
+    ink,
+    soft: validHex(textColor) ? mix(ink, 255, 0.42) : "#6c6455",
     line: "#d9d2c0",
     accent: a,
     accentSoft: lighten(a, 0.44),
@@ -89,7 +89,14 @@ export interface CertificateData {
   issuedText?: string;
   verifyCode?: string;
   // --- controlado pelo ADM ---
+  distance?: string; // distância da prova (da categoria) — "a prova de X"
   accent?: string; // cor de destaque (da logo ou config)
+  bgColor?: string; // cor de fundo
+  textColor?: string; // cor do texto principal
+  scaleTitle?: number; // escalas por grupo de escrita + logo
+  scaleName?: number;
+  scaleBody?: number;
+  scaleLogo?: number;
   showEventName?: boolean; // nome da corrida ao lado da logo
   message?: string; // observação opcional abaixo do subtítulo
   signMode?: "one" | "two"; // uma pessoa (os dois papéis) ou dois assinantes
@@ -107,6 +114,23 @@ export interface CertificateData {
 
 export interface CertificateAssets {
   logo: HTMLImageElement | null;
+  /** Imagem de fundo opcional (desenhada com veil para legibilidade). */
+  bg?: HTMLImageElement | null;
+}
+
+/** Escala segura (0.6–1.8), 1 quando ausente. */
+function scale(v?: number): number {
+  return Math.max(0.6, Math.min(1.8, v || 1));
+}
+/** Hex válido → normalizado com `#`; senão undefined. */
+function validHex(h?: string): string | undefined {
+  const s = h?.trim();
+  return s && /^#?[0-9a-fA-F]{3,6}$/.test(s) ? (s[0] === "#" ? s : `#${s}`) : undefined;
+}
+/** Cor com alfa (rgba) a partir de um hex. */
+function withAlpha(hex: string, a: number): string {
+  const { r, g, b } = parseHex(hex);
+  return `rgba(${r},${g},${b},${a})`;
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -246,19 +270,36 @@ export function drawCertificate(
   assets: CertificateAssets,
 ) {
   const cx = W / 2;
-  const col = certificatePalette(data.accent);
+  const col = certificatePalette(data.accent, data.textColor, data.bgColor);
+  const sT = scale(data.scaleTitle);
+  const sN = scale(data.scaleName);
+  const sB = scale(data.scaleBody);
+  const sL = scale(data.scaleLogo);
   ctx.textBaseline = "alphabetic";
 
-  // ---- Fundo (creme com leve vinheta + tinta suave da marca no rodapé) ----
-  ctx.fillStyle = col.bg;
-  ctx.fillRect(0, 0, W, H);
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "rgba(0,0,0,0)");
-  g.addColorStop(1, `${lighten(col.accent, 0.86)}`);
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 1;
+  // ---- Fundo: imagem (cover) + veil legível, ou cor sólida com leve vinheta ----
+  const bg = assets.bg && assets.bg.width > 0 ? assets.bg : null;
+  if (bg) {
+    // cobre todo o canvas mantendo proporção (object-fit: cover)
+    const ar = bg.width / bg.height;
+    const car = W / H;
+    let dw = W, dh = H, dx = 0, dy = 0;
+    if (ar > car) { dh = H; dw = H * ar; dx = (W - dw) / 2; } else { dw = W; dh = W / ar; dy = (H - dh) / 2; }
+    ctx.drawImage(bg, dx, dy, dw, dh);
+    // veil com a cor de fundo (padrão creme) para manter o texto legível
+    ctx.fillStyle = withAlpha(col.bg, 0.62);
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    ctx.fillStyle = col.bg;
+    ctx.fillRect(0, 0, W, H);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, `${lighten(col.accent, 0.86)}`);
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
 
   // ---- Moldura dupla + cantos ----
   const m = 96;
@@ -287,21 +328,21 @@ export function drawCertificate(
   const innerW = W - m2 * 2 - 200; // largura útil para texto
   let y = m2 + 118;
 
-  // ---- Marca ----
-  const brandBottom = drawBrand(ctx, assets, data, cx, y, 156, col);
+  // ---- Marca (altura escalável) ----
+  const brandBottom = drawBrand(ctx, assets, data, cx, y, Math.round(156 * sL), col);
   y = brandBottom + 96;
 
   // ---- Título ----
   y += 34;
   ctx.textAlign = "center"; // drawBrand pode ter deixado "left" (lockup); tudo abaixo é centralizado
   ctx.fillStyle = col.ink;
-  const titlePx = 214;
+  const titlePx = Math.round(214 * sT);
   ctx.font = `800 ${titlePx}px ${DISPLAY}`;
   withTracking(ctx, "10px", () => ctx.fillText("CERTIFICADO", cx, y + titlePx * 0.5));
   y += titlePx * 0.62;
   // Subtítulo do tipo + filetes laterais.
   ctx.fillStyle = col.accentDeep;
-  ctx.font = `700 54px ${DISPLAY}`;
+  ctx.font = `700 ${Math.round(54 * sT)}px ${DISPLAY}`;
   const sub = "DE CONCLUSÃO";
   y += 82;
   const subW = ctx.measureText(sub).width + 44;
@@ -317,23 +358,23 @@ export function drawCertificate(
   const message = data.message?.trim();
   if (message) {
     ctx.fillStyle = col.soft;
-    ctx.font = `italic 42px ${SERIF}`;
+    ctx.font = `italic ${Math.round(42 * sB)}px ${SERIF}`;
     for (const line of wrapText(ctx, message, innerW, 2)) {
       ctx.fillText(line, cx, y);
-      y += 56;
+      y += Math.round(56 * sB);
     }
     y += 18;
   }
 
   // ---- Corpo ----
   ctx.fillStyle = col.soft;
-  ctx.font = `italic 52px ${SERIF}`;
+  ctx.font = `italic ${Math.round(52 * sB)}px ${SERIF}`;
   ctx.fillText("Certificamos que", cx, y);
   y += 136;
 
   // Nome (serifa, grande, auto-ajustável)
   const name = (data.name || "").trim();
-  const namePx = fitFont(ctx, name, 178, 78, (px) => `700 ${px}px ${SERIF}`, innerW);
+  const namePx = fitFont(ctx, name, Math.round(178 * sN), Math.round(78 * sN), (px) => `700 ${px}px ${SERIF}`, innerW);
   ctx.font = `700 ${namePx}px ${SERIF}`;
   ctx.fillStyle = col.ink;
   ctx.fillText(name, cx, y);
@@ -344,7 +385,7 @@ export function drawCertificate(
   y += 138;
 
   // Prosa
-  const distance = (data.modality || data.categoryLabel || "").trim();
+  const distance = (data.distance || data.modality || data.categoryLabel || "").trim();
   const place = `${data.pos}ª colocação geral`;
   const faixa = data.ageGroup && data.ageGroupPos && data.ageGroupPos !== "-"
     ? `, e ${data.ageGroupPos}ª colocação na faixa ${data.ageGroup}`
@@ -358,10 +399,10 @@ export function drawCertificate(
   prose += `, alcançando a ${place}${faixa}.`;
 
   ctx.fillStyle = col.ink;
-  ctx.font = `400 50px ${SERIF}`;
+  ctx.font = `400 ${Math.round(50 * sB)}px ${SERIF}`;
   for (const line of wrapText(ctx, prose, innerW, 3)) {
     ctx.fillText(line, cx, y);
-    y += 70;
+    y += Math.round(70 * sB);
   }
 
   // ---- Bloco de dados (respeita os toggles do ADM) ----
