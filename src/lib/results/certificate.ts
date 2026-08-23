@@ -1,8 +1,9 @@
 /**
  * Desenho (sem React) do **certificado** do atleta num `<canvas>` A4 paisagem.
  * Design moderno e profissional: moldura dupla, marca, título, corpo em serifa,
- * bloco de dados, **selo** e linhas de assinatura. WYSIWYG: o mesmo desenho serve
- * para o preview e para o PDF (o PDF embute o JPEG deste canvas).
+ * bloco de dados, **selo** e linhas de assinatura. As cores derivam da **logo**
+ * (ou de um accent configurado no ADM). WYSIWYG: o mesmo desenho serve para o
+ * preview e para o PDF (o PDF embute o JPEG deste canvas).
  */
 
 import { wrapText } from "./card";
@@ -14,35 +15,82 @@ export const CERT_H = 2480;
 const DISPLAY = `'Space Grotesk', system-ui, -apple-system, Arial, sans-serif`;
 const SERIF = `Georgia, 'Times New Roman', 'Playfair Display', serif`;
 
-const COL = {
-  bg: "#faf8f2",
-  bgEdge: "#f2eee2",
-  ink: "#1b1712",
-  soft: "#6c6455",
-  line: "#d9d2c0",
-  accent: "#7c8a1e", // verde-oliva (marca, legível sobre creme)
-  accentSoft: "#aeb42a",
-  gold: "#b08d2b",
-};
+const DEFAULT_ACCENT = "#7c8a1e"; // verde-oliva (legível sobre creme)
+
+export interface CertificatePalette {
+  bg: string;
+  ink: string;
+  soft: string;
+  line: string;
+  accent: string;
+  accentSoft: string;
+  accentDeep: string;
+}
+
+// ---- utilidades de cor ----
+function clamp(n: number): number {
+  return Math.max(0, Math.min(255, Math.round(n)));
+}
+function parseHex(h: string): { r: number; g: number; b: number } {
+  const s = h.replace("#", "");
+  const v = s.length === 3 ? s.split("").map((c) => c + c).join("") : s.padEnd(6, "0").slice(0, 6);
+  const n = parseInt(v, 16) || 0;
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+function toHex(r: number, g: number, b: number): string {
+  return "#" + [r, g, b].map((x) => clamp(x).toString(16).padStart(2, "0")).join("");
+}
+function mix(hex: string, target: number, amt: number): string {
+  const c = parseHex(hex);
+  return toHex(c.r + (target - c.r) * amt, c.g + (target - c.g) * amt, c.b + (target - c.b) * amt);
+}
+const lighten = (h: string, a: number) => mix(h, 255, a);
+const darken = (h: string, a: number) => mix(h, 0, a);
+
+/** Paleta do certificado a partir de um accent (hex). Deriva soft/deep. */
+export function certificatePalette(accent?: string): CertificatePalette {
+  const clean = accent?.trim();
+  const a = clean && /^#?[0-9a-fA-F]{3,6}$/.test(clean) ? (clean[0] === "#" ? clean : `#${clean}`) : DEFAULT_ACCENT;
+  return {
+    bg: "#faf8f2",
+    ink: "#1b1712",
+    soft: "#6c6455",
+    line: "#d9d2c0",
+    accent: a,
+    accentSoft: lighten(a, 0.44),
+    accentDeep: darken(a, 0.2),
+  };
+}
 
 export interface CertificateData {
   name: string;
   bib?: string;
   pos: number;
-  time?: string; // tempo oficial (líquido/bruto) já escolhido
-  timeLabel?: string; // "Tempo líquido" | "Tempo bruto"
-  modality?: string; // "5KM"
-  categoryLabel?: string; // "5KM MASCULINO"
+  time?: string;
+  timeLabel?: string;
+  modality?: string;
+  categoryLabel?: string;
   ageGroup?: string;
   ageGroupPos?: string;
   team?: string;
   eventName: string;
   editionYear?: string;
-  dateText?: string; // "14 de setembro de 2026" (ou o que vier do dateLabel)
-  cityText?: string; // "Rio de Janeiro"
-  siteUrl?: string; // "run4brasilafrica..."
-  issuedText?: string; // "Emitido em 13/08/2026"
-  verifyCode?: string; // código curto de autenticidade
+  dateText?: string;
+  cityText?: string;
+  siteUrl?: string;
+  issuedText?: string;
+  verifyCode?: string;
+  // --- controlado pelo ADM ---
+  accent?: string; // cor de destaque (da logo ou config)
+  message?: string; // observação opcional abaixo do subtítulo
+  sig1Label?: string;
+  sig1Sub?: string;
+  sig2Label?: string;
+  sig2Sub?: string;
+  showBib?: boolean;
+  showTime?: boolean;
+  showAgeGroup?: boolean;
+  showTeam?: boolean;
 }
 
 export interface CertificateAssets {
@@ -71,21 +119,31 @@ function fitFont(ctx: CanvasRenderingContext2D, text: string, startPx: number, m
   return px;
 }
 
-/** Selo circular (anel + laurel + colocação/“concluído”). */
-function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, pos: number) {
+/** Aplica `letterSpacing` quando suportado (canvas moderno), volta ao normal depois. */
+function withTracking(ctx: CanvasRenderingContext2D, px: string, fn: () => void) {
+  const c = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+  const prev = c.letterSpacing;
+  try {
+    if ("letterSpacing" in c) c.letterSpacing = px;
+    fn();
+  } finally {
+    if ("letterSpacing" in c) c.letterSpacing = prev ?? "0px";
+  }
+}
+
+/** Selo circular (anel + serrilha + estrela + colocação). */
+function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, pos: number, col: CertificatePalette) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  // Anel externo + interno.
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fillStyle = "#ffffff"; ctx.fill();
-  ctx.lineWidth = r * 0.06; ctx.strokeStyle = COL.accent; ctx.stroke();
+  ctx.lineWidth = r * 0.06; ctx.strokeStyle = col.accent; ctx.stroke();
   ctx.beginPath(); ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
-  ctx.lineWidth = r * 0.02; ctx.strokeStyle = COL.accentSoft; ctx.stroke();
+  ctx.lineWidth = r * 0.02; ctx.strokeStyle = col.accentSoft; ctx.stroke();
 
-  // Serrilhado do selo (raios curtos).
   const teeth = 40;
-  ctx.strokeStyle = COL.accent;
+  ctx.strokeStyle = col.accent;
   ctx.lineWidth = r * 0.018;
   for (let i = 0; i < teeth; i++) {
     const a = (i / teeth) * Math.PI * 2;
@@ -96,7 +154,6 @@ function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numb
     ctx.stroke();
   }
 
-  // Estrela de 5 pontas no topo do selo.
   const star = (scx: number, scy: number, rr: number) => {
     ctx.beginPath();
     for (let i = 0; i < 10; i++) {
@@ -107,23 +164,22 @@ function drawSeal(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numb
       i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
     }
     ctx.closePath();
-    ctx.fillStyle = COL.accentSoft;
+    ctx.fillStyle = col.accentSoft;
     ctx.fill();
   };
   star(cx, cy - r * 0.42, r * 0.2);
 
-  // Texto central: colocação + rótulo.
-  ctx.fillStyle = COL.ink;
-  ctx.font = `800 ${Math.round(r * 0.58)}px ${DISPLAY}`;
+  ctx.fillStyle = col.ink;
+  ctx.font = `800 ${Math.round(r * 0.6)}px ${DISPLAY}`;
   ctx.fillText(`${pos}º`, cx, cy + r * 0.06);
-  ctx.fillStyle = COL.accent;
-  ctx.font = `700 ${Math.round(r * 0.15)}px ${DISPLAY}`;
-  ctx.fillText("COLOCAÇÃO", cx, cy + r * 0.46);
+  ctx.fillStyle = col.accentDeep;
+  ctx.font = `700 ${Math.round(r * 0.155)}px ${DISPLAY}`;
+  ctx.fillText("COLOCAÇÃO", cx, cy + r * 0.47);
   ctx.restore();
 }
 
 /** Marca (logo do evento centrada, ou nome do evento em texto). */
-function drawBrand(ctx: CanvasRenderingContext2D, assets: CertificateAssets, data: CertificateData, cx: number, top: number, h: number) {
+function drawBrand(ctx: CanvasRenderingContext2D, assets: CertificateAssets, data: CertificateData, cx: number, top: number, h: number, col: CertificatePalette) {
   if (assets.logo && assets.logo.width > 0) {
     const w = (assets.logo.width / assets.logo.height) * h;
     const maxW = CERT_W * 0.34;
@@ -133,7 +189,7 @@ function drawBrand(ctx: CanvasRenderingContext2D, assets: CertificateAssets, dat
     return top + dh;
   }
   ctx.textAlign = "center";
-  ctx.fillStyle = COL.ink;
+  ctx.fillStyle = col.ink;
   ctx.font = `800 ${Math.round(h * 0.9)}px ${DISPLAY}`;
   ctx.fillText((data.eventName || "").toUpperCase(), cx, top + h * 0.9);
   return top + h;
@@ -148,30 +204,32 @@ export function drawCertificate(
   assets: CertificateAssets,
 ) {
   const cx = W / 2;
+  const col = certificatePalette(data.accent);
   ctx.textBaseline = "alphabetic";
 
-  // ---- Fundo (creme com leve vinheta) ----
-  ctx.fillStyle = COL.bg;
+  // ---- Fundo (creme com leve vinheta + tinta suave da marca no rodapé) ----
+  ctx.fillStyle = col.bg;
   ctx.fillRect(0, 0, W, H);
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, "rgba(0,0,0,0)");
-  g.addColorStop(1, "rgba(120,110,80,0.05)");
+  g.addColorStop(1, `${lighten(col.accent, 0.86)}`);
+  ctx.globalAlpha = 0.5;
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
 
   // ---- Moldura dupla + cantos ----
   const m = 96;
-  ctx.strokeStyle = COL.ink;
+  ctx.strokeStyle = col.ink;
   ctx.lineWidth = 6;
   ctx.strokeRect(m, m, W - m * 2, H - m * 2);
   const m2 = m + 26;
-  ctx.strokeStyle = COL.accentSoft;
+  ctx.strokeStyle = col.accentSoft;
   ctx.lineWidth = 3;
   ctx.strokeRect(m2, m2, W - m2 * 2, H - m2 * 2);
-  // Cantos (pequenos “L” na cor da marca).
-  const corner = 70;
-  ctx.strokeStyle = COL.accent;
-  ctx.lineWidth = 8;
+  const corner = 74;
+  ctx.strokeStyle = col.accent;
+  ctx.lineWidth = 9;
   const drawCorner = (x: number, y: number, sx: number, sy: number) => {
     ctx.beginPath();
     ctx.moveTo(x, y + sy * corner);
@@ -184,59 +242,73 @@ export function drawCertificate(
   drawCorner(m2 + 14, H - m2 - 14, 1, -1);
   drawCorner(W - m2 - 14, H - m2 - 14, -1, -1);
 
-  const innerW = W - m2 * 2 - 160; // largura útil para texto
-  let y = m2 + 120;
+  const innerW = W - m2 * 2 - 200; // largura útil para texto
+  let y = m2 + 118;
 
   // ---- Marca ----
-  const brandBottom = drawBrand(ctx, assets, data, cx, y, 150);
-  y = brandBottom + 40;
+  const brandBottom = drawBrand(ctx, assets, data, cx, y, 156, col);
+  y = brandBottom + 44;
 
   // Eyebrow (evento + edição)
   ctx.textAlign = "center";
-  ctx.fillStyle = COL.soft;
-  ctx.font = `700 40px ${DISPLAY}`;
+  ctx.fillStyle = col.soft;
+  ctx.font = `700 44px ${DISPLAY}`;
   const eyebrow = [data.eventName, data.editionYear].filter(Boolean).join(" · ").toUpperCase();
-  if (eyebrow && (assets.logo?.width ?? 0) > 0) { ctx.fillText(eyebrow, cx, y); y += 60; }
+  if (eyebrow && (assets.logo?.width ?? 0) > 0) {
+    withTracking(ctx, "6px", () => ctx.fillText(eyebrow, cx, y));
+    y += 64;
+  }
 
   // ---- Título ----
-  y += 30;
-  ctx.fillStyle = COL.ink;
-  const titlePx = 190;
+  y += 34;
+  ctx.fillStyle = col.ink;
+  const titlePx = 214;
   ctx.font = `800 ${titlePx}px ${DISPLAY}`;
-  ctx.fillText("CERTIFICADO", cx, y + titlePx * 0.5);
+  withTracking(ctx, "10px", () => ctx.fillText("CERTIFICADO", cx, y + titlePx * 0.5));
   y += titlePx * 0.62;
-  // Rótulo do tipo + filetes laterais.
-  ctx.fillStyle = COL.accent;
-  ctx.font = `700 46px ${DISPLAY}`;
+  // Subtítulo do tipo + filetes laterais.
+  ctx.fillStyle = col.accentDeep;
+  ctx.font = `700 54px ${DISPLAY}`;
   const sub = "DE CONCLUSÃO";
-  y += 70;
-  const subW = ctx.measureText(sub).width;
-  ctx.fillText(sub, cx, y);
-  ctx.strokeStyle = COL.accentSoft;
-  ctx.lineWidth = 3;
-  const ry = y - 16;
-  ctx.beginPath(); ctx.moveTo(cx - subW / 2 - 120, ry); ctx.lineTo(cx - subW / 2 - 40, ry); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx + subW / 2 + 40, ry); ctx.lineTo(cx + subW / 2 + 120, ry); ctx.stroke();
-  y += 90;
+  y += 82;
+  const subW = ctx.measureText(sub).width + 44;
+  withTracking(ctx, "4px", () => ctx.fillText(sub, cx, y));
+  ctx.strokeStyle = col.accentSoft;
+  ctx.lineWidth = 4;
+  const ry = y - 18;
+  ctx.beginPath(); ctx.moveTo(cx - subW / 2 - 130, ry); ctx.lineTo(cx - subW / 2 - 44, ry); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + subW / 2 + 44, ry); ctx.lineTo(cx + subW / 2 + 130, ry); ctx.stroke();
+  y += 84;
+
+  // Mensagem opcional (ADM)
+  const message = data.message?.trim();
+  if (message) {
+    ctx.fillStyle = col.soft;
+    ctx.font = `italic 42px ${SERIF}`;
+    for (const line of wrapText(ctx, message, innerW, 2)) {
+      ctx.fillText(line, cx, y);
+      y += 56;
+    }
+    y += 18;
+  }
 
   // ---- Corpo ----
-  ctx.fillStyle = COL.soft;
-  ctx.font = `italic 48px ${SERIF}`;
+  ctx.fillStyle = col.soft;
+  ctx.font = `italic 52px ${SERIF}`;
   ctx.fillText("Certificamos que", cx, y);
-  y += 130;
+  y += 136;
 
   // Nome (serifa, grande, auto-ajustável)
   const name = (data.name || "").trim();
-  const namePx = fitFont(ctx, name, 150, 64, (px) => `700 ${px}px ${SERIF}`, innerW);
+  const namePx = fitFont(ctx, name, 178, 78, (px) => `700 ${px}px ${SERIF}`, innerW);
   ctx.font = `700 ${namePx}px ${SERIF}`;
-  ctx.fillStyle = COL.ink;
+  ctx.fillStyle = col.ink;
   ctx.fillText(name, cx, y);
-  // Filete sob o nome
   const nameW = Math.min(ctx.measureText(name).width, innerW);
-  ctx.strokeStyle = COL.accentSoft;
-  ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(cx - nameW / 2 - 30, y + 34); ctx.lineTo(cx + nameW / 2 + 30, y + 34); ctx.stroke();
-  y += 130;
+  ctx.strokeStyle = col.accentSoft;
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(cx - nameW / 2 - 34, y + 38); ctx.lineTo(cx + nameW / 2 + 34, y + 38); ctx.stroke();
+  y += 138;
 
   // Prosa
   const distance = (data.modality || data.categoryLabel || "").trim();
@@ -252,70 +324,73 @@ export function drawCertificate(
   if (data.time) prose += `, com o tempo de ${data.time}`;
   prose += `, alcançando a ${place}${faixa}.`;
 
-  ctx.fillStyle = COL.ink;
-  ctx.font = `400 46px ${SERIF}`;
+  ctx.fillStyle = col.ink;
+  ctx.font = `400 50px ${SERIF}`;
   for (const line of wrapText(ctx, prose, innerW, 3)) {
     ctx.fillText(line, cx, y);
-    y += 66;
+    y += 70;
   }
 
-  // ---- Bloco de dados ----
-  y += 60;
+  // ---- Bloco de dados (respeita os toggles do ADM) ----
+  y += 62;
   const stats: { label: string; value: string }[] = [];
-  if (data.bib) stats.push({ label: "Número", value: `#${data.bib}` });
-  if (data.time) stats.push({ label: (data.timeLabel || "Tempo"), value: data.time });
-  if (data.ageGroup) stats.push({ label: "Faixa etária", value: data.ageGroup });
-  if (data.team) stats.push({ label: "Equipe", value: data.team });
+  if (data.showBib !== false && data.bib) stats.push({ label: "Número", value: `#${data.bib}` });
+  if (data.showTime !== false && data.time) stats.push({ label: data.timeLabel || "Tempo", value: data.time });
+  if (data.showAgeGroup !== false && data.ageGroup) stats.push({ label: "Faixa etária", value: data.ageGroup });
+  if (data.showTeam !== false && data.team) stats.push({ label: "Equipe", value: data.team });
   if (stats.length) {
-    const boxW = 620, boxH = 150, gap = 40;
+    const boxW = 640, boxH = 158, gap = 42;
     const totalW = stats.length * boxW + (stats.length - 1) * gap;
     let bx = cx - totalW / 2;
     for (const s of stats) {
-      roundRect(ctx, bx, y, boxW, boxH, 20);
+      roundRect(ctx, bx, y, boxW, boxH, 22);
       ctx.fillStyle = "#ffffff"; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = COL.line; ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = col.line; ctx.stroke();
+      // filete de topo na cor da marca
+      roundRect(ctx, bx, y, boxW, 10, 6);
+      ctx.fillStyle = col.accentSoft; ctx.fill();
       ctx.textAlign = "center";
-      ctx.fillStyle = COL.soft;
-      ctx.font = `700 26px ${DISPLAY}`;
-      ctx.fillText(s.label.toUpperCase(), bx + boxW / 2, y + 52);
-      ctx.fillStyle = COL.ink;
-      const vPx = fitFont(ctx, s.value, 54, 30, (px) => `800 ${px}px ${DISPLAY}`, boxW - 60);
+      ctx.fillStyle = col.soft;
+      ctx.font = `700 28px ${DISPLAY}`;
+      ctx.fillText(s.label.toUpperCase(), bx + boxW / 2, y + 62);
+      ctx.fillStyle = col.ink;
+      const vPx = fitFont(ctx, s.value, 58, 32, (px) => `800 ${px}px ${DISPLAY}`, boxW - 64);
       ctx.font = `800 ${vPx}px ${DISPLAY}`;
-      ctx.fillText(s.value, bx + boxW / 2, y + 116);
+      ctx.fillText(s.value, bx + boxW / 2, y + 124);
       bx += boxW + gap;
     }
   }
 
   // ---- Selo (direita) ----
-  const sealR = 210;
+  const sealR = 214;
   const sealCx = W - m2 - 120 - sealR;
   const sealCy = H - m2 - 120 - sealR;
-  drawSeal(ctx, sealCx, sealCy, sealR, data.pos);
+  drawSeal(ctx, sealCx, sealCy, sealR, data.pos, col);
 
-  // ---- Assinaturas (esquerda + centro) ----
-  const sigY = H - m2 - 220;
-  const sigW = 620;
-  const drawSig = (centerX: number, label: string, sub: string) => {
-    ctx.strokeStyle = COL.ink; ctx.lineWidth = 3;
+  // ---- Assinaturas (rótulos do ADM) ----
+  const sigY = H - m2 - 224;
+  const sigW = 640;
+  const drawSig = (centerX: number, label: string, subLine: string) => {
+    ctx.strokeStyle = col.ink; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(centerX - sigW / 2, sigY); ctx.lineTo(centerX + sigW / 2, sigY); ctx.stroke();
     ctx.textAlign = "center";
-    ctx.fillStyle = COL.ink; ctx.font = `700 34px ${DISPLAY}`;
-    ctx.fillText(label.toUpperCase(), centerX, sigY + 52);
-    if (sub) { ctx.fillStyle = COL.soft; ctx.font = `400 30px ${SERIF}`; ctx.fillText(sub, centerX, sigY + 96); }
+    ctx.fillStyle = col.ink; ctx.font = `700 38px ${DISPLAY}`;
+    ctx.fillText(label.toUpperCase(), centerX, sigY + 56);
+    if (subLine) { ctx.fillStyle = col.soft; ctx.font = `400 32px ${SERIF}`; ctx.fillText(subLine, centerX, sigY + 100); }
   };
   const sigLeft = m2 + 120 + sigW / 2;
-  const sigMid = sigLeft + sigW + 160;
-  drawSig(sigLeft, "Organização", data.eventName);
-  drawSig(sigMid, "Direção de Prova", "Cronometragem oficial");
+  const sigMid = sigLeft + sigW + 170;
+  drawSig(sigLeft, data.sig1Label?.trim() || "Organização", data.sig1Sub?.trim() || data.eventName);
+  drawSig(sigMid, data.sig2Label?.trim() || "Direção de Prova", data.sig2Sub?.trim() || "Cronometragem oficial");
 
   // ---- Rodapé (site + emissão + código) ----
   ctx.textAlign = "center";
-  ctx.fillStyle = COL.soft;
-  ctx.font = `400 30px ${DISPLAY}`;
+  ctx.fillStyle = col.soft;
+  ctx.font = `400 32px ${DISPLAY}`;
   const footer = [data.siteUrl, data.issuedText, data.verifyCode ? `Autenticação ${data.verifyCode}` : ""]
     .filter(Boolean)
     .join("   ·   ");
-  if (footer) ctx.fillText(footer, cx, H - m2 - 44);
+  if (footer) ctx.fillText(footer, cx, H - m2 - 46);
 
   ctx.textAlign = "left";
 }

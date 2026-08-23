@@ -10,6 +10,7 @@ export const EDITION_FIELDS: readonly (keyof Edition)[] = [
   "event",
   "branding",
   "headerCta",
+  "certificate",
   "theme",
   "cloudinary",
   "analytics",

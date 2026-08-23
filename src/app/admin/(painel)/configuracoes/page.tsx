@@ -6,6 +6,7 @@ import type { Backend } from "@/lib/content/store";
 import type {
   Analytics,
   Branding,
+  CertificateConfig,
   Cloudinary,
   ContactLinks,
   EventInfo,
@@ -56,6 +57,7 @@ function ConfiguracoesForm({
   initialEvent,
   initialBranding,
   initialHeaderCta,
+  initialCertificate,
   initialTheme,
   initialCloudinary,
   initialAnalytics,
@@ -67,6 +69,7 @@ function ConfiguracoesForm({
   initialEvent: EventInfo;
   initialBranding: Branding;
   initialHeaderCta: HeaderCta;
+  initialCertificate: CertificateConfig;
   initialTheme: ThemeColors;
   initialCloudinary: Cloudinary;
   initialAnalytics: Analytics;
@@ -79,6 +82,7 @@ function ConfiguracoesForm({
   const [event, setEvent] = useState<EventInfo>(initialEvent);
   const [branding, setBranding] = useState(initialBranding);
   const [headerCta, setHeaderCta] = useState<HeaderCta>(initialHeaderCta);
+  const [cert, setCert] = useState<CertificateConfig>(initialCertificate);
   const headerTargets = homeAnchorTargets(content);
   const [theme, setTheme] = useState<ThemeColors>(initialTheme);
   const [cloudinary, setCloudinary] = useState<Cloudinary>(initialCloudinary);
@@ -342,6 +346,88 @@ function ConfiguracoesForm({
               )}
             </div>
           )}
+        </Card>
+
+        {/* Certificado do atleta — informações e aparência, POR EDIÇÃO */}
+        <Card>
+          <SectionLabel>Certificado do atleta</SectionLabel>
+          <p className="mb-3 text-[12px] text-adm-muted">
+            Controle as informações e a aparência do certificado que os atletas emitem na
+            Classificação (Resultados). Por padrão, as cores vêm da logo.
+          </p>
+          <div className="mb-3">
+            <FieldLabel>Cores</FieldLabel>
+            <Select
+              value={cert.useLogoColors === false ? "custom" : "logo"}
+              onChange={(e) => setCert((c) => ({ ...c, useLogoColors: e.target.value === "logo" }))}
+            >
+              <option value="logo">Usar as cores da logo</option>
+              <option value="custom">Escolher uma cor</option>
+            </Select>
+            {cert.useLogoColors === false && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="color"
+                  value={cert.accent || "#7c8a1e"}
+                  onChange={(e) => setCert((c) => ({ ...c, accent: e.target.value }))}
+                  aria-label="Cor de destaque do certificado"
+                  className="h-9 w-14 cursor-pointer rounded-md border border-adm-border bg-white p-1"
+                />
+                <span className="text-[11px] text-adm-muted">Cor da moldura, selo e filetes.</span>
+              </div>
+            )}
+          </div>
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <FieldLabel>Assinatura 1 — título</FieldLabel>
+              <TextInput value={cert.sig1Label ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Label: e.target.value }))} placeholder="Organização" />
+            </div>
+            <div>
+              <FieldLabel>Assinatura 1 — linha de baixo</FieldLabel>
+              <TextInput value={cert.sig1Sub ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Sub: e.target.value }))} placeholder="(nome do evento)" />
+            </div>
+            <div>
+              <FieldLabel>Assinatura 2 — título</FieldLabel>
+              <TextInput value={cert.sig2Label ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Label: e.target.value }))} placeholder="Direção de Prova" />
+            </div>
+            <div>
+              <FieldLabel>Assinatura 2 — linha de baixo</FieldLabel>
+              <TextInput value={cert.sig2Sub ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Sub: e.target.value }))} placeholder="Cronometragem oficial" />
+            </div>
+          </div>
+          <div className="mb-3">
+            <FieldLabel>Mensagem opcional</FieldLabel>
+            <TextArea value={cert.message ?? ""} onChange={(e) => setCert((c) => ({ ...c, message: e.target.value }))} rows={2} placeholder="Ex.: Parabéns pela sua conquista!" />
+          </div>
+          <div>
+            <FieldLabel>Caixas de dados exibidas</FieldLabel>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: "showBib", label: "Número" },
+                { key: "showTime", label: "Tempo" },
+                { key: "showAgeGroup", label: "Faixa etária" },
+                { key: "showTeam", label: "Equipe" },
+              ] as { key: "showBib" | "showTime" | "showAgeGroup" | "showTeam"; label: string }[]).map((t) => {
+                const on = cert[t.key] !== false;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setCert((c) => ({ ...c, [t.key]: !on }))}
+                    aria-pressed={on}
+                    className="rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors"
+                    style={{
+                      borderColor: on ? "#c8551f" : "var(--adm-border, #e2ddd2)",
+                      background: on ? "#fdeee6" : "transparent",
+                      color: on ? "#c8551f" : "#666",
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </Card>
 
         {/* Cores do site (tema) */}
@@ -615,6 +701,7 @@ function ConfiguracoesForm({
                 event,
                 branding,
                 headerCta,
+                certificate: cert,
                 theme,
                 cloudinary,
                 analytics,
@@ -642,6 +729,7 @@ export default function ConfiguracoesPage() {
       initialEvent={content.event}
       initialBranding={content.branding ?? {}}
       initialHeaderCta={content.headerCta ?? {}}
+      initialCertificate={content.certificate ?? {}}
       initialTheme={content.theme ?? {}}
       initialCloudinary={content.cloudinary ?? {}}
       initialAnalytics={content.analytics ?? {}}

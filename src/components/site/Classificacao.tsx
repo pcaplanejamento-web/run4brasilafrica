@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
+  CertificateConfig,
   ClassificacaoDisplay,
   ClassificacaoSection,
   EventInfo,
@@ -40,12 +41,14 @@ export default function Classificacao({
   event,
   brandLogo,
   routes,
+  certificate,
 }: {
   classificacao?: ClassificacaoSection;
   title?: string;
   event?: EventInfo;
   brandLogo?: string;
   routes?: PercursoRoute[];
+  certificate?: CertificateConfig;
 }) {
   const cfg = classificacao;
   const cats = useMemo(() => cfg?.categories ?? [], [cfg]);
@@ -269,6 +272,7 @@ export default function Classificacao({
         categoryLabel={activeCat?.label ?? ""}
         brandLogo={brandLogo}
         display={display}
+        certificate={certificate}
       />
     </section>
   );

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type {
+  CertificateConfig,
   Album,
   CustomBlock,
   CustomSection,
@@ -54,8 +55,10 @@ export interface SectionRenderCtx {
   galleryPhotos: GalleryPhoto[];
   /** "Seja um parceiro" CTA só funciona quando aquela seção está ativa. */
   sejaParceiroEnabled: boolean;
-  /** Logo do evento (para o estúdio de cards da Classificação). */
+  /** Logo do evento (para o estúdio de cards da Classificação e o certificado). */
   brandLogo?: string;
+  /** Config do certificado do atleta (ADM). */
+  certificate?: CertificateConfig;
   /** Rotas do Percurso (a imagem `fallbackImage` vira o mapa dos cards). */
   percursoRoutes: PercursoRoute[];
   /** "Agora" do servidor (época ms) para o 1º paint dos lotes — o mesmo valor é
@@ -143,6 +146,7 @@ function renderSection(
           event={ctx.event}
           brandLogo={ctx.brandLogo}
           routes={ctx.percursoRoutes}
+          certificate={ctx.certificate}
         />
       );
     default:

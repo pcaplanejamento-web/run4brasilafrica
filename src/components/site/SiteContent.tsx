@@ -65,6 +65,7 @@ export default function SiteContent({ initial }: { initial: SiteContentType }) {
     sejaParceiroEnabled,
     nowMs,
     brandLogo: c.branding?.logo,
+    certificate: c.certificate,
     percursoRoutes,
   };
 

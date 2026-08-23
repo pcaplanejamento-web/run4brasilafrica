@@ -91,6 +91,7 @@ export function resolveEdition(stored: StoredContent, editionId?: string): SiteC
     // privacidade/integrações). Trocar a edição ativa muda o site por completo.
     branding: (ed?.branding ?? {}) as Branding,
     headerCta: ed?.headerCta,
+    certificate: ed?.certificate,
     theme: (ed?.theme ?? {}) as ThemeColors,
     cloudinary: (ed?.cloudinary ?? {}) as Cloudinary,
     analytics: (ed?.analytics ?? {}) as Analytics,

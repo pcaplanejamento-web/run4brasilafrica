@@ -195,6 +195,30 @@ export interface Branding {
 }
 
 /**
+ * Certificado do atleta — o ADM controla as informações e a aparência. As cores
+ * vêm da logo por padrão (`useLogoColors`), com override opcional de `accent`.
+ */
+export interface CertificateConfig {
+  /** Cor de destaque (moldura/selo/filetes). Vazio → cor da logo ou padrão. */
+  accent?: string;
+  /** Extrair as cores da logo (padrão: ligado). `accent` explícito tem prioridade. */
+  useLogoColors?: boolean;
+  /** Assinatura esquerda: rótulo + linha de baixo. */
+  sig1Label?: string;
+  sig1Sub?: string;
+  /** Assinatura central: rótulo + linha de baixo. */
+  sig2Label?: string;
+  sig2Sub?: string;
+  /** Mensagem/observação opcional (abaixo do subtítulo). */
+  message?: string;
+  /** Caixas de dados (padrão: exibir quando houver dado). `false` oculta. */
+  showBib?: boolean;
+  showTime?: boolean;
+  showAgeGroup?: boolean;
+  showTeam?: boolean;
+}
+
+/**
  * Header button — fully driven by this config (no auto/lote logic), so it never
  * flashes a different label. Empty `label` falls back to "Inscreva-se".
  */
@@ -689,6 +713,7 @@ export interface Edition {
   event: EventInfo;
   branding: Branding;
   headerCta?: HeaderCta;
+  certificate?: CertificateConfig;
   theme: ThemeColors;
   cloudinary: Cloudinary;
   analytics: Analytics;
@@ -716,6 +741,8 @@ export interface SiteContent {
   branding: Branding;
   /** Optional override for the header button (label + destination). */
   headerCta?: HeaderCta;
+  /** Athlete certificate config (ADM-controlled info + look). */
+  certificate?: CertificateConfig;
   theme: ThemeColors;
   /** Homepage section order + on/off (ADM dashboard). */
   layout: LayoutItem[];

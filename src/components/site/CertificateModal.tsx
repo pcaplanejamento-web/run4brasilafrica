@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ClassificacaoDisplay, EventInfo, RaceResultRow } from "@/lib/content/types";
+import type { CertificateConfig, ClassificacaoDisplay, EventInfo, RaceResultRow } from "@/lib/content/types";
 import { primaryTime } from "@/lib/results/format";
 import { ensureFonts, loadImageTaintSafe } from "@/lib/results/card";
 import {
@@ -38,12 +38,55 @@ function verifyCode(seed: string): string {
  * dependências) ou compartilhar no celular. Mesma casca/History/scroll-lock dos
  * outros modais do site. 100% no navegador.
  */
+/** Cor dominante (mais vívida) da logo — para tingir o certificado com a marca. */
+function dominantColor(img: HTMLImageElement | null): string | undefined {
+  if (!img || !img.width) return undefined;
+  try {
+    const s = 48;
+    const cv = document.createElement("canvas");
+    cv.width = s; cv.height = s;
+    const cx = cv.getContext("2d", { willReadFrequently: true });
+    if (!cx) return undefined;
+    cx.drawImage(img, 0, 0, s, s);
+    const { data } = cx.getImageData(0, 0, s, s);
+    const buckets = new Map<number, { n: number; r: number; g: number; b: number }>();
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 128) continue;
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const light = (max + min) / 2;
+      if (light > 242 || light < 22) continue; // pula branco/preto
+      if ((max === 0 ? 0 : (max - min) / max) < 0.18) continue; // pula cinza
+      const key = Math.round(r / 32) * 100 + Math.round(g / 32) * 10 + Math.round(b / 32);
+      const cur = buckets.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
+      cur.n++; cur.r += r; cur.g += g; cur.b += b;
+      buckets.set(key, cur);
+    }
+    let best = { score: -1, r: 0, g: 0, b: 0 };
+    for (const c of buckets.values()) {
+      const r = c.r / c.n, g = c.g / c.n, b = c.b / c.n;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const sat = max === 0 ? 0 : (max - min) / max;
+      const score = c.n * (0.4 + sat);
+      if (score > best.score) best = { score, r, g, b };
+    }
+    if (best.score < 0) return undefined;
+    let { r, g, b } = best;
+    if (0.299 * r + 0.587 * g + 0.114 * b > 185) { r *= 0.72; g *= 0.72; b *= 0.72; } // escurece p/ legibilidade sobre creme
+    const h = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+    return `#${h(r)}${h(g)}${h(b)}`;
+  } catch {
+    return undefined;
+  }
+}
+
 export default function CertificateModal({
   runner,
   event,
   categoryLabel,
   brandLogo,
   display,
+  certificate,
   onClose,
 }: {
   runner: RaceResultRow | null;
@@ -51,6 +94,7 @@ export default function CertificateModal({
   categoryLabel: string;
   brandLogo?: string;
   display?: ClassificacaoDisplay;
+  certificate?: CertificateConfig;
   onClose: () => void;
 }) {
   const open = !!runner;
@@ -106,8 +150,21 @@ export default function CertificateModal({
       siteUrl: typeof window !== "undefined" ? window.location.host : undefined,
       issuedText: `Emitido em ${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()}`,
       verifyCode: verifyCode(`${runner.name}|${runner.bib}|${runner.pos}|${categoryLabel}`),
+      // ADM: cor da marca (accent explícito, senão amostra a logo), rótulos e toggles.
+      accent:
+        certificate?.accent?.trim() ||
+        (certificate?.useLogoColors !== false ? dominantColor(logo) : undefined),
+      message: certificate?.message,
+      sig1Label: certificate?.sig1Label,
+      sig1Sub: certificate?.sig1Sub,
+      sig2Label: certificate?.sig2Label,
+      sig2Sub: certificate?.sig2Sub,
+      showBib: certificate?.showBib,
+      showTime: certificate?.showTime,
+      showAgeGroup: certificate?.showAgeGroup,
+      showTeam: certificate?.showTeam,
     };
-  }, [runner, event, categoryLabel, display]);
+  }, [runner, event, categoryLabel, display, certificate, logo]);
 
   // Desenha o certificado quando tudo está pronto.
   useEffect(() => {
