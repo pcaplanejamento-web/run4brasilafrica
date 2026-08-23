@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ContactLinks } from "@/lib/content/types";
+import VerifyCertificateModal from "./VerifyCertificateModal";
 
 function ext(url?: string) {
   if (!url) return "#";
@@ -71,6 +72,9 @@ export default function SiteFooter({
         >
           Privacidade
         </a>
+        <span className="border-l border-line-soft pl-4 text-[12px]">
+          <VerifyCertificateModal />
+        </span>
         <Link
           href="/admin/login"
           className="border-l border-line-soft pl-4 text-[12px] text-muted transition-colors hover:text-cream"

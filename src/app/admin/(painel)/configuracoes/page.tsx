@@ -402,24 +402,57 @@ function ConfiguracoesForm({
               </div>
             )}
           </div>
-          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <FieldLabel>Assinatura 1 — título</FieldLabel>
-              <TextInput value={cert.sig1Label ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Label: e.target.value }))} placeholder="Organização" />
+          <div className="mb-3">
+            <FieldLabel>Assinantes</FieldLabel>
+            <Select
+              value={cert.signMode === "one" ? "one" : "two"}
+              onChange={(e) => setCert((c) => ({ ...c, signMode: e.target.value as "one" | "two" }))}
+            >
+              <option value="two">Dois assinantes (Organização e Direção)</option>
+              <option value="one">Uma pessoa para os dois papéis</option>
+            </Select>
+            <p className="mt-1 text-[11px] text-adm-muted">
+              O nome aparece em cursiva (como assinatura) e o CPF fica **mascarado** (LGPD): ***.456.789-**
+            </p>
+          </div>
+          <div className="mb-3 rounded-lg border border-adm-border p-3">
+            <div className="mb-2 text-[12px] font-bold text-adm-ink">
+              {cert.signMode === "one" ? "Assinante" : "Assinatura 1"}
             </div>
-            <div>
-              <FieldLabel>Assinatura 1 — linha de baixo</FieldLabel>
-              <TextInput value={cert.sig1Sub ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Sub: e.target.value }))} placeholder="(nome do evento)" />
-            </div>
-            <div>
-              <FieldLabel>Assinatura 2 — título</FieldLabel>
-              <TextInput value={cert.sig2Label ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Label: e.target.value }))} placeholder="Direção de Prova" />
-            </div>
-            <div>
-              <FieldLabel>Assinatura 2 — linha de baixo</FieldLabel>
-              <TextInput value={cert.sig2Sub ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Sub: e.target.value }))} placeholder="Cronometragem oficial" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <FieldLabel>Papel</FieldLabel>
+                <TextInput value={cert.sig1Label ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Label: e.target.value }))} placeholder={cert.signMode === "one" ? "Organização e Direção" : "Organização"} />
+              </div>
+              <div>
+                <FieldLabel>Nome (assinatura)</FieldLabel>
+                <TextInput value={cert.sig1Name ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Name: e.target.value }))} placeholder="Nome completo" />
+              </div>
+              <div>
+                <FieldLabel>CPF</FieldLabel>
+                <TextInput value={cert.sig1Cpf ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig1Cpf: e.target.value }))} placeholder="000.000.000-00" />
+              </div>
             </div>
           </div>
+          {cert.signMode !== "one" && (
+            <div className="mb-3 rounded-lg border border-adm-border p-3">
+              <div className="mb-2 text-[12px] font-bold text-adm-ink">Assinatura 2</div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <FieldLabel>Papel</FieldLabel>
+                  <TextInput value={cert.sig2Label ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Label: e.target.value }))} placeholder="Direção de Prova" />
+                </div>
+                <div>
+                  <FieldLabel>Nome (assinatura)</FieldLabel>
+                  <TextInput value={cert.sig2Name ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Name: e.target.value }))} placeholder="Nome completo" />
+                </div>
+                <div>
+                  <FieldLabel>CPF</FieldLabel>
+                  <TextInput value={cert.sig2Cpf ?? ""} onChange={(e) => setCert((c) => ({ ...c, sig2Cpf: e.target.value }))} placeholder="000.000.000-00" />
+                </div>
+              </div>
+            </div>
+          )}
           <div className="mb-3">
             <FieldLabel>Mensagem opcional</FieldLabel>
             <TextArea value={cert.message ?? ""} onChange={(e) => setCert((c) => ({ ...c, message: e.target.value }))} rows={2} placeholder="Ex.: Parabéns pela sua conquista!" />

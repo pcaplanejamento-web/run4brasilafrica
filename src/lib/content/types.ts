@@ -207,12 +207,16 @@ export interface CertificateConfig {
   accent?: string;
   /** Extrair as cores da logo (padrão: ligado). `accent` explícito tem prioridade. */
   useLogoColors?: boolean;
-  /** Assinatura esquerda: rótulo + linha de baixo. */
+  /** Assinantes: uma pessoa para os dois papéis ("one") ou dois ("two", padrão). */
+  signMode?: "one" | "two";
+  /** Assinatura 1 (Organização, ou a pessoa única): papel + nome (cursivo) + CPF. */
   sig1Label?: string;
-  sig1Sub?: string;
-  /** Assinatura central: rótulo + linha de baixo. */
+  sig1Name?: string;
+  sig1Cpf?: string;
+  /** Assinatura 2 (Direção de Prova): papel + nome (cursivo) + CPF. */
   sig2Label?: string;
-  sig2Sub?: string;
+  sig2Name?: string;
+  sig2Cpf?: string;
   /** Mensagem/observação opcional (abaixo do subtítulo). */
   message?: string;
   /** Caixas de dados (padrão: exibir quando houver dado). `false` oculta. */

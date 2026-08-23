@@ -14,6 +14,14 @@ export const CERT_H = 2480;
 
 const DISPLAY = `'Space Grotesk', system-ui, -apple-system, Arial, sans-serif`;
 const SERIF = `Georgia, 'Times New Roman', 'Playfair Display', serif`;
+const CURSIVE = `'Snell Roundhand', 'Segoe Script', 'Bradley Hand', 'Brush Script MT', cursive`;
+
+/** Mascara o CPF (LGPD): mostra só os dígitos do meio — `***.456.789-**`. */
+function maskCpf(cpf?: string): string {
+  const d = (cpf || "").replace(/\D/g, "");
+  if (d.length !== 11) return "";
+  return `***.${d.slice(3, 6)}.${d.slice(6, 9)}-**`;
+}
 
 const DEFAULT_ACCENT = "#7c8a1e"; // verde-oliva (legível sobre creme)
 
@@ -84,10 +92,13 @@ export interface CertificateData {
   accent?: string; // cor de destaque (da logo ou config)
   showEventName?: boolean; // nome da corrida ao lado da logo
   message?: string; // observação opcional abaixo do subtítulo
+  signMode?: "one" | "two"; // uma pessoa (os dois papéis) ou dois assinantes
   sig1Label?: string;
-  sig1Sub?: string;
+  sig1Name?: string;
+  sig1Cpf?: string;
   sig2Label?: string;
-  sig2Sub?: string;
+  sig2Name?: string;
+  sig2Cpf?: string;
   showBib?: boolean;
   showTime?: boolean;
   showAgeGroup?: boolean;
@@ -282,6 +293,7 @@ export function drawCertificate(
 
   // ---- Título ----
   y += 34;
+  ctx.textAlign = "center"; // drawBrand pode ter deixado "left" (lockup); tudo abaixo é centralizado
   ctx.fillStyle = col.ink;
   const titlePx = 214;
   ctx.font = `800 ${titlePx}px ${DISPLAY}`;
@@ -388,21 +400,36 @@ export function drawCertificate(
   const sealCy = H - m2 - 120 - sealR;
   drawSeal(ctx, sealCx, sealCy, sealR, data.pos, col);
 
-  // ---- Assinaturas (rótulos do ADM) ----
-  const sigY = H - m2 - 224;
+  // ---- Assinaturas: nome em cursiva (assinatura) + papel + CPF mascarado ----
+  const sigY = H - m2 - 234;
   const sigW = 640;
-  const drawSig = (centerX: number, label: string, subLine: string) => {
+  const drawSig = (centerX: number, role: string, sigName?: string, cpf?: string) => {
+    const nm = sigName?.trim();
+    if (nm) {
+      ctx.textAlign = "center";
+      ctx.fillStyle = col.ink;
+      const nmPx = fitFont(ctx, nm, 82, 46, (px) => `italic 600 ${px}px ${CURSIVE}`, sigW - 24);
+      ctx.font = `italic 600 ${nmPx}px ${CURSIVE}`;
+      ctx.fillText(nm, centerX, sigY - 22);
+    }
     ctx.strokeStyle = col.ink; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(centerX - sigW / 2, sigY); ctx.lineTo(centerX + sigW / 2, sigY); ctx.stroke();
     ctx.textAlign = "center";
-    ctx.fillStyle = col.ink; ctx.font = `700 38px ${DISPLAY}`;
-    ctx.fillText(label.toUpperCase(), centerX, sigY + 56);
-    if (subLine) { ctx.fillStyle = col.soft; ctx.font = `400 32px ${SERIF}`; ctx.fillText(subLine, centerX, sigY + 100); }
+    ctx.fillStyle = col.ink; ctx.font = `700 36px ${DISPLAY}`;
+    ctx.fillText(role.toUpperCase(), centerX, sigY + 54);
+    const mc = maskCpf(cpf);
+    if (mc) { ctx.fillStyle = col.soft; ctx.font = `400 30px ${DISPLAY}`; ctx.fillText(`CPF ${mc}`, centerX, sigY + 96); }
   };
-  const sigLeft = m2 + 120 + sigW / 2;
-  const sigMid = sigLeft + sigW + 170;
-  drawSig(sigLeft, data.sig1Label?.trim() || "Organização", data.sig1Sub?.trim() || data.eventName);
-  drawSig(sigMid, data.sig2Label?.trim() || "Direção de Prova", data.sig2Sub?.trim() || "Cronometragem oficial");
+
+  if (data.signMode === "one") {
+    // Uma pessoa para os dois papéis — assinatura única centrada.
+    drawSig(cx, data.sig1Label?.trim() || "Organização e Direção de Prova", data.sig1Name, data.sig1Cpf);
+  } else {
+    const sigLeft = m2 + 120 + sigW / 2;
+    const sigMid = sigLeft + sigW + 170;
+    drawSig(sigLeft, data.sig1Label?.trim() || "Organização", data.sig1Name, data.sig1Cpf);
+    drawSig(sigMid, data.sig2Label?.trim() || "Direção de Prova", data.sig2Name, data.sig2Cpf);
+  }
 
   // ---- Rodapé (site + emissão + código) ----
   ctx.textAlign = "center";

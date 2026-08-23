@@ -11,6 +11,7 @@ import {
   type CertificateData,
 } from "@/lib/results/certificate";
 import { A4_LANDSCAPE_PT, canvasToPdfBlob } from "@/lib/pdf";
+import { certSeed, certVerifyCode } from "@/lib/results/verify";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 function slug(s: string): string {
@@ -24,12 +25,6 @@ function titleCase(s: string): string {
     .split(/\s+/)
     .map((w, i) => (i > 0 && small.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
     .join(" ");
-}
-/** Código curto e determinístico de autenticação (a partir de nome + nº + pos). */
-function verifyCode(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  return `R4B-${h.toString(36).toUpperCase().padStart(6, "0").slice(0, 6)}`;
 }
 
 /**
@@ -149,17 +144,20 @@ export default function CertificateModal({
       cityText: cityRaw ? titleCase(cityRaw) : undefined,
       siteUrl: typeof window !== "undefined" ? window.location.host : undefined,
       issuedText: `Emitido em ${p(now.getDate())}/${p(now.getMonth() + 1)}/${now.getFullYear()}`,
-      verifyCode: verifyCode(`${runner.name}|${runner.bib}|${runner.pos}|${categoryLabel}`),
+      verifyCode: certVerifyCode(certSeed(runner, categoryLabel)),
       // ADM: cor da marca (accent explícito, senão amostra a logo), rótulos e toggles.
       accent:
         certificate?.accent?.trim() ||
         (certificate?.useLogoColors !== false ? dominantColor(logo) : undefined),
       showEventName: certificate?.showEventName,
       message: certificate?.message,
+      signMode: certificate?.signMode,
       sig1Label: certificate?.sig1Label,
-      sig1Sub: certificate?.sig1Sub,
+      sig1Name: certificate?.sig1Name,
+      sig1Cpf: certificate?.sig1Cpf,
       sig2Label: certificate?.sig2Label,
-      sig2Sub: certificate?.sig2Sub,
+      sig2Name: certificate?.sig2Name,
+      sig2Cpf: certificate?.sig2Cpf,
       showBib: certificate?.showBib,
       showTime: certificate?.showTime,
       showAgeGroup: certificate?.showAgeGroup,
